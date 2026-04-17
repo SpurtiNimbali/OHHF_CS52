@@ -1,8 +1,9 @@
 import React from 'react'
 import { createRoot } from 'react-dom/client'
+import { WelcomeScreen } from './WelcomeScreen'
 
 function App() {
-  return <h1>Minimal Apps</h1>
+  return <WelcomeScreen />
 }
 
 createRoot(document.getElementById('root')!).render(<App />)
