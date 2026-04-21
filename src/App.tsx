@@ -1,6 +1,6 @@
 import React from 'react'
 import { createRoot } from 'react-dom/client'
-import { WelcomeScreen } from './WelcomeScreen'
+import { WelcomeScreen } from './welcomeScreen'
 
 function App() {
   return <WelcomeScreen />
