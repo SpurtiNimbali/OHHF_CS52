@@ -1,5 +1,7 @@
 import React, { useEffect, useState } from 'react'
 import { OnboardingProgressDots } from './components/OnboardingProgressDots'
+import { CustomSelect } from './components/CustomSelect'
+import welcomeHeart from './assets/images/OHHF_heart.png'
 
 type OnboardingStep =
   | 'welcome'
@@ -205,24 +207,78 @@ export function WelcomeScreen() {
         minHeight: '100vh',
         display: 'flex',
         flexDirection: 'column',
-        justifyContent: 'center',
+        justifyContent: step === 'welcome' ? 'center' : 'flex-start',
         alignItems: 'center',
         padding: 24,
+        paddingTop: step === 'welcome' ? 24 : 44,
         textAlign: 'center',
         color: '#0A2E5C',
+        background: '#EEF1F4',
         gap: 14,
-        fontFamily: 'Inter, sans-serif',
+        fontFamily: 'Montserrat, sans-serif',
       }}
     >
       {step === 'welcome' && (
         <>
-          <h1 style={{ fontSize: 44, lineHeight: 1.1, margin: 0, fontWeight: 750 }}>
-            Welcome
+          <div
+            aria-hidden="true"
+            style={{
+              width: 140,
+              height: 140,
+              borderRadius: '50%',
+              display: 'grid',
+              placeItems: 'center',
+              background:
+                'radial-gradient(circle at 30% 25%, rgba(255, 255, 255, 0.95), rgba(232, 223, 242, 0.92) 45%, rgba(216, 200, 238, 0.9) 100%)',
+              boxShadow:
+                '0 12px 26px rgba(15, 23, 42, 0.12), 0 2px 4px rgba(15, 23, 42, 0.06)',
+              marginBottom: 6,
+            }}
+          >
+            <img
+              src={welcomeHeart}
+              alt=""
+              style={{
+                width: 68,
+                height: 68,
+                objectFit: 'contain',
+                filter: 'drop-shadow(0 6px 10px rgba(15, 23, 42, 0.12))',
+              }}
+            />
+          </div>
+
+          <h1
+            style={{
+              fontSize: 50,
+              lineHeight: 1.05,
+              margin: 0,
+              fontWeight: 800,
+              letterSpacing: -0.8,
+              color: '#1F2937',
+            }}
+          >
+            Welcome.
           </h1>
-          <p style={{ fontSize: 22, lineHeight: 1.3, margin: 0, fontWeight: 600 }}>
-            You are not alone in this journey
+          <p
+            style={{
+              fontSize: 22,
+              lineHeight: 1.25,
+              margin: 0,
+              fontWeight: 500,
+              color: '#4B5563',
+            }}
+          >
+            You are not alone in this journey.
           </p>
-          <p style={{ fontSize: 16, lineHeight: 1.5, margin: 0, maxWidth: 560 }}>
+          <p
+            style={{
+              fontSize: 16,
+              lineHeight: 1.55,
+              margin: 0,
+              maxWidth: 600,
+              color: '#6B7280',
+            }}
+          >
             Caring for a child with complex medical needs can feel overwhelming.
             <br />
             You don’t have to navigate it alone.
@@ -230,11 +286,28 @@ export function WelcomeScreen() {
             This space is here to support you — gently and at your pace.
           </p>
 
-          <button type="button" onClick={() => setStep('age-at-diagnosis')} style={primaryButtonStyle}>
+          <button
+            type="button"
+            onClick={() => setStep('age-at-diagnosis')}
+            style={{
+              ...primaryButtonStyle,
+              marginTop: 20,
+              width: 'min(560px, 100%)',
+              padding: '16px 22px',
+              borderRadius: 9999,
+              fontSize: 17,
+              fontWeight: 700,
+              letterSpacing: 0.6,
+              textTransform: 'uppercase',
+              background: '#1F2937',
+              boxShadow:
+                '0 18px 38px rgba(15, 23, 42, 0.18), 0 3px 6px rgba(15, 23, 42, 0.12)',
+            }}
+          >
             Continue
           </button>
 
-          <div style={{ marginTop: 18 }}>
+          <div style={{ marginTop: 14 }}>
             <OnboardingProgressDots totalSteps={4} currentStep={0} />
           </div>
         </>
@@ -242,32 +315,26 @@ export function WelcomeScreen() {
 
       {step === 'age-at-diagnosis' && (
         <>
-          <h1 style={{ fontSize: 32, lineHeight: 1.15, margin: 0, fontWeight: 750 }}>
+          <h1 style={{ fontSize: 28, lineHeight: 1.15, margin: 0, fontWeight: 750 }}>
             What was your child&apos;s age at diagnosis?
           </h1>
-          <p style={{ fontSize: 22, lineHeight: 1.3, margin: 0, fontWeight: 600 }}>
+          <p style={{ fontSize: 18, lineHeight: 1.3, margin: 0, fontWeight: 600 }}>
             This helps us tailor resources and support to your caregiving stage.
           </p>
 
-          <select
+          <CustomSelect
             id="age-at-diagnosis"
-            aria-label="Child age at diagnosis"
-            value={answers.ageAtDiagnosis ?? ''}
-            onChange={(e) =>
+            label="Child age at diagnosis"
+            placeholder="Select age range"
+            value={(answers.ageAtDiagnosis as (typeof ageOptions)[number] | null) ?? null}
+            options={ageOptions.map((label) => ({ value: label, label }))}
+            onChange={(next) =>
               setAnswers((prev) => ({
                 ...prev,
-                ageAtDiagnosis: e.target.value || null,
+                ageAtDiagnosis: next,
               }))
             }
-            style={ageSelectStyle(answers.ageAtDiagnosis != null)}
-          >
-            <option value="">Select age range</option>
-            {ageOptions.map((label) => (
-              <option key={label} value={label}>
-                {label}
-              </option>
-            ))}
-          </select>
+          />
 
           <div style={navRowStyle}>
             <button type="button" onClick={() => setStep('welcome')} style={{ ...backButtonStyle, marginTop: 0 }}>
@@ -296,38 +363,32 @@ export function WelcomeScreen() {
 
       {step === 'current-age' && (
         <>
-          <h1 style={{ fontSize: 32, lineHeight: 1.15, margin: 0, fontWeight: 750 }}>
+          <h1 style={{ fontSize: 28, lineHeight: 1.15, margin: 0, fontWeight: 750 }}>
             What is your child&apos;s current age?
           </h1>
-          <p style={{ fontSize: 22, lineHeight: 1.3, margin: 0, fontWeight: 600 }}>
+          <p style={{ fontSize: 18, lineHeight: 1.3, margin: 0, fontWeight: 600 }}>
             This helps us tailor resources and support to your caregiving stage.
           </p>
 
-          <select
+          <CustomSelect
             id="current-child-age"
-            aria-label="Child current age range"
-            value={answers.currentChildAge ?? ''}
-            onChange={(e) =>
-              setAnswers((prev) => ({
-                ...prev,
-                currentChildAge: e.target.value || null,
-              }))
-            }
-            style={ageSelectStyle(currentAgeOk)}
-          >
-            <option value="">Select age range</option>
-            {ageOptions.map((label) => {
+            label="Child current age range"
+            placeholder="Select age range"
+            value={(answers.currentChildAge as (typeof ageOptions)[number] | null) ?? null}
+            options={ageOptions.map((label) => {
               const diagnosisIdx = ageCategoryIndex(answers.ageAtDiagnosis)
               const optionIdx = ageCategoryIndex(label)
               const disabled =
                 diagnosisIdx >= 0 && optionIdx >= 0 && optionIdx < diagnosisIdx
-              return (
-                <option key={label} value={label} disabled={disabled}>
-                  {label}
-                </option>
-              )
+              return { value: label, label, disabled }
             })}
-          </select>
+            onChange={(next) =>
+              setAnswers((prev) => ({
+                ...prev,
+                currentChildAge: next,
+              }))
+            }
+          />
 
           <div style={navRowStyle}>
             <button
@@ -391,12 +452,12 @@ export function WelcomeScreen() {
                     gap: 12,
                     padding: '12px 14px',
                     borderRadius: 12,
-                    border: checked ? '2px solid #0A2E5C' : '1px solid rgba(10, 46, 92, 0.25)',
-                    background: checked ? 'rgba(10, 46, 92, 0.08)' : '#FFFFFF',
+                    border: checked ? '2px solid #577568' : '1px solid rgba(10, 46, 92, 0.25)',
+                    background: checked ? 'rgba(172, 183, 168, 0.52)' : '#FFFFFF',
                     cursor: 'pointer',
                     fontSize: 14,
                     fontWeight: 600,
-                    color: '#0A2E5C',
+                    color: checked ? '#577568' : '#0A2E5C',
                   }}
                 >
                   <input
@@ -409,7 +470,7 @@ export function WelcomeScreen() {
                       height: 18,
                       flexShrink: 0,
                       cursor: 'pointer',
-                      accentColor: '#0A2E5C',
+                      accentColor: checked ? '#577568' : '#0A2E5C',
                     }}
                   />
                   <span style={{ lineHeight: 1.45 }}>
