@@ -1,8 +1,11 @@
 import React from 'react'
 import { createRoot } from 'react-dom/client'
+import MedicalGlossary from './pages/medicalGlossary'
+
 
 function App() {
-  return <h1>App</h1>
+  return <MedicalGlossary />
 }
 
 createRoot(document.getElementById('root')!).render(<App />)
+
