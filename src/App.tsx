@@ -3,6 +3,7 @@ import { useState } from 'react'
 import QuestionsForCardiologist from './components/QuestionsForCardiologist'
 import FindSupport from './components/FindSupport'
 import { createRoot } from 'react-dom/client'
+import { WelcomeScreen } from './welcomeScreen'
 
 type Screen = 'questions' | 'support'
 
