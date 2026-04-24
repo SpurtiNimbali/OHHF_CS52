@@ -17,8 +17,9 @@ export type CustomSelectProps<T extends string> = {
   maxWidth?: number | string
 }
 
+/** App “dark blue” — keep in sync with onboarding (`#0A2E5C`). */
 const palette = {
-  navy: '#192B3F',
+  navy: '#0A2E5C',
   lightBlue: '#C6D9E5',
   almostWhite: '#F1F5F9',
   lightGreen: '#ACB7A8',
@@ -183,10 +184,10 @@ export function CustomSelect<T extends string>({
           borderRadius: 14,
           padding: '14px 16px',
           fontSize: 16,
-          fontWeight: 650,
+          fontWeight: 500,
           border: value
             ? `2px solid ${palette.darkGreen}`
-            : '2px solid rgba(25, 43, 63, 0.22)',
+            : '2px solid rgba(10, 46, 92, 0.22)',
           background: value ? 'rgba(172, 183, 168, 0.5)' : palette.almostWhite,
           color: value ? palette.darkGreen : palette.navy,
           cursor: 'pointer',
@@ -222,7 +223,7 @@ export function CustomSelect<T extends string>({
             borderRadius: 16,
             padding: 10,
             background: '#FFFFFF',
-            border: '1px solid rgba(25, 43, 63, 0.14)',
+            border: '1px solid rgba(10, 46, 92, 0.14)',
             boxShadow: '0 20px 48px rgba(15, 23, 42, 0.18)',
             maxHeight: 320,
             overflowY: 'auto',
@@ -257,7 +258,7 @@ export function CustomSelect<T extends string>({
                   padding: '14px 14px',
                   borderRadius: 14,
                   fontSize: 16,
-                  fontWeight: isSelected ? 750 : 650,
+                  fontWeight: isDisabled ? 400 : 500,
                   cursor: isDisabled ? 'not-allowed' : 'pointer',
                   background: isActive
                     ? 'rgba(172, 183, 168, 0.62)'
@@ -265,7 +266,7 @@ export function CustomSelect<T extends string>({
                       ? 'rgba(172, 183, 168, 0.5)'
                       : 'transparent',
                   color: isDisabled
-                    ? 'rgba(25, 43, 63, 0.35)'
+                    ? 'rgba(10, 46, 92, 0.35)'
                     : isSelected
                       ? palette.darkGreen
                       : palette.navy,
@@ -298,12 +299,12 @@ export function CustomSelect<T extends string>({
               marginTop: 8,
               borderRadius: 14,
               padding: '12px 14px',
-              border: '1px dashed rgba(25, 43, 63, 0.32)',
+              border: '1px dashed rgba(10, 46, 92, 0.32)',
               background: 'rgba(241, 245, 249, 0.75)',
               cursor: 'pointer',
               color: palette.navy,
               fontFamily: 'inherit',
-              fontWeight: 650,
+              fontWeight: 500,
             }}
           >
             Clear selection
