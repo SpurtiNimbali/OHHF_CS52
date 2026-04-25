@@ -1,5 +1,6 @@
 import React from 'react'
 import { Link } from 'react-router-dom'
+import welcomeHeart from '../assets/images/OHHF_heart.png'
 
 const COLOR_NAVY = '#0A2E5C'
 const FONT_UI = 'Montserrat, sans-serif' as const
@@ -55,9 +56,34 @@ const buttonBase: React.CSSProperties = {
 export function AuthLandingScreen() {
   return (
     <main style={containerStyle}>
-      <h1 style={titleStyle}>Welcome back</h1>
+      <div
+        aria-hidden="true"
+        style={{
+          width: 132,
+          height: 132,
+          borderRadius: '50%',
+          display: 'grid',
+          placeItems: 'center',
+          background:
+            'radial-gradient(circle at 30% 25%, rgba(255, 255, 255, 0.95), rgba(232, 223, 242, 0.92) 45%, rgba(216, 200, 238, 0.9) 100%)',
+          boxShadow: '0 12px 26px rgba(15, 23, 42, 0.12), 0 2px 4px rgba(15, 23, 42, 0.06)',
+          marginBottom: 10,
+        }}
+      >
+        <img
+          src={welcomeHeart}
+          alt=""
+          style={{
+            width: 84,
+            height: 84,
+            objectFit: 'contain',
+            filter: 'drop-shadow(0 6px 10px rgba(15, 23, 42, 0.12))',
+          }}
+        />
+      </div>
+      <h1 style={titleStyle}>Insert app name here</h1>
       <p style={subtitleStyle}>
-        Sign in to continue, or create an account if this is your first time.
+        Sign in to continue, or sign up if this is your first time.
       </p>
 
       <div style={{ display: 'flex', gap: 12, marginTop: 22, flexWrap: 'wrap', justifyContent: 'center' }}>

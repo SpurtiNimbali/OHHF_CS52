@@ -1,7 +1,9 @@
-import React, { useEffect, useState } from 'react'
+import React, { useEffect, useRef, useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { OnboardingProgressDots } from '../components/OnboardingProgressDots'
 import { CustomSelect } from '../components/CustomSelect'
 import welcomeHeart from '../assets/images/OHHF_heart.png'
+import { supabase } from '../lib/supabaseClient'
 
 type OnboardingStep =
   | 'welcome'
@@ -226,7 +228,12 @@ function PersonalizingSpinner() {
 }
 
 export function WelcomeScreen() {
+  const navigate = useNavigate()
   const [step, setStep] = useState<OnboardingStep>('welcome')
+  const [isSaving, setIsSaving] = useState(false)
+  const [saveError, setSaveError] = useState<string | null>(null)
+  const [didPersist, setDidPersist] = useState(false)
+  const persistStartedRef = useRef(false)
   const [answers, setAnswers] = useState<{
     ageAtDiagnosis: string | null
     currentChildAge: string | null
@@ -262,6 +269,95 @@ export function WelcomeScreen() {
       return prev
     })
   }, [step, answers.ageAtDiagnosis])
+
+  // If the user ever leaves the personalizing step, allow re-save when they return.
+  useEffect(() => {
+    if (step !== 'personalizing') {
+      persistStartedRef.current = false
+    }
+  }, [step])
+
+  useEffect(() => {
+    if (step !== 'personalizing') return
+    if (didPersist) return
+    if (persistStartedRef.current) return
+    persistStartedRef.current = true
+
+    let cancelled = false
+
+    async function ensureAuthedUserId(): Promise<string> {
+      const { data: sessionData, error: sessionError } = await supabase.auth.getSession()
+      if (sessionError) throw sessionError
+      if (sessionData.session?.user?.id) return sessionData.session.user.id
+
+      const { data: anonData, error: anonError } = await supabase.auth.signInAnonymously()
+      if (anonError) throw anonError
+      const uid = anonData.user?.id
+      if (!uid) throw new Error('Could not create a user session.')
+      return uid
+    }
+
+    function formatSupabaseishError(e: unknown): string {
+      if (!e) return 'Could not save onboarding answers. Please try again.'
+      if (e instanceof Error) return e.message || 'Could not save onboarding answers. Please try again.'
+      if (typeof e === 'object') {
+        const maybe = e as { message?: unknown; details?: unknown; hint?: unknown; code?: unknown }
+        const parts = [maybe.message, maybe.details, maybe.hint, maybe.code]
+          .filter((p) => typeof p === 'string' && p.trim().length > 0) as string[]
+        if (parts.length) return parts.join(' — ')
+        try {
+          return JSON.stringify(e)
+        } catch {
+          // ignore
+        }
+      }
+      return String(e)
+    }
+
+    async function persistOnboarding() {
+      setIsSaving(true)
+      setSaveError(null)
+      try {
+        const uid = await ensureAuthedUserId()
+        const condition = answers.diagnosisCategories
+          .map((d) => d.title.trim())
+          .filter((t) => t.length > 0)
+          .join(', ')
+
+        const { error: upErr } = await supabase
+          .from('users')
+          .update({
+            diagnosis_age_category: answers.ageAtDiagnosis,
+            current_age_category: answers.currentChildAge,
+            // Store only the title part (not the parenthesized detail shown in the UI).
+            condition,
+          })
+          .eq('id', uid)
+
+        if (upErr) throw upErr
+        if (!cancelled) setDidPersist(true)
+      } catch (e) {
+        if (!cancelled) setSaveError(formatSupabaseishError(e))
+      } finally {
+        if (!cancelled) setIsSaving(false)
+      }
+    }
+
+    void persistOnboarding()
+
+    return () => {
+      cancelled = true
+    }
+  }, [answers, didPersist, step])
+
+  // Final step: pause briefly for the “personalizing” moment, then go to Home.
+  useEffect(() => {
+    if (step !== 'personalizing') return
+    if (saveError) return
+    if (!didPersist) return
+    const t = window.setTimeout(() => navigate('/home'), 1200)
+    return () => window.clearTimeout(t)
+  }, [didPersist, navigate, saveError, step])
 
   const currentAgeOk = isValidCurrentVsDiagnosisAge(
     answers.ageAtDiagnosis,
@@ -617,6 +713,39 @@ export function WelcomeScreen() {
             <div aria-label="Loading">
               <PersonalizingSpinner />
             </div>
+            {saveError && (
+              <div style={{ marginTop: 10, textAlign: 'center' }}>
+                <p
+                  role="alert"
+                  style={{
+                    margin: 0,
+                    fontFamily: FONT_UI,
+                    fontSize: 14,
+                    lineHeight: 1.45,
+                    fontWeight: 650,
+                    color: '#9B1C31',
+                  }}
+                >
+                  {saveError}
+                </p>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setDidPersist(false)
+                    setSaveError(null)
+                  }}
+                  style={{
+                    marginTop: 10,
+                    ...primaryButtonStyle,
+                    opacity: isSaving ? 0.55 : 1,
+                    cursor: isSaving ? 'not-allowed' : 'pointer',
+                  }}
+                  disabled={isSaving}
+                >
+                  Retry
+                </button>
+              </div>
+            )}
           </div>
         </div>
       )}

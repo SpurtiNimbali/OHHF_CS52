@@ -1,6 +1,7 @@
 import React from 'react'
 import { createRoot } from 'react-dom/client'
 import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom'
+import './global.css'
 import { AuthLandingScreen } from './screens/authLandingScreen'
 import { HomeScreen } from './screens/homeScreen'
 import { SignInScreen } from './screens/signInScreen'

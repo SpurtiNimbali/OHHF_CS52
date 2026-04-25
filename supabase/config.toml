@@ -1,0 +1,3 @@
+# Allow sign-in before any session exists (no JWT on /sign-in).
+[functions.sign-in-with-security]
+verify_jwt = false

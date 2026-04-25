@@ -1,12 +1,12 @@
 import React, { useEffect, useId, useMemo, useRef, useState } from 'react'
 
-export type CustomSelectOption<T extends string> = {
+export type CustomSelectOption<T extends string | number> = {
   value: T
   label: string
   disabled?: boolean
 }
 
-export type CustomSelectProps<T extends string> = {
+export type CustomSelectProps<T extends string | number> = {
   id?: string
   label: string
   options: Array<CustomSelectOption<T>>
@@ -15,6 +15,14 @@ export type CustomSelectProps<T extends string> = {
   onChange: (next: T | null) => void
   width?: number | string
   maxWidth?: number | string
+  /** @default true — hide for required single-choice fields (e.g. security question). */
+  allowClear?: boolean
+  /**
+   * `compact` — smaller option text, tighter rows, and a shorter list that scrolls after
+   * ~3 options (good for long labels on small viewports).
+   * @default 'default'
+   */
+  variant?: 'default' | 'compact'
 }
 
 /** App “dark blue” — keep in sync with onboarding (`#0A2E5C`). */
@@ -51,7 +59,7 @@ function useClickOutside(
   }, [enabled, onOutside, refs])
 }
 
-export function CustomSelect<T extends string>({
+export function CustomSelect<T extends string | number>({
   id,
   label,
   options,
@@ -60,7 +68,14 @@ export function CustomSelect<T extends string>({
   onChange,
   width = '100%',
   maxWidth = 520,
+  allowClear = true,
+  variant = 'default',
 }: CustomSelectProps<T>) {
+  const isCompact = variant === 'compact'
+  // ~3 full option rows (14px, wrapped labels); then the list scrolls.
+  const listMaxHeight = isCompact ? 'min(12.5rem, 45vh)' : 320
+  const optionFontSize = isCompact ? 14 : 16
+  const optionPadding = isCompact ? '10px 12px' : '14px 14px'
   const autoId = useId()
   const baseId = id ?? `ohhf-select-${autoId}`
 
@@ -225,7 +240,7 @@ export function CustomSelect<T extends string>({
             background: '#FFFFFF',
             border: '1px solid rgba(10, 46, 92, 0.14)',
             boxShadow: '0 20px 48px rgba(15, 23, 42, 0.18)',
-            maxHeight: 320,
+            maxHeight: listMaxHeight,
             overflowY: 'auto',
           }}
         >
@@ -239,7 +254,7 @@ export function CustomSelect<T extends string>({
 
             return (
               <div
-                key={opt.value}
+                key={String(opt.value)}
                 role="option"
                 aria-selected={isSelected}
                 aria-disabled={isDisabled || undefined}
@@ -255,9 +270,10 @@ export function CustomSelect<T extends string>({
                   buttonRef.current?.focus()
                 }}
                 style={{
-                  padding: '14px 14px',
+                  padding: optionPadding,
                   borderRadius: 14,
-                  fontSize: 16,
+                  fontSize: optionFontSize,
+                  lineHeight: isCompact ? 1.4 : undefined,
                   fontWeight: isDisabled ? 400 : 500,
                   cursor: isDisabled ? 'not-allowed' : 'pointer',
                   background: isActive
@@ -272,14 +288,30 @@ export function CustomSelect<T extends string>({
                       : palette.navy,
                   outline: isActive ? `2px solid rgba(87, 117, 104, 0.5)` : 'none',
                   display: 'flex',
-                  alignItems: 'center',
+                  alignItems: isCompact ? 'flex-start' : 'center',
                   justifyContent: 'space-between',
                   gap: 12,
                 }}
               >
-                <span>{opt.label}</span>
+                <span
+                  style={
+                    isCompact
+                      ? {
+                          flex: 1,
+                          minWidth: 0,
+                          textAlign: 'left',
+                          wordBreak: 'break-word',
+                        }
+                      : { textAlign: 'left' }
+                  }
+                >
+                  {opt.label}
+                </span>
                 {isSelected && (
-                  <span aria-hidden="true" style={{ opacity: 0.75 }}>
+                  <span
+                    aria-hidden="true"
+                    style={{ opacity: 0.75, flexShrink: 0, marginTop: isCompact ? 2 : 0 }}
+                  >
                     ✓
                   </span>
                 )}
@@ -287,28 +319,30 @@ export function CustomSelect<T extends string>({
             )
           })}
 
-          <button
-            type="button"
-            onClick={() => {
-              onChange(null)
-              setOpen(false)
-              buttonRef.current?.focus()
-            }}
-            style={{
-              width: '100%',
-              marginTop: 8,
-              borderRadius: 14,
-              padding: '12px 14px',
-              border: '1px dashed rgba(10, 46, 92, 0.32)',
-              background: 'rgba(241, 245, 249, 0.75)',
-              cursor: 'pointer',
-              color: palette.navy,
-              fontFamily: 'inherit',
-              fontWeight: 500,
-            }}
-          >
-            Clear selection
-          </button>
+          {allowClear && (
+            <button
+              type="button"
+              onClick={() => {
+                onChange(null)
+                setOpen(false)
+                buttonRef.current?.focus()
+              }}
+              style={{
+                width: '100%',
+                marginTop: 8,
+                borderRadius: 14,
+                padding: '12px 14px',
+                border: '1px dashed rgba(10, 46, 92, 0.32)',
+                background: 'rgba(241, 245, 249, 0.75)',
+                cursor: 'pointer',
+                color: palette.navy,
+                fontFamily: 'inherit',
+                fontWeight: 500,
+              }}
+            >
+              Clear selection
+            </button>
+          )}
         </div>
       )}
     </div>
