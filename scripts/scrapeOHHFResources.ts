@@ -15,23 +15,6 @@ async function main() {
   const html = await response.text()
   const $ = cheerio.load(html)
 
-//   const links = $('a')
-//     .map((_, element) => {
-//       const title = $(element).text().trim().replace(/\s+/g, ' ')
-//       const href = $(element).attr('href')
-
-//       return {
-//         title,
-//         href,
-//       }
-//     })
-//     .get()
-//     .filter((link) => link.title && link.href)
-
-//   console.log(`Found ${links.length} links`)
-//   console.log(JSON.stringify(links.slice(0, 30), null, 2))
-
-// Finding headings diagnostic
 const resources: {
     section: string
     title: string
