@@ -1,4 +1,7 @@
-import React from 'react'
+import './index.css'
+import { useState } from 'react'
+import QuestionsForCardiologist from './components/QuestionsForCardiologist'
+import FindSupport from './components/FindSupport'
 import { createRoot } from 'react-dom/client'
 import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom'
 import './global.css'
@@ -7,6 +10,8 @@ import { HomeScreen } from './screens/homeScreen'
 import { SignInScreen } from './screens/signInScreen'
 import { SignUpScreen } from './screens/signUpScreen'
 import { WelcomeScreen } from './screens/welcomeScreen'
+
+type Screen = 'questions' | 'support'
 
 function App() {
   return (
