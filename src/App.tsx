@@ -1,10 +1,8 @@
-import React from 'react'
 import { createRoot } from 'react-dom/client'
-import MedicalGlossary from './pages/medicalGlossary'
-
+import ResourcesLanding from './pages/ResourcesLanding'
 
 function App() {
-  return <MedicalGlossary />
+  return <ResourcesLanding />
 }
 
 createRoot(document.getElementById('root')!).render(<App />)

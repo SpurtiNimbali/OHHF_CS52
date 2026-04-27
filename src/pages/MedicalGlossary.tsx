@@ -1,11 +1,18 @@
-import React, { useState, useEffect } from 'react'
+import { useState, useEffect } from 'react'
+import { createClient } from '@supabase/supabase-js'
 import SearchBar from '../components/SearchBar'
+
+interface GlossaryTerm {
+  id: number
+  term: string
+  definition: string
+}
 
 function MedicalGlossary() {
   const [query, setQuery] = useState('')
-  const [terms, setTerms] = useState([])
+  const [terms, setTerms] = useState<GlossaryTerm[]>([])
   const [loading, setLoading] = useState(false)
-  const [error, setError] = useState(null)
+  const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
     let isMounted = true
@@ -17,20 +24,38 @@ function MedicalGlossary() {
       }
 
       try {
-        const res = await fetch(`/api/glossary?search=${encodeURIComponent(query)}`)
+        const supabaseUrl = (import.meta as any).env.VITE_SUPABASE_URL
+        const supabaseKey = (import.meta as any).env.VITE_SUPABASE_PUBLISHABLE_KEY
 
-        if (!res.ok) {
-          throw new Error(`Request failed with status ${res.status}`)
+        if (!supabaseUrl || !supabaseKey) {
+          throw new Error('Missing Supabase environment variables')
         }
 
-        const data = await res.json()
+        const supabase = createClient(supabaseUrl, supabaseKey)
+        const search = query.trim()
+
+        let dbQuery = supabase
+          .from('glossary_terms')
+          .select('id, term, definition')
+          .order('term', { ascending: true })
+
+        if (search) {
+          dbQuery = dbQuery.ilike('term', `%${search}%`)
+        }
+
+        const { data, error: dbError } = await dbQuery
+
+        if (dbError) {
+          throw new Error(dbError.message)
+        }
+
         if (isMounted) {
-          setTerms(data)
+          setTerms(data || [])
         }
       } catch (err) {
         if (isMounted) {
           setTerms([])
-          setError('Could not load glossary terms. Check your API server and env keys.')
+          setError(err instanceof Error ? err.message : 'Could not load glossary terms. Check your Supabase configuration.')
         }
       } finally {
         if (isMounted) {
@@ -59,13 +84,43 @@ function MedicalGlossary() {
         <p>No terms match your search</p>
       )}
 
-      <ul>
-        {terms.map((term) => (
-          <li key={term.id}>
-            <strong>{term.term}</strong>: {term.definition}
-          </li>
-        ))}
-      </ul>
+      {!loading && !error && terms.length > 0 && (
+        <div style={{ marginTop: '20px', overflowX: 'auto' }}>
+          <table style={{
+            width: '100%',
+            borderCollapse: 'collapse',
+            border: '1px solid #ddd',
+            fontSize: '14px'
+          }}>
+            <tbody>
+              {terms.map((term) => (
+                <tr key={term.id} style={{
+                  borderBottom: '1px solid #eee'
+                }}>
+                  <td style={{
+                    padding: '12px 16px',
+                    fontWeight: 'bold',
+                    color: '#2c3e50',
+                    verticalAlign: 'top',
+                    minWidth: '200px',
+                    borderRight: '1px solid #eee'
+                  }}>
+                    {term.term}
+                  </td>
+                  <td style={{
+                    padding: '12px 16px',
+                    color: '#555',
+                    lineHeight: '1.5',
+                    verticalAlign: 'top'
+                  }}>
+                    {term.definition}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
     </div>
   )
 }
