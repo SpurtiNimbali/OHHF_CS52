@@ -1,3 +1,10 @@
+<<<<<<< HEAD
+import { createRoot } from 'react-dom/client'
+import ResourcesLanding from './pages/ResourcesLanding'
+
+function App() {
+  return <ResourcesLanding />
+=======
 import './index.css'
 import { useState } from 'react'
 import QuestionsForCardiologist from './components/QuestionsForCardiologist'
@@ -26,6 +33,8 @@ function App() {
       </Routes>
     </BrowserRouter>
   )
+>>>>>>> main
 }
 
 createRoot(document.getElementById('root')!).render(<App />)
+
