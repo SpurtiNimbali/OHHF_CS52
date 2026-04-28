@@ -1,0 +1,54 @@
+/* Global theme + focus styles to avoid browser default orange rings. */
+
+:root {
+  --ohhf-navy: #0a2e5c;
+  --ohhf-green: #577568;
+  --ohhf-green-ring: rgba(87, 117, 104, 0.55);
+  --ohhf-green-ring-strong: rgba(87, 117, 104, 0.75);
+}
+
+html,
+body {
+  height: 100%;
+}
+
+body {
+  margin: 0;
+}
+
+/* Use the green theme for native controls. */
+* {
+  accent-color: var(--ohhf-green);
+  caret-color: var(--ohhf-green);
+}
+
+/* Consistent accessible focus ring for keyboard users. */
+*:focus-visible {
+  outline: 3px solid var(--ohhf-green-ring-strong);
+  outline-offset: 2px;
+}
+
+/* Remove default outline on focus (we use :focus-visible above). */
+*:focus {
+  outline-color: transparent;
+}
+
+/* Inputs: override the browser's orange focus highlight. */
+input:focus-visible,
+textarea:focus-visible,
+button:focus-visible,
+select:focus-visible,
+a:focus-visible {
+  box-shadow: 0 0 0 4px var(--ohhf-green-ring);
+}
+
+input:focus,
+textarea:focus {
+  border-color: var(--ohhf-green) !important;
+}
+
+button:focus,
+a:focus {
+  outline-color: transparent;
+}
+

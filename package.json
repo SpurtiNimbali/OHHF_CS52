@@ -6,15 +6,22 @@
   "scripts": {
     "dev": "vite",
     "build": "vite build",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "scrape:ohhf": "tsx scripts/scrapeOHHFResources.ts",
+    "upload:ohhf": "tsx scripts/uploadOHHFResources.ts"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.104.0",
+    "cheerio": "^1.2.0",
+    "dotenv": "^17.4.2",
     "react": "^19.2.4",
-    "react-dom": "^19.2.4"
+    "react-dom": "^19.2.4",
+    "tsx": "^4.21",
+    "bcryptjs": "^3.0.3",
+ 
   },
   "devDependencies": {
-    "@tailwindcss/vite": "^4.2.4",
+    "@types/bcryptjs": "^2.4.6",
     "@types/react": "^19.2.14",
     "@types/react-dom": "^19.2.3",
     "@vitejs/plugin-react": "^6.0.1",
