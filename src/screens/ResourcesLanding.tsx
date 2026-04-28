@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { Link } from 'react-router-dom'
 import NavCard from '../components/NavCard'
 import BackButton from '../components/BackButton'
 import MedicalGlossary from './MedicalGlossary'
@@ -65,6 +66,32 @@ const ResourcesLanding: React.FC = () => {
       background: 'linear-gradient(180deg, #f8fafc 0%, #eef2f6 100%)',
       padding: '0',
     }}>
+      {/* Back to Home Button */}
+      <div style={{
+        position: 'absolute',
+        top: '20px',
+        left: '20px',
+        zIndex: 100,
+      }}>
+        <Link
+          to="/home"
+          style={{
+            display: 'inline-flex',
+            alignItems: 'center',
+            padding: '10px 20px',
+            borderRadius: '8px',
+            fontSize: '14px',
+            fontWeight: 600,
+            textDecoration: 'none',
+            color: '#667eea',
+            background: '#ffffff',
+            boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
+          }}
+        >
+          ← Back to Home
+        </Link>
+      </div>
+
       {/* Hero Section */}
       <div style={{
         background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
