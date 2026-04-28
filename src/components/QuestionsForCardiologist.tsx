@@ -67,7 +67,8 @@ export default function QuestionsForCardiologist() {
     if (!customText.trim()) return
     setAdding(true)
     const row = { user_id: CURRENT_USER_ID, question_id: null, custom_text: customText.trim() }
-    const { data } = await supabase.from('saved_questions').insert(row).select().single()
+    const { data, error } = await supabase.from('saved_questions').insert(row).select().single()
+    console.log('[addCustomQuestion]', { data, error })
     if (data) setSaved((prev) => [...prev, data as SavedQuestion])
     setCustomText('')
     setAdding(false)

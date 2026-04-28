@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { supabase, SupportResource } from '../lib/supabase'
 
 type Category = 'All' | 'Mental Health' | 'Family Support' | 'Financial Aid' | 'Community'
@@ -36,15 +36,28 @@ export default function FindSupport() {
     load()
   }, [])
 
-  const filtered = resources.filter((r) => {
-    const matchesCategory = activeCategory === 'All' || r.category === activeCategory
+  const sortedResources = useMemo(() => {
     const query = locationQuery.trim().toLowerCase()
-    const matchesLocation =
-      !query ||
-      (r.zipcode ?? '').toLowerCase().includes(query) ||
-      (r.city ?? '').toLowerCase().includes(query)
-    return matchesCategory && matchesLocation
-  })
+
+    const categoryFiltered = resources.filter(
+      (r) => activeCategory === 'All' || r.category === activeCategory,
+    )
+
+    if (!query) return categoryFiltered
+
+    const scored = categoryFiltered.flatMap((r) => {
+      const zip = (r.zipcode ?? '').toLowerCase()
+      const city = (r.city ?? '').toLowerCase()
+
+      if (zip === query || city === query) return [{ r, score: 0 }]
+      if (zip.startsWith(query.slice(0, 3)) && query.length >= 3) return [{ r, score: 1 }]
+      if (zip.includes(query) || city.includes(query)) return [{ r, score: 2 }]
+      return []
+    })
+
+    scored.sort((a, b) => a.score - b.score || a.r.name.localeCompare(b.r.name))
+    return scored.map(({ r }) => r)
+  }, [resources, activeCategory, locationQuery])
 
   return (
     <div className="max-w-2xl mx-auto px-4 py-6 space-y-6">
@@ -78,11 +91,11 @@ export default function FindSupport() {
         <div className="flex items-center justify-center h-48">
           <p className="text-gray-500 text-sm">Loading resources...</p>
         </div>
-      ) : filtered.length === 0 ? (
+      ) : sortedResources.length === 0 ? (
         <p className="text-center text-gray-400 text-sm py-12">No resources found.</p>
       ) : (
         <ul className="space-y-4">
-          {filtered.map((r) => (
+          {sortedResources.map((r) => (
             <li
               key={r.id}
               className="border border-gray-200 rounded-xl p-4 shadow-sm bg-white space-y-2"
