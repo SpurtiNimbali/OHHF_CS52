@@ -21,7 +21,7 @@ const ResourcesLanding: React.FC = () => {
     return (
       <div style={{ padding: '20px' }}>
         <div style={{ marginBottom: '20px' }}>
-          <BackButton onClick={handleBackToLanding} text="Back to Resources" />
+          <BackButton onClick={handleBackToLanding} text="← Back to Resources" />
         </div>
         <MedicalGlossary />
       </div>
@@ -32,7 +32,7 @@ const ResourcesLanding: React.FC = () => {
     return (
       <div style={{ padding: '20px', maxWidth: '800px', margin: '0 auto' }}>
         <div style={{ marginBottom: '20px' }}>
-          <BackButton onClick={handleBackToLanding} text="Back to Resources" />
+          <BackButton onClick={handleBackToLanding} text="← Back to Resources" />
         </div>
 
         <h1 style={{ color: '#2c3e50', marginBottom: '20px' }}>Find Support</h1>
@@ -47,7 +47,7 @@ const ResourcesLanding: React.FC = () => {
     return (
       <div style={{ padding: '20px', maxWidth: '800px', margin: '0 auto' }}>
         <div style={{ marginBottom: '20px' }}>
-          <BackButton onClick={handleBackToLanding} text="Back to Resources" />
+          <BackButton onClick={handleBackToLanding} text="← Back to Resources" />
         </div>
 
         <h1 style={{ color: '#2c3e50', marginBottom: '20px' }}>Questions to Ask Your Cardiologist</h1>
@@ -62,51 +62,96 @@ const ResourcesLanding: React.FC = () => {
   return (
     <div style={{
       minHeight: '100vh',
-      backgroundColor: '#f8f9fa',
-      padding: '40px 20px'
+      background: 'linear-gradient(180deg, #f8fafc 0%, #eef2f6 100%)',
+      padding: '0',
     }}>
+      {/* Hero Section */}
       <div style={{
-        maxWidth: '1000px',
-        margin: '0 auto',
-        textAlign: 'center'
+        background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+        padding: '80px 24px 100px',
+        textAlign: 'center',
+        position: 'relative',
+        overflow: 'hidden',
       }}>
-        <h1 style={{
-          fontSize: '32px',
-          fontWeight: 'bold',
-          color: '#2c3e50',
-          marginBottom: '12px'
-        }}>
-          OHHF Resources
-        </h1>
+        {/* Decorative elements */}
+        <div style={{
+          position: 'absolute',
+          top: '-100px',
+          left: '-100px',
+          width: '300px',
+          height: '300px',
+          background: 'radial-gradient(circle, rgba(255,255,255,0.2) 0%, transparent 70%)',
+          borderRadius: '50%',
+        }} />
+        <div style={{
+          position: 'absolute',
+          bottom: '-50px',
+          right: '-50px',
+          width: '200px',
+          height: '200px',
+          background: 'radial-gradient(circle, rgba(255,255,255,0.15) 0%, transparent 70%)',
+          borderRadius: '50%',
+        }} />
+        <div style={{
+          position: 'absolute',
+          top: '50%',
+          left: '50%',
+          transform: 'translate(-50%, -50%)',
+          width: '400px',
+          height: '400px',
+          background: 'radial-gradient(circle, rgba(255,255,255,0.1) 0%, transparent 70%)',
+          borderRadius: '50%',
+        }} />
+        
+        <div style={{ position: 'relative', zIndex: 1 }}>
+          <h1 style={{
+            fontSize: '3rem',
+            fontWeight: 800,
+            color: '#ffffff',
+            margin: 0,
+            textShadow: '0 2px 20px rgba(0,0,0,0.2)',
+          }}>
+            OHHF Resources
+          </h1>
+          <p style={{
+            color: 'rgba(255,255,255,0.9)',
+            fontSize: '1.3rem',
+            marginTop: '16px',
+            maxWidth: '600px',
+            margin: '16px auto 0',
+            lineHeight: 1.6,
+          }}>
+            Access support, information, and tools to help you on your heart health journey.
+          </p>
+        </div>
+      </div>
 
-        <p style={{
-          fontSize: '18px',
-          color: '#6c757d',
-          marginBottom: '40px',
-          maxWidth: '600px',
-          margin: '0 auto 40px auto'
-        }}>
-          Access support, information, and tools to help you on your heart health journey.
-        </p>
-
+      {/* Cards Section - Overlapping the hero */}
+      <div style={{
+        maxWidth: '1100px',
+        margin: '-60px auto 0',
+        padding: '0 24px 60px',
+        position: 'relative',
+        zIndex: 10,
+      }}>
         <div style={{
           display: 'grid',
-          gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))',
-          gap: '24px',
-          maxWidth: '900px',
-          margin: '0 auto'
+          gridTemplateColumns: 'repeat(3, 1fr)',
+          gap: '28px',
         }}>
           <NavCard
             title="Find Support"
             icon="🤝"
             description="Connect with community resources and support groups"
+            accentColor="#f472b6"
             onClick={() => handleNavigation('support')}
           />
 
           <NavCard
-            title="Questions to Ask Your Cardiologist"
+            title="Questions for Your Cardiologist"
             icon="💬"
             description="Important questions and conversation starters for your appointments"
+            accentColor="#764ba2"
             onClick={() => handleNavigation('questions')}
           />
 
@@ -114,6 +159,7 @@ const ResourcesLanding: React.FC = () => {
             title="Medical Glossary"
             icon="📚"
             description="Understand medical terms related to heart health"
+            accentColor="#9333ea"
             onClick={() => handleNavigation('glossary')}
           />
         </div>
