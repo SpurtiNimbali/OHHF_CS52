@@ -12,28 +12,21 @@
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.104.0",
-<<<<<<< HEAD
-=======
+    "@tailwindcss/vite": "^4.2.4",
+    "bcryptjs": "^3.0.3",
     "cheerio": "^1.2.0",
->>>>>>> main
     "dotenv": "^17.4.2",
     "react": "^19.2.4",
     "react-dom": "^19.2.4",
-    "tsx": "^4.21",
-    "bcryptjs": "^3.0.3",
- 
+    "react-router-dom": "^7.14.2",
+    "tsx": "^4.21"
   },
   "devDependencies": {
-<<<<<<< HEAD
-    "@types/react": "^19.2.14",
-    "@types/react-dom": "^19.2.3",
-=======
     "@types/bcryptjs": "^2.4.6",
     "@types/react": "^19.2.14",
     "@types/react-dom": "^19.2.3",
     "@vitejs/plugin-react": "^6.0.1",
     "tailwindcss": "^4.2.4",
->>>>>>> main
     "typescript": "^6.0.3",
     "vite": "^8.0.8"
   }
