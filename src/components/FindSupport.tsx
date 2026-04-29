@@ -5,51 +5,65 @@ type Category = 'All' | 'Mental Health' | 'Family Support' | 'Financial Aid' | '
 
 const CATEGORIES: Category[] = ['All', 'Mental Health', 'Family Support', 'Financial Aid', 'Community']
 
-const CHIP_ACTIVE: Record<Category, string> = {
-  All: 'bg-rose-500 text-white shadow-sm',
-  'Mental Health': 'bg-purple-500 text-white shadow-sm',
-  'Family Support': 'bg-blue-500 text-white shadow-sm',
-  'Financial Aid': 'bg-emerald-500 text-white shadow-sm',
-  Community: 'bg-orange-400 text-white shadow-sm',
-}
-
-const CATEGORY_BADGE: Record<string, string> = {
-  'Mental Health': 'bg-purple-100 text-purple-600',
-  'Family Support': 'bg-blue-100 text-blue-600',
-  'Financial Aid': 'bg-emerald-100 text-emerald-600',
-  Community: 'bg-orange-100 text-orange-600',
-}
-
 // ── ResourceCard ─────────────────────────────────────────────────────────────
 
 function ResourceCard({ resource }: { resource: SupportResource }) {
+  const [hovered, setHovered] = useState(false)
+
   return (
-    <li className="bg-white rounded-2xl shadow-sm border border-rose-100 p-5 space-y-3 transition-shadow hover:shadow-md">
-      <div className="flex items-start justify-between gap-3">
-        <h3 className="font-semibold text-gray-900 text-base leading-snug">{resource.name}</h3>
-        <span
-          className={`shrink-0 text-xs font-medium px-2.5 py-1 rounded-full ${
-            CATEGORY_BADGE[resource.category] ?? 'bg-gray-100 text-gray-600'
-          }`}
-        >
+    <li
+      onMouseEnter={() => setHovered(true)}
+      onMouseLeave={() => setHovered(false)}
+      style={{
+        background: '#fff',
+        border: `1.5px solid ${hovered ? '#577568' : '#c6d9e5'}`,
+        borderRadius: '14px',
+        padding: '24px',
+        display: 'flex',
+        flexDirection: 'column',
+        gap: '10px',
+        boxShadow: hovered ? '0 8px 24px rgba(25,43,63,0.09)' : '0 2px 8px rgba(25,43,63,0.04)',
+        transition: 'all 0.2s ease',
+        listStyle: 'none',
+      }}
+    >
+      {/* Name + category badge */}
+      <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: '12px' }}>
+        <h3 style={{
+          margin: 0,
+          fontSize: '1rem',
+          fontWeight: 700,
+          color: '#192b3f',
+          lineHeight: 1.3,
+          fontFamily: 'Inter, system-ui, sans-serif',
+        }}>
+          {resource.name}
+        </h3>
+        <span style={{
+          flexShrink: 0,
+          fontSize: '0.72rem',
+          fontWeight: 600,
+          background: '#c6d9e5',
+          color: '#192b3f',
+          padding: '3px 10px',
+          borderRadius: '100px',
+          fontFamily: 'Inter, system-ui, sans-serif',
+          letterSpacing: '0.01em',
+        }}>
           {resource.category}
         </span>
       </div>
 
       {resource.description && (
-        <p className="text-sm text-gray-500 leading-relaxed">{resource.description}</p>
+        <p style={{ margin: 0, fontSize: '0.875rem', color: '#acb7a8', lineHeight: 1.65, fontFamily: 'Inter, system-ui, sans-serif' }}>
+          {resource.description}
+        </p>
       )}
 
       {(resource.city || resource.zipcode) && (
-        <div className="flex items-center gap-1.5">
-          <svg className="w-3.5 h-3.5 text-gray-300 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-            <path strokeLinecap="round" strokeLinejoin="round" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
-            <path strokeLinecap="round" strokeLinejoin="round" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
-          </svg>
-          <p className="text-xs text-gray-400">
-            {[resource.city, resource.zipcode].filter(Boolean).join(', ')}
-          </p>
-        </div>
+        <p style={{ margin: 0, fontSize: '0.78rem', color: '#acb7a8', fontFamily: 'Inter, system-ui, sans-serif' }}>
+          📍 {[resource.city, resource.zipcode].filter(Boolean).join(', ')}
+        </p>
       )}
 
       {resource.link && (
@@ -57,12 +71,26 @@ function ResourceCard({ resource }: { resource: SupportResource }) {
           href={resource.link}
           target="_blank"
           rel="noopener noreferrer"
-          className="inline-flex items-center gap-1.5 mt-1 bg-rose-500 hover:bg-rose-600 active:scale-95 text-white text-sm font-medium px-4 py-2 rounded-xl transition-all duration-150"
+          style={{
+            marginTop: '4px',
+            display: 'inline-flex',
+            alignItems: 'center',
+            gap: '6px',
+            background: '#577568',
+            color: '#f5f9f9',
+            padding: '8px 18px',
+            borderRadius: '10px',
+            fontSize: '0.85rem',
+            fontWeight: 600,
+            textDecoration: 'none',
+            fontFamily: 'Inter, system-ui, sans-serif',
+            transition: 'background 0.2s ease',
+            width: 'fit-content',
+          }}
+          onMouseEnter={e => (e.currentTarget.style.background = '#192b3f')}
+          onMouseLeave={e => (e.currentTarget.style.background = '#577568')}
         >
-          Visit Website
-          <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
-            <path strokeLinecap="round" strokeLinejoin="round" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
-          </svg>
+          Visit Website ↗
         </a>
       )}
     </li>
@@ -71,28 +99,32 @@ function ResourceCard({ resource }: { resource: SupportResource }) {
 
 // ── CategoryChips ─────────────────────────────────────────────────────────────
 
-function CategoryChips({
-  active,
-  onChange,
-}: {
-  active: Category
-  onChange: (c: Category) => void
-}) {
+function CategoryChips({ active, onChange }: { active: Category; onChange: (c: Category) => void }) {
   return (
-    <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-hide">
-      {CATEGORIES.map((cat) => (
-        <button
-          key={cat}
-          onClick={() => onChange(cat)}
-          className={`shrink-0 px-4 py-1.5 rounded-full text-sm font-medium transition-all duration-150 ${
-            active === cat
-              ? CHIP_ACTIVE[cat]
-              : 'bg-white text-gray-500 border border-gray-200 hover:border-rose-200 hover:text-rose-500'
-          }`}
-        >
-          {cat}
-        </button>
-      ))}
+    <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+      {CATEGORIES.map((cat) => {
+        const isActive = cat === active
+        return (
+          <button
+            key={cat}
+            onClick={() => onChange(cat)}
+            style={{
+              padding: '7px 16px',
+              borderRadius: '100px',
+              fontSize: '0.8rem',
+              fontWeight: 600,
+              fontFamily: 'Inter, system-ui, sans-serif',
+              cursor: 'pointer',
+              border: `1.5px solid ${isActive ? '#577568' : '#c6d9e5'}`,
+              background: isActive ? '#577568' : '#fff',
+              color: isActive ? '#f5f9f9' : '#577568',
+              transition: 'all 0.15s ease',
+            }}
+          >
+            {cat}
+          </button>
+        )
+      })}
     </div>
   )
 }
@@ -130,78 +162,98 @@ export default function FindSupport() {
       const city = String(r.city ?? '').toLowerCase()
       const hasLocation = zip || city
 
-      // Exact city or zip match
       if (city === query || zip === query) return [{ r, score: 0 }]
-      // City starts with query (e.g. "san" matches "San Francisco")
       if (city.startsWith(query)) return [{ r, score: 1 }]
-      // Same zip region (first 3 digits)
       if (query.length >= 3 && zip.startsWith(query.slice(0, 3))) return [{ r, score: 2 }]
-      // Any partial match in city or zip
       if (city.includes(query) || zip.includes(query)) return [{ r, score: 3 }]
-      // No city/zip = online/national resource, always include but ranked last
       if (!hasLocation) return [{ r, score: 4 }]
-      // No match at all
       return []
     })
 
-    // null-safe sort: by score first, then alphabetically by name
-    scored.sort(
-      (a, b) =>
-        a.score - b.score ||
-        (a.r.name ?? '').localeCompare(b.r.name ?? ''),
-    )
+    scored.sort((a, b) => a.score - b.score || (a.r.name ?? '').localeCompare(b.r.name ?? ''))
     return scored.map(({ r }) => r)
   }, [resources, activeCategory, locationQuery])
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-rose-50 via-pink-50 to-purple-50">
-      <div className="max-w-2xl mx-auto px-4 py-8 space-y-5">
+    <div style={{ minHeight: '100vh', background: '#f5f9f9', fontFamily: 'Inter, system-ui, sans-serif' }}>
+      <div style={{ maxWidth: '720px', margin: '0 auto', padding: '40px 24px 72px' }}>
 
         {/* Header */}
-        <div className="text-center mt-2 mb-6">
-          <h1 className="text-3xl font-bold tracking-wide text-gray-900 leading-tight">
+        <div style={{ marginBottom: '32px' }}>
+          <p style={{
+            margin: '0 0 6px',
+            fontSize: '10px',
+            fontWeight: 700,
+            letterSpacing: '0.12em',
+            textTransform: 'uppercase',
+            color: '#acb7a8',
+            fontFamily: 'Inter, system-ui, sans-serif',
+          }}>
+            Cardea
+          </p>
+          <h1 style={{
+            margin: '0 0 10px',
+            fontFamily: 'var(--font-display, "Bebas Neue", sans-serif)',
+            fontSize: 'clamp(2.2rem, 4vw, 3rem)',
+            letterSpacing: '0.04em',
+            color: '#192b3f',
+            lineHeight: 1,
+          }}>
             Find Support
           </h1>
-          <p className="text-sm text-gray-400 mt-2">
+          <p style={{ margin: 0, fontSize: '0.875rem', color: '#acb7a8', lineHeight: 1.65, fontFamily: 'Inter, system-ui, sans-serif' }}>
             Resources for heart families — near you and online.
           </p>
         </div>
 
         {/* Search */}
-        <div className="relative">
-          <svg
-            className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-rose-300"
-            fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}
-          >
-            <path strokeLinecap="round" strokeLinejoin="round" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
-            <path strokeLinecap="round" strokeLinejoin="round" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
-          </svg>
+        <div style={{ position: 'relative', marginBottom: '16px' }}>
+          <span style={{ position: 'absolute', left: '14px', top: '50%', transform: 'translateY(-50%)', color: '#acb7a8', fontSize: '1rem' }}>
+            📍
+          </span>
           <input
             type="text"
             value={locationQuery}
             onChange={(e) => setLocationQuery(e.target.value)}
             placeholder="Search by city or zip code..."
-            className="w-full pl-10 pr-4 py-3 rounded-2xl border border-rose-200 bg-white shadow-sm text-sm focus:outline-none focus:ring-2 focus:ring-rose-300 transition"
+            style={{
+              width: '100%',
+              padding: '12px 16px 12px 40px',
+              borderRadius: '12px',
+              border: '1.5px solid #c6d9e5',
+              background: '#fff',
+              fontSize: '0.9rem',
+              color: '#192b3f',
+              fontFamily: 'Inter, system-ui, sans-serif',
+              outline: 'none',
+              boxSizing: 'border-box',
+              transition: 'border-color 0.2s ease',
+            }}
           />
         </div>
 
         {/* Category chips */}
-        <CategoryChips active={activeCategory} onChange={setActiveCategory} />
+        <div style={{ marginBottom: '28px' }}>
+          <CategoryChips active={activeCategory} onChange={setActiveCategory} />
+        </div>
+
+        {/* Divider */}
+        <div style={{ height: '1px', background: '#c6d9e5', marginBottom: '28px' }} />
 
         {/* Results */}
         {loading ? (
-          <div className="flex items-center justify-center h-48">
-            <p className="text-gray-400 text-sm">Loading resources...</p>
-          </div>
+          <p style={{ textAlign: 'center', color: '#acb7a8', fontSize: '0.9rem', padding: '48px 0' }}>
+            Loading resources…
+          </p>
         ) : sortedResources.length === 0 ? (
-          <div className="text-center py-16">
-            <div className="text-4xl mb-3">💛</div>
-            <p className="text-sm text-gray-400">
+          <div style={{ textAlign: 'center', padding: '64px 0' }}>
+            <div style={{ fontSize: '2.5rem', marginBottom: '12px' }}>💛</div>
+            <p style={{ margin: 0, fontSize: '0.9rem', color: '#acb7a8' }}>
               No resources found — try adjusting your filters.
             </p>
           </div>
         ) : (
-          <ul className="space-y-4">
+          <ul style={{ listStyle: 'none', margin: 0, padding: 0, display: 'flex', flexDirection: 'column', gap: '16px' }}>
             {sortedResources.map((r) => (
               <ResourceCard key={r.id} resource={r} />
             ))}

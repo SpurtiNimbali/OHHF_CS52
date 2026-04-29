@@ -2,8 +2,8 @@ import React from 'react'
 import { Link } from 'react-router-dom'
 import welcomeHeart from '../assets/images/OHHF_heart.png'
 
-const COLOR_NAVY = '#0A2E5C'
-const FONT_UI = 'Montserrat, sans-serif' as const
+const COLOR_NAVY = '#192b3f'
+const FONT_UI = 'Inter, system-ui, sans-serif' as const
 
 const containerStyle: React.CSSProperties = {
   minHeight: '100vh',
@@ -81,7 +81,7 @@ export function AuthLandingScreen() {
           }}
         />
       </div>
-      <h1 style={titleStyle}>Insert app name here</h1>
+      <h1 style={titleStyle}>Cardea</h1>
       <p style={subtitleStyle}>
         Sign in to continue, or sign up if this is your first time.
       </p>
