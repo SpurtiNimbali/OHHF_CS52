@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import { createClient } from '@supabase/supabase-js'
+// @ts-expect-error - SearchBar is a JSX component without type declarations
 import SearchBar from '../components/SearchBar'
 
 interface GlossaryTerm {
@@ -314,11 +315,6 @@ function MedicalGlossary() {
                     transition: 'all 0.3s ease',
                     cursor: 'pointer',
                     animation: `fadeInUp 0.5s ease ${index * 0.05}s both`,
-                    ':hover': {
-                      transform: 'translateY(-5px)',
-                      boxShadow: '0 12px 40px rgba(102, 126, 234, 0.2)',
-                      borderColor: colors.border,
-                    },
                   }}
                   onMouseEnter={(e) => {
                     e.currentTarget.style.transform = 'translateY(-5px)'
