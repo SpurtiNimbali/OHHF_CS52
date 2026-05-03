@@ -1,14 +1,4 @@
-<<<<<<< HEAD
-import { createRoot } from 'react-dom/client'
-import ResourcesLanding from './pages/ResourcesLanding'
-
-function App() {
-  return <ResourcesLanding />
-=======
 import './index.css'
-import { useState } from 'react'
-import QuestionsForCardiologist from './components/QuestionsForCardiologist'
-import FindSupport from './components/FindSupport'
 import { createRoot } from 'react-dom/client'
 import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom'
 import './global.css'
@@ -17,8 +7,7 @@ import { HomeScreen } from './screens/homeScreen'
 import { SignInScreen } from './screens/signInScreen'
 import { SignUpScreen } from './screens/signUpScreen'
 import { WelcomeScreen } from './screens/welcomeScreen'
-
-type Screen = 'questions' | 'support'
+import ResourcesLanding from './screens/ResourcesLanding'
 
 function App() {
   return (
@@ -29,11 +18,11 @@ function App() {
         <Route path="/sign-up" element={<SignUpScreen />} />
         <Route path="/onboarding" element={<WelcomeScreen />} />
         <Route path="/home" element={<HomeScreen />} />
+        <Route path="/resources" element={<ResourcesLanding />} />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     </BrowserRouter>
   )
->>>>>>> main
 }
 
 createRoot(document.getElementById('root')!).render(<App />)
