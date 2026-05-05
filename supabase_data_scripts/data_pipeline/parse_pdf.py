@@ -233,7 +233,7 @@ def parse_glossary_lines(lines: list[str]) -> list[GlossaryEntry]:
             continue
         if _is_table_header(term) or _is_section_header(term):
             continue
-        definition = normalize_text(f"{mean} {therapist}".strip())
+        definition = normalize_text(mean.strip())
         if len(definition) < 5:
             continue
         entries.append(GlossaryEntry(term=term, definition=definition, section=section))
