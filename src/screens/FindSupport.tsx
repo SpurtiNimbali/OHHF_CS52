@@ -1,214 +1,733 @@
-import { useEffect, useMemo, useState } from 'react'
-import { supabase, SupportResource } from '../lib/supabase'
+import { useCallback, useEffect, useMemo, useState, type CSSProperties } from 'react'
+// @ts-expect-error - SearchBar is a JSX component without type declarations
+import SearchBar from '../components/SearchBar'
+import { supabase, ensureAuthUserId, SupportResource } from '../lib/supabase'
 
-type Category = 'All' | 'Mental Health' | 'Family Support' | 'Financial Aid' | 'Community'
+const FILTER_CATEGORIES = [
+  'Mental Health',
+  'Family Support',
+  'Financial Aid',
+  'Community',
+] as const
+type SupportFilterCategory = (typeof FILTER_CATEGORIES)[number]
 
-const CATEGORIES: Category[] = ['All', 'Mental Health', 'Family Support', 'Financial Aid', 'Community']
+/** Matches `welcomeScreen` age option labels; school age and younger vs older. */
+const SCHOOL_AGE_OR_BELOW_LABELS = [
+  'Prenatal',
+  'Infant (1 and under)',
+  'Preschooler (2-5)',
+  'School Age (6-12)',
+] as const
 
-const CHIP_ACTIVE: Record<Category, string> = {
-  All: 'bg-rose-500 text-white shadow-sm',
-  'Mental Health': 'bg-purple-500 text-white shadow-sm',
-  'Family Support': 'bg-blue-500 text-white shadow-sm',
-  'Financial Aid': 'bg-emerald-500 text-white shadow-sm',
-  Community: 'bg-orange-400 text-white shadow-sm',
+type UserProfileFields = {
+  diagnosis_age_category: string | null
+  current_age_category: string | null
+  condition: string | null
 }
 
-const CATEGORY_BADGE: Record<string, string> = {
-  'Mental Health': 'bg-purple-100 text-purple-600',
-  'Family Support': 'bg-blue-100 text-blue-600',
-  'Financial Aid': 'bg-emerald-100 text-emerald-600',
-  Community: 'bg-orange-100 text-orange-600',
+function isSchoolAgeOrBelow(currentAgeCategory: string | null | undefined): boolean {
+  if (!currentAgeCategory?.trim()) return false
+  return (SCHOOL_AGE_OR_BELOW_LABELS as readonly string[]).includes(currentAgeCategory.trim())
 }
 
-// ── ResourceCard ─────────────────────────────────────────────────────────────
-
-function ResourceCard({ resource }: { resource: SupportResource }) {
-  return (
-    <li className="bg-white rounded-2xl shadow-sm border border-rose-100 p-5 space-y-3 transition-shadow hover:shadow-md">
-      <div className="flex items-start justify-between gap-3">
-        <h3 className="font-semibold text-gray-900 text-base leading-snug">{resource.name}</h3>
-        <span
-          className={`shrink-0 text-xs font-medium px-2.5 py-1 rounded-full ${
-            CATEGORY_BADGE[resource.category] ?? 'bg-gray-100 text-gray-600'
-          }`}
-        >
-          {resource.category}
-        </span>
-      </div>
-
-      {resource.description && (
-        <p className="text-sm text-gray-500 leading-relaxed">{resource.description}</p>
-      )}
-
-      {(resource.city || resource.zipcode) && (
-        <div className="flex items-center gap-1.5">
-          <svg className="w-3.5 h-3.5 text-gray-300 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-            <path strokeLinecap="round" strokeLinejoin="round" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
-            <path strokeLinecap="round" strokeLinejoin="round" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
-          </svg>
-          <p className="text-xs text-gray-400">
-            {[resource.city, resource.zipcode].filter(Boolean).join(', ')}
-          </p>
-        </div>
-      )}
-
-      {resource.link && (
-        <a
-          href={resource.link}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="inline-flex items-center gap-1.5 mt-1 bg-rose-500 hover:bg-rose-600 active:scale-95 text-white text-sm font-medium px-4 py-2 rounded-xl transition-all duration-150"
-        >
-          Visit Website
-          <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
-            <path strokeLinecap="round" strokeLinejoin="round" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
-          </svg>
-        </a>
-      )}
-    </li>
-  )
+/** Stored `condition` is comma-separated category titles from onboarding. */
+function conditionIsGeneticOrMentalHealth(condition: string | null | undefined): boolean {
+  if (!condition?.trim()) return false
+  const c = condition.toLowerCase()
+  return /\bgenetic\b/.test(c) || /mental health/.test(c)
 }
 
-// ── CategoryChips ─────────────────────────────────────────────────────────────
+/**
+ * Placeholder rules (will be replaced later).
+ * Age: school-or-below → Mental Health / Family Support only; older → Financial Aid / Community only.
+ * Condition: Genetic or Mental Health → Mental Health / Family Support; else → Financial Aid / Community.
+ */
+function passesPersonalizationFilters(
+  personalizeByAge: boolean,
+  personalizeByCondition: boolean,
+  profile: UserProfileFields | null,
+  bucket: SupportFilterCategory | 'other',
+): boolean {
+  const anyOn = personalizeByAge || personalizeByCondition
+  if (!anyOn) return true
+  if (bucket === 'other') return false
 
-function CategoryChips({
-  active,
-  onChange,
-}: {
-  active: Category
-  onChange: (c: Category) => void
-}) {
-  return (
-    <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-hide">
-      {CATEGORIES.map((cat) => (
-        <button
-          key={cat}
-          onClick={() => onChange(cat)}
-          className={`shrink-0 px-4 py-1.5 rounded-full text-sm font-medium transition-all duration-150 ${
-            active === cat
-              ? CHIP_ACTIVE[cat]
-              : 'bg-white text-gray-500 border border-gray-200 hover:border-rose-200 hover:text-rose-500'
-          }`}
-        >
-          {cat}
-        </button>
-      ))}
-    </div>
-  )
+  const isMentalOrFamily = bucket === 'Mental Health' || bucket === 'Family Support'
+  const isFinOrCommunity = bucket === 'Financial Aid' || bucket === 'Community'
+
+  let allowed = true
+
+  if (personalizeByAge) {
+    const age = profile?.current_age_category
+    if (age?.trim()) {
+      const below = isSchoolAgeOrBelow(age)
+      const ageOk = below ? isMentalOrFamily : isFinOrCommunity
+      allowed = allowed && ageOk
+    }
+  }
+
+  if (personalizeByCondition) {
+    const cond = profile?.condition
+    if (cond?.trim()) {
+      const geneticOrMental = conditionIsGeneticOrMentalHealth(cond)
+      const condOk = geneticOrMental ? isMentalOrFamily : isFinOrCommunity
+      allowed = allowed && condOk
+    }
+  }
+
+  return allowed
 }
 
-// ── Main Screen ───────────────────────────────────────────────────────────────
+const categoryColors: Record<
+  (typeof FILTER_CATEGORIES)[number] | 'other',
+  { bg: string; text: string; border: string }
+> = {
+  'Mental Health': { bg: '#f3e8ff', text: '#7c3aed', border: '#d8b4fe' },
+  'Family Support': { bg: '#dbeafe', text: '#1d4ed8', border: '#93c5fd' },
+  'Financial Aid': { bg: '#d1fae5', text: '#047857', border: '#6ee7b7' },
+  Community: { bg: '#ffedd5', text: '#c2410c', border: '#fdba74' },
+  other: { bg: '#f3f4f6', text: '#4b5563', border: '#d1d5db' },
+}
+
+function normalizeCategoryLabel(raw: string | number | null | undefined): string {
+  if (raw == null) return ''
+  return String(raw).trim()
+}
+
+function normalizeSupportCategoryBucket(raw: string | number | null | undefined): SupportFilterCategory | 'other' {
+  const label = normalizeCategoryLabel(raw)
+  const key = FILTER_CATEGORIES.find((c) => c.toLowerCase() === label.toLowerCase())
+  return key ?? 'other'
+}
+
+function categoryStyle(label: string) {
+  const key = FILTER_CATEGORIES.find((c) => c.toLowerCase() === label.toLowerCase())
+  return key ? categoryColors[key] : categoryColors.other
+}
+
+function normalizeExternalUrl(raw: string): string {
+  const t = raw.trim()
+  if (!t) return ''
+  if (/^https?:\/\//i.test(t)) return t
+  return `https://${t}`
+}
+
+/** Only allow http(s) URLs for clickable cards. */
+function safeExternalHref(raw: string | number | null | undefined): string | null {
+  const s = String(raw ?? '').trim()
+  if (!s) return null
+  try {
+    const u = new URL(normalizeExternalUrl(s))
+    if (u.protocol === 'http:' || u.protocol === 'https:') return u.href
+  } catch {
+    /* ignore */
+  }
+  return null
+}
 
 export default function FindSupport() {
   const [resources, setResources] = useState<SupportResource[]>([])
-  const [activeCategory, setActiveCategory] = useState<Category>('All')
-  const [locationQuery, setLocationQuery] = useState('')
+  const [query, setQuery] = useState('')
+  const [selectedCategory, setSelectedCategory] = useState<string | null>(null)
   const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
+  const [userId, setUserId] = useState<string | null>(null)
+  const [authBootstrapped, setAuthBootstrapped] = useState(false)
+  const [userProfile, setUserProfile] = useState<UserProfileFields | null>(null)
+  const [personalizeByAge, setPersonalizeByAge] = useState(false)
+  const [personalizeByCondition, setPersonalizeByCondition] = useState(false)
 
   useEffect(() => {
-    async function load() {
-      setLoading(true)
-      const { data, error } = await supabase.from('support_resources').select('*').order('name')
-      console.log('[FindSupport] fetch:', { count: data?.length, error })
-      if (data) setResources(data as SupportResource[])
-      setLoading(false)
+    let cancelled = false
+    ;(async () => {
+      const uid = await ensureAuthUserId()
+      if (!cancelled) {
+        setUserId(uid)
+        setAuthBootstrapped(true)
+      }
+    })()
+    return () => {
+      cancelled = true
     }
-    load()
   }, [])
 
-  const sortedResources = useMemo(() => {
-    const query = locationQuery.trim().toLowerCase()
-
-    const categoryFiltered = resources.filter(
-      (r) => activeCategory === 'All' || r.category === activeCategory,
-    )
-
-    if (!query) return categoryFiltered
-
-    const scored = categoryFiltered.flatMap((r) => {
-      const zip = String(r.zipcode ?? '').toLowerCase()
-      const city = String(r.city ?? '').toLowerCase()
-      const hasLocation = zip || city
-
-      // Exact city or zip match
-      if (city === query || zip === query) return [{ r, score: 0 }]
-      // City starts with query (e.g. "san" matches "San Francisco")
-      if (city.startsWith(query)) return [{ r, score: 1 }]
-      // Same zip region (first 3 digits)
-      if (query.length >= 3 && zip.startsWith(query.slice(0, 3))) return [{ r, score: 2 }]
-      // Any partial match in city or zip
-      if (city.includes(query) || zip.includes(query)) return [{ r, score: 3 }]
-      // No city/zip = online/national resource, always include but ranked last
-      if (!hasLocation) return [{ r, score: 4 }]
-      // No match at all
-      return []
+  useEffect(() => {
+    if (!authBootstrapped) return
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((_event, session) => {
+      setUserId(session?.user?.id ?? null)
     })
+    return () => subscription.unsubscribe()
+  }, [authBootstrapped])
 
-    // null-safe sort: by score first, then alphabetically by name
-    scored.sort(
-      (a, b) =>
-        a.score - b.score ||
-        (a.r.name ?? '').localeCompare(b.r.name ?? ''),
-    )
-    return scored.map(({ r }) => r)
-  }, [resources, activeCategory, locationQuery])
+  const load = useCallback(async (uid: string | null) => {
+    setLoading(true)
+    setError(null)
+
+    const resourcesQuery = supabase
+      .from('support_resources')
+      .select('id, name, description, link, city, zipcode, category')
+      .order('name', { ascending: true })
+
+    const profileQuery = uid
+      ? supabase
+          .from('users')
+          .select('diagnosis_age_category, current_age_category, condition')
+          .eq('id', uid)
+          .maybeSingle()
+      : Promise.resolve({ data: null as UserProfileFields | null, error: null })
+
+    const [{ data, error: dbError }, { data: profileRow, error: profileError }] = await Promise.all([
+      resourcesQuery,
+      profileQuery,
+    ])
+
+    if (!profileError && profileRow) {
+      setUserProfile(profileRow as UserProfileFields)
+    } else {
+      setUserProfile(null)
+    }
+
+    if (dbError) {
+      setResources([])
+      setError(dbError.message)
+    } else {
+      setResources((data as SupportResource[]) ?? [])
+    }
+    setLoading(false)
+  }, [])
+
+  useEffect(() => {
+    if (!authBootstrapped) return
+    load(userId)
+  }, [authBootstrapped, userId, load])
+
+  const filteredResources = useMemo(() => {
+    const q = query.trim().toLowerCase()
+
+    return resources.filter((r) => {
+      const cat = normalizeCategoryLabel(r.category)
+      if (selectedCategory) {
+        if (cat.toLowerCase() !== selectedCategory.toLowerCase()) return false
+      }
+
+      if (!q) return true
+
+      const name = String(r.name ?? '').toLowerCase()
+      const desc = String(r.description ?? '').toLowerCase()
+      const city = String(r.city ?? '').toLowerCase()
+      const zip = String(r.zipcode ?? '').toLowerCase()
+
+      return (
+        name.includes(q) ||
+        desc.includes(q) ||
+        (city.length > 0 && city.includes(q)) ||
+        (zip.length > 0 && zip.includes(q))
+      )
+    })
+  }, [resources, query, selectedCategory])
+
+  const personalizedResources = useMemo(() => {
+    return filteredResources.filter((r) => {
+      const bucket = normalizeSupportCategoryBucket(r.category)
+      return passesPersonalizationFilters(
+        personalizeByAge,
+        personalizeByCondition,
+        userProfile,
+        bucket,
+      )
+    })
+  }, [filteredResources, personalizeByAge, personalizeByCondition, userProfile])
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-rose-50 via-pink-50 to-purple-50">
-      <div className="max-w-2xl mx-auto px-4 py-8 space-y-5">
+    <div
+      style={{
+        minHeight: '100vh',
+        background: 'linear-gradient(135deg, #fdfbfb 0%, #ebedee 100%)',
+        padding: '0',
+      }}
+    >
+      <div
+        style={{
+          background: 'linear-gradient(135deg, #ec4899 0%, #f472b6 45%, #a78bfa 100%)',
+          padding: '40px 24px',
+          textAlign: 'center',
+          position: 'relative',
+          overflow: 'hidden',
+        }}
+      >
+        <div
+          style={{
+            position: 'absolute',
+            top: '-50px',
+            left: '-50px',
+            width: '200px',
+            height: '200px',
+            background: 'rgba(255,255,255,0.1)',
+            borderRadius: '50%',
+          }}
+        />
+        <div
+          style={{
+            position: 'absolute',
+            bottom: '-30px',
+            right: '10%',
+            width: '150px',
+            height: '150px',
+            background: 'rgba(255,255,255,0.1)',
+            borderRadius: '50%',
+          }}
+        />
+        <div
+          style={{
+            position: 'absolute',
+            top: '20px',
+            right: '20%',
+            width: '80px',
+            height: '80px',
+            background: 'rgba(255,255,255,0.08)',
+            borderRadius: '50%',
+          }}
+        />
 
-        {/* Header */}
-        <div className="text-center mt-2 mb-6">
-          <h1 className="text-3xl font-bold tracking-wide text-gray-900 leading-tight">
-            Find Support
-          </h1>
-          <p className="text-sm text-gray-400 mt-2">
-            Resources for heart families — near you and online.
+        <h1
+          style={{
+            fontSize: '2.5rem',
+            fontWeight: 800,
+            color: '#ffffff',
+            margin: 0,
+            textShadow: '0 2px 10px rgba(0,0,0,0.2)',
+            position: 'relative',
+          }}
+        >
+          🤝 Find Support
+        </h1>
+        <p
+          style={{
+            color: 'rgba(255,255,255,0.9)',
+            fontSize: '1.1rem',
+            marginTop: '12px',
+            position: 'relative',
+          }}
+        >
+          Community resources and connections for heart families
+        </p>
+      </div>
+
+      <div
+        style={{
+          maxWidth: '800px',
+          margin: '-30px auto 30px',
+          padding: '0 20px',
+          position: 'relative',
+          zIndex: 10,
+        }}
+      >
+        <div
+          style={{
+            background: '#ffffff',
+            borderRadius: '20px',
+            padding: '24px',
+            boxShadow: '0 10px 40px rgba(236, 72, 153, 0.18)',
+          }}
+        >
+          <SearchBar value={query} onChange={setQuery} placeholder="Search resources..." />
+
+          <div style={{ marginTop: '16px' }}>
+            <p
+              style={{
+                fontSize: '0.85rem',
+                color: '#888',
+                marginBottom: '10px',
+                fontWeight: 600,
+              }}
+            >
+              Filter by category:
+            </p>
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
+              <button
+                type="button"
+                onClick={() => setSelectedCategory(null)}
+                style={{
+                  padding: '8px 16px',
+                  borderRadius: '20px',
+                  border: selectedCategory === null ? '2px solid #ec4899' : '2px solid #e0e0e0',
+                  background: selectedCategory === null ? '#ec4899' : '#ffffff',
+                  color: selectedCategory === null ? '#ffffff' : '#666',
+                  fontSize: '0.85rem',
+                  fontWeight: 600,
+                  cursor: 'pointer',
+                  transition: 'all 0.2s ease',
+                }}
+              >
+                All
+              </button>
+              {FILTER_CATEGORIES.map((cat) => {
+                const colors = categoryColors[cat]
+                const isSelected = selectedCategory === cat
+                return (
+                  <button
+                    type="button"
+                    key={cat}
+                    onClick={() => setSelectedCategory(isSelected ? null : cat)}
+                    style={{
+                      padding: '8px 16px',
+                      borderRadius: '20px',
+                      border: isSelected ? `2px solid ${colors.text}` : `2px solid ${colors.border}`,
+                      background: isSelected ? colors.text : colors.bg,
+                      color: isSelected ? '#ffffff' : colors.text,
+                      fontSize: '0.85rem',
+                      fontWeight: 600,
+                      cursor: 'pointer',
+                      transition: 'all 0.2s ease',
+                    }}
+                  >
+                    {cat}
+                  </button>
+                )
+              })}
+            </div>
+          </div>
+
+          <div
+            style={{
+              marginTop: '20px',
+              paddingTop: '16px',
+              borderTop: '1px solid #f3f4f6',
+            }}
+          >
+            <p
+              style={{
+                fontSize: '0.85rem',
+                color: '#888',
+                marginBottom: '12px',
+                fontWeight: 600,
+              }}
+            >
+              Personalize from your profile (PLACEHOLDER RULES CURRENTLY):
+            </p>
+            <label
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '10px',
+                cursor: 'pointer',
+                marginBottom: '10px',
+                fontSize: '0.9rem',
+                color: '#444',
+              }}
+            >
+              <input
+                type="checkbox"
+                checked={personalizeByAge}
+                onChange={(e) => setPersonalizeByAge(e.target.checked)}
+                style={{ width: '18px', height: '18px', accentColor: '#ec4899' }}
+              />
+              Related to age
+            </label>
+            <label
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '10px',
+                cursor: 'pointer',
+                fontSize: '0.9rem',
+                color: '#444',
+              }}
+            >
+              <input
+                type="checkbox"
+                checked={personalizeByCondition}
+                onChange={(e) => setPersonalizeByCondition(e.target.checked)}
+                style={{ width: '18px', height: '18px', accentColor: '#ec4899' }}
+              />
+              Related to condition
+            </label>
+          </div>
+
+          <p
+            style={{
+              marginTop: '14px',
+              marginBottom: 0,
+              fontSize: '0.8rem',
+              color: '#9ca3af',
+              lineHeight: 1.45,
+            }}
+          >
+            Tap a card to open the resource website.
           </p>
         </div>
+      </div>
 
-        {/* Search */}
-        <div className="relative">
-          <svg
-            className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-rose-300"
-            fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}
-          >
-            <path strokeLinecap="round" strokeLinejoin="round" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
-            <path strokeLinecap="round" strokeLinejoin="round" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
-          </svg>
-          <input
-            type="text"
-            value={locationQuery}
-            onChange={(e) => setLocationQuery(e.target.value)}
-            placeholder="Search by city or zip code..."
-            className="w-full pl-10 pr-4 py-3 rounded-2xl border border-rose-200 bg-white shadow-sm text-sm focus:outline-none focus:ring-2 focus:ring-rose-300 transition"
-          />
-        </div>
-
-        {/* Category chips */}
-        <CategoryChips active={activeCategory} onChange={setActiveCategory} />
-
-        {/* Results */}
-        {loading ? (
-          <div className="flex items-center justify-center h-48">
-            <p className="text-gray-400 text-sm">Loading resources...</p>
+      <div style={{ maxWidth: '1000px', margin: '0 auto', padding: '0 20px 40px' }}>
+        {loading && (
+          <div style={{ textAlign: 'center', padding: '60px 20px' }}>
+            <div style={{ fontSize: '3rem' }}>⏳</div>
+            <p style={{ color: '#ec4899', fontSize: '1.2rem', fontWeight: 600 }}>Loading resources...</p>
           </div>
-        ) : sortedResources.length === 0 ? (
-          <div className="text-center py-16">
-            <div className="text-4xl mb-3">💛</div>
-            <p className="text-sm text-gray-400">
-              No resources found — try adjusting your filters.
-            </p>
-          </div>
-        ) : (
-          <ul className="space-y-4">
-            {sortedResources.map((r) => (
-              <ResourceCard key={r.id} resource={r} />
-            ))}
-          </ul>
         )}
 
+        {!loading && error && (
+          <div
+            style={{
+              background: '#ffebee',
+              border: '2px solid #ffcdd2',
+              borderRadius: '16px',
+              padding: '24px',
+              textAlign: 'center',
+            }}
+          >
+            <span style={{ fontSize: '2rem' }}>⚠️</span>
+            <p style={{ color: '#c62828', fontWeight: 600, marginTop: '8px' }}>{error}</p>
+          </div>
+        )}
+
+        {!loading && !error && resources.length === 0 && (
+          <div
+            style={{
+              background: '#fff8e1',
+              border: '2px solid #ffe082',
+              borderRadius: '16px',
+              padding: '40px 24px',
+              textAlign: 'center',
+            }}
+          >
+            <span style={{ fontSize: '3rem' }}>📋</span>
+            <p style={{ color: '#f57f17', fontSize: '1.2rem', fontWeight: 600, marginTop: '12px' }}>
+              No resources yet
+            </p>
+          </div>
+        )}
+
+        {!loading && !error && resources.length > 0 && filteredResources.length === 0 && (
+          <div
+            style={{
+              background: '#fff8e1',
+              border: '2px solid #ffe082',
+              borderRadius: '16px',
+              padding: '40px 24px',
+              textAlign: 'center',
+            }}
+          >
+            <span style={{ fontSize: '3rem' }}>🔍</span>
+            <p style={{ color: '#f57f17', fontSize: '1.2rem', fontWeight: 600, marginTop: '12px' }}>
+              {selectedCategory
+                ? `No ${selectedCategory} resources match`
+                : 'No resources match your search'}
+            </p>
+            <p style={{ color: '#f57f17', opacity: 0.85, marginTop: '8px', fontSize: '0.95rem' }}>
+              Try another search or category.
+            </p>
+          </div>
+        )}
+
+        {!loading &&
+          !error &&
+          resources.length > 0 &&
+          filteredResources.length > 0 &&
+          personalizedResources.length === 0 && (
+            <div
+              style={{
+                background: '#fff8e1',
+                border: '2px solid #ffe082',
+                borderRadius: '16px',
+                padding: '40px 24px',
+                textAlign: 'center',
+              }}
+            >
+              <span style={{ fontSize: '3rem' }}>✨</span>
+              <p style={{ color: '#f57f17', fontSize: '1.2rem', fontWeight: 600, marginTop: '12px' }}>
+                No resources match your personalization settings
+              </p>
+              <p style={{ color: '#b45309', fontSize: '0.95rem', marginTop: '8px', lineHeight: 1.5 }}>
+                Try turning off the age or condition options above, or adjust your search or category filter.
+              </p>
+            </div>
+          )}
+
+        {!loading && !error && personalizedResources.length > 0 && (
+          <div
+            style={{
+              display: 'grid',
+              gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))',
+              gap: '20px',
+            }}
+          >
+            {personalizedResources.map((r, index) => {
+              const catLabel = normalizeCategoryLabel(r.category) || 'Resource'
+              const colors = categoryStyle(catLabel)
+              const href = safeExternalHref(r.link)
+              const locationLine = [r.city, r.zipcode]
+                .filter((v) => v != null && String(v).trim() !== '')
+                .map((v) => String(v))
+                .join(', ')
+
+              const cardInner = (
+                <>
+                  <div
+                    style={{
+                      display: 'flex',
+                      alignItems: 'flex-start',
+                      justifyContent: 'space-between',
+                      gap: '12px',
+                      marginBottom: '12px',
+                    }}
+                  >
+                    <h3
+                      style={{
+                        fontSize: '1.2rem',
+                        fontWeight: 700,
+                        color: '#2c3e50',
+                        margin: 0,
+                        lineHeight: 1.35,
+                        flex: 1,
+                        minWidth: 0,
+                      }}
+                    >
+                      {r.name}
+                    </h3>
+                    <span
+                      style={{
+                        flexShrink: 0,
+                        fontSize: '0.7rem',
+                        fontWeight: 700,
+                        textTransform: 'uppercase',
+                        letterSpacing: '0.4px',
+                        padding: '4px 10px',
+                        borderRadius: '999px',
+                        background: colors.bg,
+                        color: colors.text,
+                        border: `1px solid ${colors.border}`,
+                        maxWidth: '46%',
+                        textAlign: 'right',
+                      }}
+                    >
+                      {catLabel}
+                    </span>
+                  </div>
+
+                  {r.description ? (
+                    <p
+                      style={{
+                        color: '#666',
+                        fontSize: '0.95rem',
+                        lineHeight: 1.55,
+                        margin: '0 0 12px',
+                      }}
+                    >
+                      {r.description}
+                    </p>
+                  ) : null}
+
+                  {locationLine ? (
+                    <p
+                      style={{
+                        margin: '0 0 12px',
+                        fontSize: '0.85rem',
+                        color: '#6b7280',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '6px',
+                      }}
+                    >
+                      <span aria-hidden>📍</span>
+                      {locationLine}
+                    </p>
+                  ) : null}
+
+                  <div
+                    style={{
+                      marginTop: 'auto',
+                      paddingTop: '14px',
+                      height: '4px',
+                      background: `linear-gradient(90deg, ${colors.border}, ${colors.bg})`,
+                      borderRadius: '2px',
+                    }}
+                  />
+                </>
+              )
+
+              const cardShellStyle: CSSProperties = {
+                background: '#ffffff',
+                borderRadius: '20px',
+                padding: '24px',
+                boxShadow: '0 4px 20px rgba(0,0,0,0.08)',
+                border: '2px solid transparent',
+                transition: 'all 0.3s ease',
+                animation: `fadeInUp 0.5s ease ${index * 0.04}s both`,
+                height: '100%',
+                boxSizing: 'border-box',
+                display: 'flex',
+                flexDirection: 'column',
+                cursor: href ? 'pointer' : 'default',
+                textDecoration: 'none',
+                color: 'inherit',
+              }
+
+              if (href) {
+                return (
+                  <a
+                    key={r.id}
+                    href={href}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    aria-label={`${r.name} — opens in a new tab`}
+                    style={cardShellStyle}
+                    onMouseEnter={(e) => {
+                      e.currentTarget.style.transform = 'translateY(-5px)'
+                      e.currentTarget.style.boxShadow = '0 12px 40px rgba(236, 72, 153, 0.2)'
+                      e.currentTarget.style.borderColor = colors.border
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.transform = 'translateY(0)'
+                      e.currentTarget.style.boxShadow = '0 4px 20px rgba(0,0,0,0.08)'
+                      e.currentTarget.style.borderColor = 'transparent'
+                    }}
+                  >
+                    {cardInner}
+                  </a>
+                )
+              }
+
+              return (
+                <div
+                  key={r.id}
+                  style={cardShellStyle}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.borderColor = colors.border
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.borderColor = 'transparent'
+                  }}
+                >
+                  {cardInner}
+                </div>
+              )
+            })}
+          </div>
+        )}
+
+        {!loading && !error && personalizedResources.length > 0 && (
+          <p
+            style={{
+              textAlign: 'center',
+              color: '#888',
+              marginTop: '30px',
+              fontSize: '0.9rem',
+            }}
+          >
+            Showing {personalizedResources.length} resource{personalizedResources.length !== 1 ? 's' : ''}
+          </p>
+        )}
       </div>
+
+      <style>{`
+        @keyframes fadeInUp {
+          from { opacity: 0; transform: translateY(20px); }
+          to { opacity: 1; transform: translateY(0); }
+        }
+      `}</style>
     </div>
   )
 }

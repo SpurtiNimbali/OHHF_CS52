@@ -1,6 +1,6 @@
 import React from 'react'
 
-const SearchBar = ({ value, onChange }) => {
+const SearchBar = ({ value, onChange, placeholder = 'Search medical terms...' }) => {
   return (
     <div style={{ position: 'relative' }}>
       <span style={{
@@ -14,7 +14,7 @@ const SearchBar = ({ value, onChange }) => {
       </span>
       <input
         type="text"
-        placeholder="Search medical terms..."
+        placeholder={placeholder}
         value={value}
         onChange={(e) => onChange(e.target.value)}
         style={{

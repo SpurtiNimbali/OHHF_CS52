@@ -1,10 +1,10 @@
 import { useState, useEffect } from 'react'
-import { createClient } from '@supabase/supabase-js'
 // @ts-expect-error - SearchBar is a JSX component without type declarations
 import SearchBar from '../components/SearchBar'
+import { supabase } from '../lib/supabase'
 
 interface GlossaryTerm {
-  id: number
+  id: string | number
   term: string
   definition: string
   category?: string
@@ -22,11 +22,12 @@ const categoryColors: Record<string, { bg: string; text: string; border: string 
 
 function getCategory(term: string): string {
   const lower = term.toLowerCase()
-  if (lower.includes('heart') || lower.includes('artery') || lower.includes('bone') || lower.includes('muscle')) return 'anatomy'
+  if (lower.includes('artery') || lower.includes('bone') || lower.includes('muscle')) return 'anatomy'
   if (lower.includes('syndrome') || lower.includes('disease') || lower.includes('disorder') || lower.includes('condition')) return 'condition'
   if (lower.includes('therapy') || lower.includes('treatment') || lower.includes('surgery')) return 'treatment'
   if (lower.includes('pill') || lower.includes('medication') || lower.includes('drug') || lower.includes('injection')) return 'medication'
-  if (lower.includes('procedure') || lower.includes('test') || lower.includes('scan') || lower.includes('examination')) return 'procedure'
+  if (lower.includes('procedure') || lower.includes('dialysis') || lower.includes('gram') ||
+  lower.includes('test') || lower.includes('scan') || lower.includes('examination')) return 'procedure'
   return 'general'
 }
 
@@ -50,14 +51,6 @@ function MedicalGlossary() {
       }
 
       try {
-        const supabaseUrl = (import.meta as any).env.VITE_SUPABASE_URL
-        const supabaseKey = (import.meta as any).env.VITE_SUPABASE_PUBLISHABLE_KEY
-
-        if (!supabaseUrl || !supabaseKey) {
-          throw new Error('Missing Supabase environment variables')
-        }
-
-        const supabase = createClient(supabaseUrl, supabaseKey)
         const search = query.trim()
 
         let dbQuery = supabase

@@ -3,6 +3,8 @@ import { Link } from 'react-router-dom'
 import NavCard from '../components/NavCard'
 import BackButton from '../components/BackButton'
 import MedicalGlossary from './MedicalGlossary'
+import QuestionsForCardiologist from './QuestionsForCardiologist'
+import FindSupport from './FindSupport'
 
 type Screen = 'landing' | 'glossary' | 'support' | 'questions'
 
@@ -31,30 +33,22 @@ const ResourcesLanding: React.FC = () => {
 
   if (currentScreen === 'support') {
     return (
-      <div style={{ padding: '20px', maxWidth: '800px', margin: '0 auto' }}>
+      <div style={{ padding: '20px' }}>
         <div style={{ marginBottom: '20px' }}>
           <BackButton onClick={handleBackToLanding} text="← Back to Resources" />
         </div>
-
-        <h1 style={{ color: '#2c3e50', marginBottom: '20px' }}>Find Support</h1>
-        <p style={{ fontSize: '16px', lineHeight: '1.6', color: '#555' }}>
-          Support resources and community connections coming soon...
-        </p>
+        <FindSupport />
       </div>
     )
   }
 
   if (currentScreen === 'questions') {
     return (
-      <div style={{ padding: '20px', maxWidth: '800px', margin: '0 auto' }}>
+      <div style={{ padding: '20px' }}>
         <div style={{ marginBottom: '20px' }}>
           <BackButton onClick={handleBackToLanding} text="← Back to Resources" />
         </div>
-
-        <h1 style={{ color: '#2c3e50', marginBottom: '20px' }}>Questions to Ask Your Cardiologist</h1>
-        <p style={{ fontSize: '16px', lineHeight: '1.6', color: '#555' }}>
-          Important questions and conversation starters for your cardiologist appointments coming soon...
-        </p>
+        <QuestionsForCardiologist />
       </div>
     )
   }
