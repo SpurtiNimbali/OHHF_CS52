@@ -22,7 +22,7 @@ if (!supabaseKey) {
 const supabase = createClient(supabaseUrl, supabaseKey);
 
 
-const OUTPUT_DIR = path.join(process.cwd(), "scripts", "data_pipeline", "output");
+const OUTPUT_DIR = path.join(process.cwd(), "supabase_data_scripts", "data_pipeline", "output");
 
 async function uploadJson(table: string, file: string, conflictKey: string) {
   const filePath = path.join(OUTPUT_DIR, file);
