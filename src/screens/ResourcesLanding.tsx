@@ -3,8 +3,8 @@ import { Link } from 'react-router-dom'
 import NavCard from '../components/NavCard'
 import BackButton from '../components/BackButton'
 import MedicalGlossary from './MedicalGlossary'
-import QuestionsForCardiologist from './QuestionsForCardiologist'
 import FindSupport from './FindSupport'
+import QuestionsForCardiologist from './QuestionsForCardiologist'
 
 type Screen = 'landing' | 'glossary' | 'support' | 'questions'
 

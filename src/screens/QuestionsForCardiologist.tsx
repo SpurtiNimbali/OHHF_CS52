@@ -25,71 +25,335 @@ function isSchoolAgeOrBelow(currentAgeCategory: string | null | undefined): bool
   return (SCHOOL_AGE_OR_BELOW_LABELS as readonly string[]).includes(currentAgeCategory.trim())
 }
 
-/** Stored `condition` is comma-separated category titles from onboarding. */
-function conditionIsGeneticOrMentalHealth(condition: string | null | undefined): boolean {
-  if (!condition?.trim()) return false
-  const c = condition.toLowerCase()
-  return /\bgenetic\b/.test(c) || /mental health/.test(c)
+function QuestionItem({
+  question,
+  saved,
+  onToggle,
+}: {
+  question: CardiologistQuestion
+  saved: boolean
+  onToggle: () => void
+}) {
+  const [hovered, setHovered] = useState(false)
+
+  return (
+    <button
+      onMouseDown={(e) => e.preventDefault()}
+      onClick={onToggle}
+      onMouseEnter={() => setHovered(true)}
+      onMouseLeave={() => setHovered(false)}
+      style={{
+        width: '100%',
+        display: 'flex',
+        alignItems: 'flex-start',
+        gap: '12px',
+        padding: '10px 16px',
+        background: hovered ? '#f5f9f9' : 'transparent',
+        border: 'none',
+        borderRadius: '10px',
+        cursor: 'pointer',
+        textAlign: 'left',
+        transition: 'background 0.15s ease',
+      }}
+    >
+      {/* Checkbox */}
+      <div style={{
+        marginTop: '2px',
+        width: '18px',
+        height: '18px',
+        borderRadius: '5px',
+        border: `2px solid ${saved ? '#577568' : '#c6d9e5'}`,
+        background: saved ? '#577568' : '#fff',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        flexShrink: 0,
+        transition: 'all 0.15s ease',
+      }}>
+        {saved && (
+          <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="#f5f9f9" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M5 13l4 4L19 7" />
+          </svg>
+        )}
+      </div>
+      <span style={{ fontSize: '0.875rem', color: '#192b3f', lineHeight: 1.55, fontFamily: 'Inter, system-ui, sans-serif' }}>
+        {question.question_text}
+      </span>
+    </button>
+  )
 }
 
-/**
- * Placeholder rules (will be replaced later).
- * Age: school-or-below → Diagnosis/Treatment only; older → Lifestyle/Monitoring only.
- * Condition: Genetic or Mental Health → Diagnosis/Treatment; else → Lifestyle/Monitoring.
- */
-function passesPersonalizationFilters(
-  personalizeByAge: boolean,
-  personalizeByCondition: boolean,
-  profile: UserProfileFields | null,
-  bucket: FilterCategory | 'other',
-): boolean {
-  const anyOn = personalizeByAge || personalizeByCondition
-  if (!anyOn) return true
-  if (bucket === 'other') return false
+// ── QuestionDropdown ─────────────────────────────────────────────────────────
 
-  const isDxOrTx = bucket === 'Diagnosis' || bucket === 'Treatment'
-  const isLifeOrMon = bucket === 'Lifestyle' || bucket === 'Monitoring'
+function QuestionDropdown({
+  grouped,
+  searchQuery,
+  savedIds,
+  customText,
+  adding,
+  onToggle,
+  onCustomChange,
+  onCustomSubmit,
+}: {
+  grouped: GroupedQuestions
+  searchQuery: string
+  savedIds: Set<string>
+  customText: string
+  adding: boolean
+  onToggle: (q: CardiologistQuestion) => void
+  onCustomChange: (v: string) => void
+  onCustomSubmit: () => void
+}) {
+  const q = searchQuery.toLowerCase().trim()
 
-  let allowed = true
-
-  if (personalizeByAge) {
-    const age = profile?.current_age_category
-    if (age?.trim()) {
-      const below = isSchoolAgeOrBelow(age)
-      const ageOk = below ? isDxOrTx : isLifeOrMon
-      allowed = allowed && ageOk
+  const filteredGroups = useMemo(() => {
+    const result: GroupedQuestions = {}
+    for (const [category, questions] of Object.entries(grouped)) {
+      if (!category || !Array.isArray(questions)) continue
+      const matches = q
+        ? questions.filter((question) => (question.question_text ?? '').toLowerCase().includes(q))
+        : questions
+      if (matches.length > 0) result[category] = matches
     }
   }
 
-  if (personalizeByCondition) {
-    const cond = profile?.condition
-    if (cond?.trim()) {
-      const geneticOrMental = conditionIsGeneticOrMentalHealth(cond)
-      const condOk = geneticOrMental ? isDxOrTx : isLifeOrMon
-      allowed = allowed && condOk
-    }
-  }
+  return (
+    <div style={{
+      position: 'absolute',
+      top: 'calc(100% + 8px)',
+      left: 0,
+      right: 0,
+      zIndex: 50,
+      background: '#fff',
+      border: '1.5px solid #c6d9e5',
+      borderRadius: '14px',
+      boxShadow: '0 12px 32px rgba(25,43,63,0.12)',
+      overflow: 'hidden',
+    }}>
+      {totalQuestions === 0 && (
+        <div style={{ padding: '10px 16px', background: '#fefce8', borderBottom: '1px solid #fde68a' }}>
+          <p style={{ margin: 0, fontSize: '0.78rem', color: '#92400e' }}>
+            ⚠ No questions loaded — check console for fetch errors
+          </p>
+        </div>
+      )}
 
-  return allowed
+      <div style={{ maxHeight: '320px', overflowY: 'auto' }}>
+        {hasResults ? (
+          Object.entries(filteredGroups).map(([category, questions]) => (
+            <div key={category}>
+              <p style={{
+                margin: 0,
+                padding: '10px 16px 4px',
+                fontSize: '0.7rem',
+                fontWeight: 700,
+                color: '#577568',
+                textTransform: 'uppercase',
+                letterSpacing: '0.07em',
+                fontFamily: 'Inter, system-ui, sans-serif',
+              }}>
+                {category}
+              </p>
+              {questions.map((question) => (
+                <QuestionItem
+                  key={question.id}
+                  question={question}
+                  saved={savedIds.has(String(question.id))}
+                  onToggle={() => onToggle(question)}
+                />
+              ))}
+            </div>
+          ))
+        ) : (
+          <p style={{ padding: '24px', textAlign: 'center', fontSize: '0.875rem', color: '#acb7a8', margin: 0 }}>
+            {totalQuestions === 0 ? 'No questions available.' : 'No questions match your search.'}
+          </p>
+        )}
+
+        {/* Add your own */}
+        <div
+          onMouseDown={(e) => e.preventDefault()}
+          style={{
+            borderTop: '1px solid #c6d9e5',
+            padding: '14px 16px',
+            background: '#f5f9f9',
+          }}
+        >
+          <p style={{
+            margin: '0 0 8px',
+            fontSize: '0.7rem',
+            fontWeight: 700,
+            color: '#577568',
+            textTransform: 'uppercase',
+            letterSpacing: '0.07em',
+            fontFamily: 'Inter, system-ui, sans-serif',
+          }}>
+            Add your own question
+          </p>
+          <div style={{ display: 'flex', gap: '8px' }}>
+            <input
+              type="text"
+              value={customText}
+              onChange={(e) => onCustomChange(e.target.value)}
+              onKeyDown={(e) => e.key === 'Enter' && onCustomSubmit()}
+              placeholder="Type your question..."
+              style={{
+                flex: 1,
+                padding: '9px 13px',
+                borderRadius: '10px',
+                border: '1.5px solid #c6d9e5',
+                background: '#fff',
+                fontSize: '0.875rem',
+                color: '#192b3f',
+                fontFamily: 'Inter, system-ui, sans-serif',
+                outline: 'none',
+              }}
+            />
+            <button
+              onMouseDown={(e) => e.preventDefault()}
+              onClick={onCustomSubmit}
+              disabled={adding || !customText.trim()}
+              style={{
+                padding: '9px 16px',
+                borderRadius: '10px',
+                border: 'none',
+                background: adding || !customText.trim() ? '#c6d9e5' : '#577568',
+                color: '#fff',
+                fontSize: '0.85rem',
+                fontWeight: 600,
+                cursor: adding || !customText.trim() ? 'not-allowed' : 'pointer',
+                fontFamily: 'Inter, system-ui, sans-serif',
+                transition: 'background 0.15s ease',
+                whiteSpace: 'nowrap',
+              }}
+            >
+              + Add
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  )
 }
 
-const categoryColors: Record<
-  FilterCategory | 'other',
-  { bg: string; text: string; border: string }
-> = {
-  Diagnosis: { bg: '#fff3e0', text: '#e65100', border: '#ffcc80' },
-  Treatment: { bg: '#e3f2fd', text: '#1565c0', border: '#90caf9' },
-  Lifestyle: { bg: '#e8f5e9', text: '#2e7d32', border: '#a5d6a7' },
-  Monitoring: { bg: '#f3e5f5', text: '#6a1b9a', border: '#ce93d8' },
-  other: { bg: '#fff8e1', text: '#f57f17', border: '#ffe082' },
-}
+// ── SavedQuestionsList ───────────────────────────────────────────────────────
 
-function normalizeCategory(cat: string | null | undefined): FilterCategory | 'other' {
-  const c = (cat ?? '').trim().toLowerCase()
-  for (const label of FILTER_CATEGORIES) {
-    if (label.toLowerCase() === c) return label
-  }
-  return 'other'
+function SavedQuestionsList({
+  saved,
+  grouped,
+  onRemove,
+}: {
+  saved: SavedQuestion[]
+  grouped: GroupedQuestions
+  onRemove: (row: SavedQuestion) => void
+}) {
+  if (saved.length === 0) return null
+
+  const allQuestions = Object.values(grouped).flat()
+
+  return (
+    <section style={{ marginTop: '32px' }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '14px' }}>
+        <span style={{ color: '#577568', fontSize: '1rem' }}>♥</span>
+        <h2 style={{
+          margin: 0,
+          fontFamily: 'var(--font-display, "Bebas Neue", sans-serif)',
+          fontSize: '1.4rem',
+          letterSpacing: '0.05em',
+          color: '#192b3f',
+        }}>
+          Saved Questions ({saved.length})
+        </h2>
+      </div>
+
+      <ul style={{ listStyle: 'none', margin: 0, padding: 0, display: 'flex', flexDirection: 'column', gap: '10px' }}>
+        {saved.map((row) => {
+          const isCustom = !row.question_id
+          const matchedQuestion = allQuestions.find(
+            (q) => String(q.id) === String(row.question_id),
+          )
+          const label = row.custom_text ?? matchedQuestion?.question_text ?? ''
+          const category = matchedQuestion?.category ?? null
+
+          return (
+            <li
+              key={row.id}
+              style={{
+                display: 'flex',
+                alignItems: 'flex-start',
+                justifyContent: 'space-between',
+                gap: '12px',
+                background: '#fff',
+                border: '1.5px solid #c6d9e5',
+                borderRadius: '12px',
+                padding: '14px 16px',
+              }}
+            >
+              <div style={{ display: 'flex', alignItems: 'flex-start', gap: '10px', minWidth: 0 }}>
+                <svg style={{ width: '14px', height: '14px', color: '#577568', marginTop: '3px', flexShrink: 0 }} fill="none" viewBox="0 0 24 24" stroke="#577568" strokeWidth="2.5">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                </svg>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '5px', minWidth: 0 }}>
+                  <span style={{ fontSize: '0.875rem', color: '#192b3f', lineHeight: 1.5, fontFamily: 'Inter, system-ui, sans-serif' }}>
+                    {label}
+                  </span>
+                  {category && (
+                    <span style={{
+                      fontSize: '0.7rem',
+                      fontWeight: 600,
+                      background: '#c6d9e5',
+                      color: '#192b3f',
+                      padding: '2px 9px',
+                      borderRadius: '100px',
+                      width: 'fit-content',
+                      fontFamily: 'Inter, system-ui, sans-serif',
+                      letterSpacing: '0.01em',
+                    }}>
+                      {category}
+                    </span>
+                  )}
+                  {isCustom && (
+                    <span style={{
+                      fontSize: '0.7rem',
+                      fontWeight: 600,
+                      background: '#f5f9f9',
+                      color: '#577568',
+                      border: '1px solid #c6d9e5',
+                      padding: '2px 9px',
+                      borderRadius: '100px',
+                      width: 'fit-content',
+                      fontFamily: 'Inter, system-ui, sans-serif',
+                    }}>
+                      Custom
+                    </span>
+                  )}
+                </div>
+              </div>
+              <button
+                onClick={() => onRemove(row)}
+                style={{
+                  background: 'none',
+                  border: 'none',
+                  cursor: 'pointer',
+                  color: '#c6d9e5',
+                  fontSize: '1.2rem',
+                  lineHeight: 1,
+                  padding: '0',
+                  flexShrink: 0,
+                  transition: 'color 0.15s ease',
+                }}
+                onMouseEnter={e => (e.currentTarget.style.color = '#577568')}
+                onMouseLeave={e => (e.currentTarget.style.color = '#c6d9e5')}
+                aria-label="Remove question"
+              >
+                ×
+              </button>
+            </li>
+          )
+        })}
+      </ul>
+    </section>
+  )
 }
 
 function categoryStyle(cat: FilterCategory | 'other') {
@@ -113,12 +377,28 @@ export default function QuestionsForCardiologist() {
   const [personalizeByCondition, setPersonalizeByCondition] = useState(false)
 
   useEffect(() => {
-    let cancelled = false
-    ;(async () => {
-      const uid = await ensureAuthUserId()
-      if (!cancelled) {
-        setUserId(uid)
-        setAuthBootstrapped(true)
+    async function load() {
+      setLoading(true)
+
+      const [
+        { data: questions, error: qError },
+        { data: savedRows, error: sError },
+      ] = await Promise.all([
+        supabase.from('cardiologist_questions').select('*').order('category'),
+        supabase.from('saved_questions').select('*').eq('user_id', CURRENT_USER_ID),
+      ])
+
+      console.log('[load] cardiologist_questions:', { count: questions?.length, error: qError })
+      console.log('[load] saved_questions:', { count: savedRows?.length, error: sError })
+
+      if (questions && questions.length > 0) {
+        const groups: GroupedQuestions = {}
+        for (const q of questions as CardiologistQuestion[]) {
+          const cat = q.category ?? 'General'
+          if (!groups[cat]) groups[cat] = []
+          groups[cat].push(q)
+        }
+        setGrouped(groups)
       }
     })()
     return () => {
@@ -288,210 +568,70 @@ export default function QuestionsForCardiologist() {
     }
   }
 
-  return (
-    <div
-      style={{
-        minHeight: '100vh',
-        background: 'linear-gradient(135deg, #fdfbfb 0%, #ebedee 100%)',
-        padding: '0',
-      }}
-    >
-      <div
-        style={{
-          background: 'linear-gradient(135deg, #f43f5e 0%, #a855f7 50%, #6366f1 100%)',
-          padding: '40px 24px',
-          textAlign: 'center',
-          position: 'relative',
-          overflow: 'hidden',
-        }}
-      >
-        <div
-          style={{
-            position: 'absolute',
-            top: '-50px',
-            left: '-50px',
-            width: '200px',
-            height: '200px',
-            background: 'rgba(255,255,255,0.1)',
-            borderRadius: '50%',
-          }}
-        />
-        <div
-          style={{
-            position: 'absolute',
-            bottom: '-30px',
-            right: '10%',
-            width: '150px',
-            height: '150px',
-            background: 'rgba(255,255,255,0.1)',
-            borderRadius: '50%',
-          }}
-        />
-        <div
-          style={{
-            position: 'absolute',
-            top: '20px',
-            right: '20%',
-            width: '80px',
-            height: '80px',
-            background: 'rgba(255,255,255,0.08)',
-            borderRadius: '50%',
-          }}
-        />
-
-        <h1
-          style={{
-            fontSize: '2.5rem',
-            fontWeight: 800,
-            color: '#ffffff',
-            margin: 0,
-            textShadow: '0 2px 10px rgba(0,0,0,0.2)',
-            position: 'relative',
-          }}
-        >
-          💬 Questions for Your Cardiologist
-        </h1>
-        <p
-          style={{
-            color: 'rgba(255,255,255,0.9)',
-            fontSize: '1.1rem',
-            marginTop: '12px',
-            position: 'relative',
-          }}
-        >
-          Save questions to bring to your next appointment
-        </p>
+  if (loading) {
+    return (
+      <div style={{ minHeight: '100vh', background: '#f5f9f9', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        <p style={{ color: '#acb7a8', fontSize: '0.9rem', fontFamily: 'Inter, system-ui, sans-serif' }}>Loading questions…</p>
       </div>
 
-      <div
-        style={{
-          maxWidth: '800px',
-          margin: '-30px auto 30px',
-          padding: '0 20px',
-          position: 'relative',
-          zIndex: 10,
-        }}
-      >
-        <div
-          style={{
-            background: '#ffffff',
-            borderRadius: '20px',
-            padding: '24px',
-            boxShadow: '0 10px 40px rgba(244, 63, 94, 0.15)',
-          }}
-        >
-          <SearchBar value={query} onChange={setQuery} />
+  return (
+    <div style={{ minHeight: '100vh', background: '#f5f9f9', fontFamily: 'Inter, system-ui, sans-serif' }}>
+      <div style={{ maxWidth: '680px', margin: '0 auto', padding: '40px 24px 72px' }}>
 
-          <div style={{ marginTop: '16px' }}>
-            <p
-              style={{
-                fontSize: '0.85rem',
-                color: '#888',
-                marginBottom: '10px',
-                fontWeight: 600,
-              }}
-            >
-              Filter by topic:
-            </p>
-            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
-              <button
-                type="button"
-                onClick={() => setSelectedTag(null)}
-                style={{
-                  padding: '8px 16px',
-                  borderRadius: '20px',
-                  border: selectedTag === null ? '2px solid #f43f5e' : '2px solid #e0e0e0',
-                  background: selectedTag === null ? '#f43f5e' : '#ffffff',
-                  color: selectedTag === null ? '#ffffff' : '#666',
-                  fontSize: '0.85rem',
-                  fontWeight: 600,
-                  cursor: 'pointer',
-                  transition: 'all 0.2s ease',
-                }}
-              >
-                All
-              </button>
-              {FILTER_CATEGORIES.map((cat) => {
-                const colors = categoryColors[cat]
-                const isSelected = selectedTag === cat
-                return (
-                  <button
-                    type="button"
-                    key={cat}
-                    onClick={() => setSelectedTag(isSelected ? null : cat)}
-                    style={{
-                      padding: '8px 16px',
-                      borderRadius: '20px',
-                      border: isSelected ? `2px solid ${colors.text}` : `2px solid ${colors.border}`,
-                      background: isSelected ? colors.text : colors.bg,
-                      color: isSelected ? '#ffffff' : colors.text,
-                      fontSize: '0.85rem',
-                      fontWeight: 600,
-                      cursor: 'pointer',
-                      transition: 'all 0.2s ease',
-                    }}
-                  >
-                    {cat}
-                  </button>
-                )
-              })}
-            </div>
-          </div>
+        {/* Header */}
+        <div style={{ marginBottom: '32px' }}>
+          <p style={{
+            margin: '0 0 6px',
+            fontSize: '10px',
+            fontWeight: 700,
+            letterSpacing: '0.12em',
+            textTransform: 'uppercase',
+            color: '#acb7a8',
+            fontFamily: 'Inter, system-ui, sans-serif',
+          }}>
+            Cardea
+          </p>
+          <h1 style={{
+            margin: '0 0 10px',
+            fontFamily: 'var(--font-display, "Bebas Neue", sans-serif)',
+            fontSize: 'clamp(2.2rem, 4vw, 3rem)',
+            letterSpacing: '0.04em',
+            color: '#192b3f',
+            lineHeight: 1,
+          }}>
+            Questions for Your Cardiologist
+          </h1>
+          <p style={{ margin: 0, fontSize: '0.875rem', color: '#acb7a8', lineHeight: 1.65, fontFamily: 'Inter, system-ui, sans-serif' }}>
+            Save questions to bring to your next appointment.
+          </p>
+        </div>
 
-          <div
-            style={{
-              marginTop: '20px',
-              paddingTop: '16px',
-              borderTop: '1px solid #f3f4f6',
-            }}
-          >
-            <p
+        {/* Search + Dropdown */}
+        <div ref={containerRef} style={{ position: 'relative', marginBottom: '32px' }}>
+          <div style={{ position: 'relative' }}>
+            <span style={{ position: 'absolute', left: '14px', top: '50%', transform: 'translateY(-50%)', color: '#acb7a8', fontSize: '0.9rem' }}>
+              🔍
+            </span>
+            <input
+              type="text"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              onFocus={() => setDropdownOpen(true)}
+              placeholder="Search or browse questions…"
               style={{
-                fontSize: '0.85rem',
-                color: '#888',
-                marginBottom: '12px',
-                fontWeight: 600,
-              }}
-            >
-              Personalize from your profile (PLACEHOLDER RULES CURRENTLY):
-            </p>
-            <label
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: '10px',
-                cursor: 'pointer',
-                marginBottom: '10px',
+                width: '100%',
+                padding: '12px 16px 12px 40px',
+                borderRadius: '12px',
+                border: '1.5px solid #c6d9e5',
+                background: '#fff',
                 fontSize: '0.9rem',
-                color: '#444',
+                color: '#192b3f',
+                fontFamily: 'Inter, system-ui, sans-serif',
+                outline: 'none',
+                boxSizing: 'border-box',
+                transition: 'border-color 0.2s ease',
               }}
-            >
-              <input
-                type="checkbox"
-                checked={personalizeByAge}
-                onChange={(e) => setPersonalizeByAge(e.target.checked)}
-                style={{ width: '18px', height: '18px', accentColor: '#f43f5e' }}
-              />
-              Related to age
-            </label>
-            <label
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: '10px',
-                cursor: 'pointer',
-                fontSize: '0.9rem',
-                color: '#444',
-              }}
-            >
-              <input
-                type="checkbox"
-                checked={personalizeByCondition}
-                onChange={(e) => setPersonalizeByCondition(e.target.checked)}
-                style={{ width: '18px', height: '18px', accentColor: '#f43f5e' }}
-              />
-              Related to condition
-            </label>
+            />
           </div>
 
           <div
@@ -549,42 +689,17 @@ export default function QuestionsForCardiologist() {
         </div>
       </div>
 
-      <div style={{ maxWidth: '1000px', margin: '0 auto', padding: '0 20px 40px' }}>
-        {loading && (
-          <div style={{ textAlign: 'center', padding: '60px 20px' }}>
-            <div style={{ fontSize: '3rem' }}>⏳</div>
-            <p style={{ color: '#f43f5e', fontSize: '1.2rem', fontWeight: 600 }}>Loading questions...</p>
-          </div>
-        )}
+        {/* Divider */}
+        <div style={{ height: '1px', background: '#c6d9e5', marginBottom: '32px' }} />
 
-        {!loading && error && (
-          <div
-            style={{
-              background: '#ffebee',
-              border: '2px solid #ffcdd2',
-              borderRadius: '16px',
-              padding: '24px',
-              textAlign: 'center',
-            }}
-          >
-            <span style={{ fontSize: '2rem' }}>⚠️</span>
-            <p style={{ color: '#c62828', fontWeight: 600, marginTop: '8px' }}>{error}</p>
-          </div>
-        )}
+        {/* Saved Questions */}
+        <SavedQuestionsList saved={saved} grouped={grouped} onRemove={removeQuestion} />
 
-        {!loading && !error && questions.length === 0 && (
-          <div
-            style={{
-              background: '#fff8e1',
-              border: '2px solid #ffe082',
-              borderRadius: '16px',
-              padding: '40px 24px',
-              textAlign: 'center',
-            }}
-          >
-            <span style={{ fontSize: '3rem' }}>📋</span>
-            <p style={{ color: '#f57f17', fontSize: '1.2rem', fontWeight: 600, marginTop: '12px' }}>
-              No questions in the database yet
+        {saved.length === 0 && (
+          <div style={{ textAlign: 'center', padding: '48px 0' }}>
+            <div style={{ fontSize: '2.5rem', marginBottom: '12px' }}>💗</div>
+            <p style={{ margin: 0, fontSize: '0.9rem', color: '#acb7a8' }}>
+              No saved questions yet. Search above to get started.
             </p>
           </div>
         )}

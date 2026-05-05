@@ -1,7 +1,5 @@
 import { useState, useEffect } from 'react'
-// @ts-expect-error - SearchBar is a JSX component without type declarations
-import SearchBar from '../components/SearchBar'
-import { supabase } from '../lib/supabase'
+import { createClient } from '@supabase/supabase-js'
 
 interface GlossaryTerm {
   id: string | number
@@ -10,25 +8,93 @@ interface GlossaryTerm {
   category?: string
 }
 
-// Colorful category tags
-const categoryColors: Record<string, { bg: string; text: string; border: string }> = {
-  anatomy: { bg: '#e8f5e9', text: '#2e7d32', border: '#a5d6a7' },
-  condition: { bg: '#fff3e0', text: '#e65100', border: '#ffcc80' },
-  treatment: { bg: '#e3f2fd', text: '#1565c0', border: '#90caf9' },
-  medication: { bg: '#fce4ec', text: '#c62828', border: '#f48fb1' },
-  procedure: { bg: '#f3e5f5', text: '#6a1b9a', border: '#ce93d8' },
-  general: { bg: '#fff8e1', text: '#f57f17', border: '#ffe082' },
+const NAVY = '#192b3f'
+const LIGHT_BLUE = '#c6d9e5'
+const ALMOST_WHITE = '#f5f9f9'
+const DARK_GREEN = '#577568'
+const LIGHT_GREEN = '#acb7a8'
+const BORDER_SOFT = `${LIGHT_BLUE}99`
+const RADIUS = 14
+const FONT_SANS =
+  '\'Inter\', system-ui, -apple-system, BlinkMacSystemFont, \'Segoe UI\', sans-serif'
+
+const CATEGORY_ORDER = [
+  'anatomy',
+  'condition',
+  'treatment',
+  'medication',
+  'procedure',
+  'general',
+] as const
+
+type CategorySlug = (typeof CATEGORY_ORDER)[number]
+
+function formatCategoryLabel(slug: string): string {
+  return slug.charAt(0).toUpperCase() + slug.slice(1)
 }
 
-function getCategory(term: string): string {
+function getCategory(term: string): CategorySlug {
   const lower = term.toLowerCase()
-  if (lower.includes('artery') || lower.includes('bone') || lower.includes('muscle')) return 'anatomy'
-  if (lower.includes('syndrome') || lower.includes('disease') || lower.includes('disorder') || lower.includes('condition')) return 'condition'
-  if (lower.includes('therapy') || lower.includes('treatment') || lower.includes('surgery')) return 'treatment'
-  if (lower.includes('pill') || lower.includes('medication') || lower.includes('drug') || lower.includes('injection')) return 'medication'
-  if (lower.includes('procedure') || lower.includes('dialysis') || lower.includes('gram') ||
-  lower.includes('test') || lower.includes('scan') || lower.includes('examination')) return 'procedure'
+  if (
+    lower.includes('heart') ||
+    lower.includes('artery') ||
+    lower.includes('bone') ||
+    lower.includes('muscle')
+  ) {
+    return 'anatomy'
+  }
+  if (
+    lower.includes('syndrome') ||
+    lower.includes('disease') ||
+    lower.includes('disorder') ||
+    lower.includes('condition')
+  ) {
+    return 'condition'
+  }
+  if (
+    lower.includes('therapy') ||
+    lower.includes('treatment') ||
+    lower.includes('surgery')
+  ) {
+    return 'treatment'
+  }
+  if (
+    lower.includes('pill') ||
+    lower.includes('medication') ||
+    lower.includes('drug') ||
+    lower.includes('injection')
+  ) {
+    return 'medication'
+  }
+  if (
+    lower.includes('procedure') ||
+    lower.includes('test') ||
+    lower.includes('scan') ||
+    lower.includes('examination')
+  ) {
+    return 'procedure'
+  }
   return 'general'
+}
+
+function BookSearchIcon({ color }: { color: string }) {
+  return (
+    <svg
+      width={22}
+      height={22}
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke={color}
+      strokeWidth={1.5}
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden
+    >
+      <path d="M12 21V7l-8-3v15c0 .5.5 1 1 .8l7-3" />
+      <path d="M12 7l8-3v15c0 .5-.5 1-1 .8l-7-3" />
+      <path d="M12 7v13" />
+    </svg>
+  )
 }
 
 function MedicalGlossary() {
@@ -37,9 +103,6 @@ function MedicalGlossary() {
   const [terms, setTerms] = useState<GlossaryTerm[]>([])
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
-
-  // Get unique categories from terms
-  const categories = Object.keys(categoryColors)
 
   useEffect(() => {
     let isMounted = true
@@ -74,7 +137,11 @@ function MedicalGlossary() {
       } catch (err) {
         if (isMounted) {
           setTerms([])
-          setError(err instanceof Error ? err.message : 'Could not load glossary terms. Check your Supabase configuration.')
+          setError(
+            err instanceof Error
+              ? err.message
+              : 'Could not load glossary terms. Check your Supabase configuration.'
+          )
         }
       } finally {
         if (isMounted) {
@@ -90,320 +157,357 @@ function MedicalGlossary() {
     }
   }, [query])
 
-  return (
-    <div style={{
-      minHeight: '100vh',
-      background: 'linear-gradient(135deg, #fdfbfb 0%, #ebedee 100%)',
-      padding: '0',
-    }}>
-      {/* Colorful Header */}
-      <div style={{
-        background: 'linear-gradient(135deg, #667eea 0%, #764ba2 50%, #f093fb 100%)',
-        padding: '40px 24px',
-        textAlign: 'center',
-        position: 'relative',
-        overflow: 'hidden',
-      }}>
-        {/* Decorative circles */}
-        <div style={{
-          position: 'absolute',
-          top: '-50px',
-          left: '-50px',
-          width: '200px',
-          height: '200px',
-          background: 'rgba(255,255,255,0.1)',
-          borderRadius: '50%',
-        }} />
-        <div style={{
-          position: 'absolute',
-          bottom: '-30px',
-          right: '10%',
-          width: '150px',
-          height: '150px',
-          background: 'rgba(255,255,255,0.1)',
-          borderRadius: '50%',
-        }} />
-        <div style={{
-          position: 'absolute',
-          top: '20px',
-          right: '20%',
-          width: '80px',
-          height: '80px',
-          background: 'rgba(255,255,255,0.08)',
-          borderRadius: '50%',
-        }} />
-        
-        <h1 style={{
-          fontSize: '2.5rem',
-          fontWeight: 800,
-          color: '#ffffff',
-          margin: 0,
-          textShadow: '0 2px 10px rgba(0,0,0,0.2)',
-          position: 'relative',
-        }}>
-          🏥 Medical Glossary
-        </h1>
-        <p style={{
-          color: 'rgba(255,255,255,0.9)',
-          fontSize: '1.1rem',
-          marginTop: '12px',
-          position: 'relative',
-        }}>
-          Learn and understand common medical terms
-        </p>
-      </div>
+  const divider = (
+    <div
+      style={{
+        height: 1,
+        background: LIGHT_BLUE,
+        opacity: 0.55,
+        margin: 0,
+        border: 'none',
+      }}
+    />
+  )
 
-      {/* Search Section */}
-      <div style={{
-        maxWidth: '800px',
-        margin: '-30px auto 30px',
-        padding: '0 20px',
-        position: 'relative',
-        zIndex: 10,
-      }}>
-        <div style={{
-          background: '#ffffff',
-          borderRadius: '20px',
-          padding: '24px',
-          boxShadow: '0 10px 40px rgba(102, 126, 234, 0.15)',
-        }}>
-          <SearchBar value={query} onChange={setQuery} />
-          
-          {/* Tag Filter Section */}
-          <div style={{ marginTop: '16px' }}>
-            <p style={{
-              fontSize: '0.85rem',
-              color: '#888',
-              marginBottom: '10px',
+  const filteredTerms = terms.filter((t) => !selectedTag || getCategory(t.term) === selectedTag)
+
+  return (
+    <div
+      style={{
+        minHeight: '100vh',
+        background: ALMOST_WHITE,
+        padding: '0 0 48px',
+        fontFamily: FONT_SANS,
+        color: NAVY,
+      }}
+    >
+      <div
+        style={{
+          maxWidth: 720,
+          margin: '0 auto',
+          padding: '8px 24px 0',
+        }}
+      >
+        <header style={{ paddingBottom: 28 }}>
+          <h1
+            style={{
+              fontSize: 'clamp(1.5rem, 4vw, 1.875rem)',
+              fontWeight: 700,
+              letterSpacing: '0.04em',
+              color: NAVY,
+              margin: '0 0 12px',
+              textTransform: 'uppercase',
+            }}
+          >
+            Medical Glossary
+          </h1>
+          <p
+            style={{
+              fontSize: '1rem',
+              lineHeight: 1.55,
+              color: DARK_GREEN,
+              margin: 0,
+            }}
+          >
+            Learn and understand common medical terms
+          </p>
+        </header>
+        {divider}
+
+        {/* Search */}
+        <section
+          style={{
+            background: ALMOST_WHITE,
+            padding: '28px 0',
+          }}
+        >
+          <div style={{ position: 'relative' }}>
+            <span
+              style={{
+                position: 'absolute',
+                left: 18,
+                top: '50%',
+                transform: 'translateY(-50%)',
+                display: 'flex',
+                pointerEvents: 'none',
+              }}
+            >
+              <BookSearchIcon color={`${NAVY}55`} />
+            </span>
+            <input
+              id="glossary-search"
+              type="search"
+              aria-label="Search medical terms"
+              placeholder="Search medical terms..."
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              style={{
+                padding: '16px 16px 16px 52px',
+                width: '100%',
+                fontSize: '1rem',
+                border: `1px solid ${BORDER_SOFT}`,
+                borderRadius: RADIUS,
+                outline: 'none',
+                transition: 'border-color 0.2s ease, box-shadow 0.2s ease',
+                background: '#ffffff',
+                boxSizing: 'border-box',
+                fontFamily: FONT_SANS,
+                color: NAVY,
+              }}
+              onFocus={(e) => {
+                e.target.style.borderColor = NAVY
+                e.target.style.boxShadow = `0 0 0 3px ${LIGHT_BLUE}`
+              }}
+              onBlur={(e) => {
+                e.target.style.borderColor = BORDER_SOFT
+                e.target.style.boxShadow = 'none'
+              }}
+            />
+          </div>
+        </section>
+        {divider}
+
+        {/* Filters */}
+        <section
+          style={{
+            background: '#ffffff',
+            padding: '26px 0',
+            marginLeft: '-24px',
+            marginRight: '-24px',
+            paddingLeft: 24,
+            paddingRight: 24,
+          }}
+        >
+          <p
+            style={{
+              fontSize: '0.9375rem',
               fontWeight: 600,
-            }}>
-              Filter by category:
-            </p>
-            <div style={{
+              color: NAVY,
+              margin: '0 0 14px',
+            }}
+          >
+            Filter by category:
+          </p>
+          <div
+            style={{
               display: 'flex',
               flexWrap: 'wrap',
-              gap: '8px',
-            }}>
-              {/* All tags button */}
-              <button
-                onClick={() => setSelectedTag(null)}
-                style={{
-                  padding: '8px 16px',
-                  borderRadius: '20px',
-                  border: selectedTag === null ? '2px solid #667eea' : '2px solid #e0e0e0',
-                  background: selectedTag === null ? '#667eea' : '#ffffff',
-                  color: selectedTag === null ? '#ffffff' : '#666',
-                  fontSize: '0.85rem',
-                  fontWeight: 600,
-                  cursor: 'pointer',
-                  transition: 'all 0.2s ease',
-                }}
-              >
-                All
-              </button>
-              {categories.map((cat) => {
-                const colors = categoryColors[cat]
-                const isSelected = selectedTag === cat
-                return (
-                  <button
-                    key={cat}
-                    onClick={() => setSelectedTag(isSelected ? null : cat)}
-                    style={{
-                      padding: '8px 16px',
-                      borderRadius: '20px',
-                      border: isSelected ? `2px solid ${colors.text}` : `2px solid ${colors.border}`,
-                      background: isSelected ? colors.text : colors.bg,
-                      color: isSelected ? '#ffffff' : colors.text,
-                      fontSize: '0.85rem',
-                      fontWeight: 600,
-                      cursor: 'pointer',
-                      transition: 'all 0.2s ease',
-                      textTransform: 'capitalize',
-                    }}
-                  >
-                    {cat}
-                  </button>
-                )
-              })}
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Content Section */}
-      <div style={{
-        maxWidth: '1000px',
-        margin: '0 auto',
-        padding: '0 20px 40px',
-      }}>
-        {loading && (
-          <div style={{
-            textAlign: 'center',
-            padding: '60px 20px',
-          }}>
-            <div style={{
-              fontSize: '3rem',
-              animation: 'bounce 1s infinite',
-            }}>⏳</div>
-            <p style={{ color: '#667eea', fontSize: '1.2rem', fontWeight: 600 }}>
-              Loading terms...
-            </p>
-          </div>
-        )}
-
-        {!loading && error && (
-          <div style={{
-            background: '#ffebee',
-            border: '2px solid #ffcdd2',
-            borderRadius: '16px',
-            padding: '24px',
-            textAlign: 'center',
-          }}>
-            <span style={{ fontSize: '2rem' }}>⚠️</span>
-            <p style={{ color: '#c62828', fontWeight: 600, marginTop: '8px' }}>
-              {error}
-            </p>
-          </div>
-        )}
-
-        {!loading && !error && terms.length === 0 && (
-          <div style={{
-            background: '#fff8e1',
-            border: '2px solid #ffe082',
-            borderRadius: '16px',
-            padding: '40px 24px',
-            textAlign: 'center',
-          }}>
-            <span style={{ fontSize: '3rem' }}>🔍</span>
-            <p style={{ color: '#f57f17', fontSize: '1.2rem', fontWeight: 600, marginTop: '12px' }}>
-              {selectedTag ? `No ${selectedTag} terms found` : 'No terms match your search'}
-            </p>
-            <p style={{ color: '#f57f17', opacity: 0.8, marginTop: '8px' }}>
-              {selectedTag ? 'Try a different category or search term' : 'Try a different search term'}
-            </p>
-          </div>
-        )}
-
-        {!loading && !error && terms.length > 0 && (
-          <div style={{
-            display: 'grid',
-            gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))',
-            gap: '20px',
-          }}>
-            {terms
-              .filter(term => !selectedTag || getCategory(term.term) === selectedTag)
-              .map((term, index) => {
-              const category = getCategory(term.term)
-              const colors = categoryColors[category] || categoryColors.general
-              
+              gap: 10,
+            }}
+          >
+            <button
+              type="button"
+              onClick={() => setSelectedTag(null)}
+              style={{
+                padding: '10px 18px',
+                borderRadius: 999,
+                border: selectedTag === null ? 'none' : `1px solid ${BORDER_SOFT}`,
+                background: selectedTag === null ? NAVY : LIGHT_BLUE,
+                color: selectedTag === null ? '#ffffff' : NAVY,
+                fontSize: '0.875rem',
+                fontWeight: 600,
+                cursor: 'pointer',
+                fontFamily: FONT_SANS,
+                transition: 'background 0.2s ease, color 0.2s ease',
+              }}
+            >
+              All
+            </button>
+            {CATEGORY_ORDER.map((cat) => {
+              const isSelected = selectedTag === cat
               return (
-                <div
-                  key={term.id}
+                <button
+                  type="button"
+                  key={cat}
+                  onClick={() => setSelectedTag(isSelected ? null : cat)}
                   style={{
-                    background: '#ffffff',
-                    borderRadius: '20px',
-                    padding: '24px',
-                    boxShadow: '0 4px 20px rgba(0,0,0,0.08)',
-                    border: '2px solid transparent',
-                    transition: 'all 0.3s ease',
+                    padding: '10px 18px',
+                    borderRadius: 999,
+                    border: isSelected ? 'none' : `1px solid ${BORDER_SOFT}`,
+                    background: isSelected ? NAVY : LIGHT_BLUE,
+                    color: isSelected ? '#ffffff' : NAVY,
+                    fontSize: '0.875rem',
+                    fontWeight: 600,
                     cursor: 'pointer',
-                    animation: `fadeInUp 0.5s ease ${index * 0.05}s both`,
-                  }}
-                  onMouseEnter={(e) => {
-                    e.currentTarget.style.transform = 'translateY(-5px)'
-                    e.currentTarget.style.boxShadow = '0 12px 40px rgba(102, 126, 234, 0.2)'
-                    e.currentTarget.style.borderColor = colors.border
-                  }}
-                  onMouseLeave={(e) => {
-                    e.currentTarget.style.transform = 'translateY(0)'
-                    e.currentTarget.style.boxShadow = '0 4px 20px rgba(0,0,0,0.08)'
-                    e.currentTarget.style.borderColor = 'transparent'
+                    fontFamily: FONT_SANS,
+                    textTransform: 'capitalize',
+                    transition: 'background 0.2s ease, color 0.2s ease',
                   }}
                 >
-                  {/* Category Tag */}
-                  <div style={{
-                    display: 'inline-block',
-                    background: colors.bg,
-                    color: colors.text,
-                    padding: '4px 12px',
-                    borderRadius: '20px',
-                    fontSize: '0.75rem',
-                    fontWeight: 700,
-                    textTransform: 'uppercase',
-                    letterSpacing: '0.5px',
-                    border: `1px solid ${colors.border}`,
-                    marginBottom: '12px',
-                  }}>
-                    {category}
-                  </div>
-
-                  {/* Term */}
-                  <h3 style={{
-                    fontSize: '1.4rem',
-                    fontWeight: 700,
-                    color: '#2c3e50',
-                    margin: '0 0 12px',
-                    lineHeight: 1.3,
-                  }}>
-                    {term.term}
-                  </h3>
-
-                  {/* Definition */}
-                  <p style={{
-                    color: '#666',
-                    fontSize: '0.95rem',
-                    lineHeight: 1.6,
-                    margin: 0,
-                  }}>
-                    {term.definition}
-                  </p>
-
-                  {/* Decorative accent */}
-                  <div style={{
-                    marginTop: '16px',
-                    height: '4px',
-                    background: `linear-gradient(90deg, ${colors.border}, ${colors.bg})`,
-                    borderRadius: '2px',
-                  }} />
-                </div>
+                  {cat}
+                </button>
               )
             })}
           </div>
-        )}
+        </section>
+        {divider}
 
-        {/* Results count */}
-        {!loading && !error && terms.length > 0 && (
-          <p style={{
-            textAlign: 'center',
-            color: '#888',
-            marginTop: '30px',
-            fontSize: '0.9rem',
-          }}>
-            {selectedTag 
-              ? `Showing ${terms.filter(t => getCategory(t.term) === selectedTag).length} ${selectedTag} term${terms.filter(t => getCategory(t.term) === selectedTag).length !== 1 ? 's' : ''}`
-              : `Showing ${terms.length} term${terms.length !== 1 ? 's' : ''}`
-            }
-          </p>
-        )}
+        {/* List */}
+        <section style={{ paddingTop: 28 }}>
+          {loading && (
+            <div
+              style={{
+                textAlign: 'center',
+                padding: '48px 16px',
+                color: DARK_GREEN,
+              }}
+            >
+              <p style={{ fontSize: '1rem', margin: 0, fontWeight: 500 }}>
+                Loading terms…
+              </p>
+            </div>
+          )}
+
+          {!loading && error && (
+            <div
+              style={{
+                background: '#ffffff',
+                border: `1px solid ${BORDER_SOFT}`,
+                borderRadius: RADIUS,
+                padding: 28,
+                textAlign: 'center',
+              }}
+            >
+              <p style={{ color: NAVY, fontWeight: 600, margin: 0 }}>
+                {error}
+              </p>
+            </div>
+          )}
+
+          {!loading && !error && terms.length === 0 && (
+            <div
+              style={{
+                background: '#ffffff',
+                border: `1px solid ${BORDER_SOFT}`,
+                borderRadius: RADIUS,
+                padding: 40,
+                textAlign: 'center',
+              }}
+            >
+              <p style={{ color: NAVY, fontWeight: 600, margin: 0 }}>
+                {selectedTag
+                  ? `No ${formatCategoryLabel(selectedTag)} terms found`
+                  : 'No terms match your search'}
+              </p>
+              <p style={{ color: DARK_GREEN, marginTop: 10, marginBottom: 0 }}>
+                {selectedTag
+                  ? 'Try a different category or search term'
+                  : 'Try a different search term'}
+              </p>
+            </div>
+          )}
+
+          {!loading &&
+            !error &&
+            terms.length > 0 &&
+            filteredTerms.length === 0 &&
+            selectedTag && (
+            <div
+              style={{
+                background: '#ffffff',
+                border: `1px solid ${BORDER_SOFT}`,
+                borderRadius: RADIUS,
+                padding: 40,
+                textAlign: 'center',
+              }}
+            >
+              <p style={{ color: NAVY, fontWeight: 600, margin: 0 }}>
+                {`No ${formatCategoryLabel(selectedTag)} terms found`}
+              </p>
+              <p style={{ color: DARK_GREEN, marginTop: 10, marginBottom: 0 }}>
+                Try a different category or search term
+              </p>
+            </div>
+          )}
+
+          {!loading && !error && filteredTerms.length > 0 && (
+            <div
+              style={{
+                display: 'flex',
+                flexDirection: 'column',
+                gap: 20,
+              }}
+            >
+              {filteredTerms.map((term) => {
+                const category = getCategory(term.term)
+                return (
+                  <article
+                    key={term.id}
+                    style={{
+                      background: '#ffffff',
+                      border: `1px solid ${BORDER_SOFT}`,
+                      borderRadius: RADIUS,
+                      padding: '22px 24px',
+                    }}
+                  >
+                    <div
+                      style={{
+                        display: 'flex',
+                        alignItems: 'flex-start',
+                        justifyContent: 'space-between',
+                        gap: 16,
+                        marginBottom: 12,
+                      }}
+                    >
+                      <h3
+                        style={{
+                          fontSize: '1.125rem',
+                          fontWeight: 700,
+                          color: NAVY,
+                          margin: 0,
+                          lineHeight: 1.35,
+                        }}
+                      >
+                        {term.term}
+                      </h3>
+                      <span
+                        style={{
+                          flexShrink: 0,
+                          background: ALMOST_WHITE,
+                          color: NAVY,
+                          padding: '6px 12px',
+                          borderRadius: 999,
+                          fontSize: '0.75rem',
+                          fontWeight: 600,
+                          border: `1px solid ${BORDER_SOFT}`,
+                          textTransform: 'capitalize',
+                        }}
+                      >
+                        {category}
+                      </span>
+                    </div>
+                    <p
+                      style={{
+                        color: DARK_GREEN,
+                        fontSize: '0.9375rem',
+                        lineHeight: 1.65,
+                        margin: 0,
+                      }}
+                    >
+                      {term.definition}
+                    </p>
+                  </article>
+                )
+              })}
+            </div>
+          )}
+
+          {!loading && !error && terms.length > 0 && (
+            <p
+              style={{
+                textAlign: 'center',
+                color: DARK_GREEN,
+                marginTop: 36,
+                fontSize: '0.875rem',
+              }}
+            >
+              {selectedTag
+                ? `Showing ${filteredTerms.length} ${formatCategoryLabel(selectedTag)} term${filteredTerms.length !== 1 ? 's' : ''}`
+                : `Showing ${terms.length} term${terms.length !== 1 ? 's' : ''}`}
+            </p>
+          )}
+        </section>
       </div>
-
-      {/* CSS for animations */}
-      <style>{`
-        @keyframes fadeInUp {
-          from {
-            opacity: 0;
-            transform: translateY(20px);
-          }
-          to {
-            opacity: 1;
-            transform: translateY(0);
-          }
-        }
-        @keyframes bounce {
-          0%, 100% { transform: translateY(0); }
-          50% { transform: translateY(-10px); }
-        }
-      `}</style>
     </div>
   )
 }

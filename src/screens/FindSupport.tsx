@@ -19,63 +19,96 @@ const SCHOOL_AGE_OR_BELOW_LABELS = [
   'School Age (6-12)',
 ] as const
 
-type UserProfileFields = {
-  diagnosis_age_category: string | null
-  current_age_category: string | null
-  condition: string | null
-}
+// ── ResourceCard ─────────────────────────────────────────────────────────────
 
-function isSchoolAgeOrBelow(currentAgeCategory: string | null | undefined): boolean {
-  if (!currentAgeCategory?.trim()) return false
-  return (SCHOOL_AGE_OR_BELOW_LABELS as readonly string[]).includes(currentAgeCategory.trim())
-}
+function ResourceCard({ resource }: { resource: SupportResource }) {
+  const [hovered, setHovered] = useState(false)
 
-/** Stored `condition` is comma-separated category titles from onboarding. */
-function conditionIsGeneticOrMentalHealth(condition: string | null | undefined): boolean {
-  if (!condition?.trim()) return false
-  const c = condition.toLowerCase()
-  return /\bgenetic\b/.test(c) || /mental health/.test(c)
-}
+  return (
+    <li
+      onMouseEnter={() => setHovered(true)}
+      onMouseLeave={() => setHovered(false)}
+      style={{
+        background: '#fff',
+        border: `1.5px solid ${hovered ? '#577568' : '#c6d9e5'}`,
+        borderRadius: '14px',
+        padding: '24px',
+        display: 'flex',
+        flexDirection: 'column',
+        gap: '10px',
+        boxShadow: hovered ? '0 8px 24px rgba(25,43,63,0.09)' : '0 2px 8px rgba(25,43,63,0.04)',
+        transition: 'all 0.2s ease',
+        listStyle: 'none',
+      }}
+    >
+      {/* Name + category badge */}
+      <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: '12px' }}>
+        <h3 style={{
+          margin: 0,
+          fontSize: '1rem',
+          fontWeight: 700,
+          color: '#192b3f',
+          lineHeight: 1.3,
+          fontFamily: 'Inter, system-ui, sans-serif',
+        }}>
+          {resource.name}
+        </h3>
+        <span style={{
+          flexShrink: 0,
+          fontSize: '0.72rem',
+          fontWeight: 600,
+          background: '#c6d9e5',
+          color: '#192b3f',
+          padding: '3px 10px',
+          borderRadius: '100px',
+          fontFamily: 'Inter, system-ui, sans-serif',
+          letterSpacing: '0.01em',
+        }}>
+          {resource.category}
+        </span>
+      </div>
 
-/**
- * Placeholder rules (will be replaced later).
- * Age: school-or-below → Mental Health / Family Support only; older → Financial Aid / Community only.
- * Condition: Genetic or Mental Health → Mental Health / Family Support; else → Financial Aid / Community.
- */
-function passesPersonalizationFilters(
-  personalizeByAge: boolean,
-  personalizeByCondition: boolean,
-  profile: UserProfileFields | null,
-  bucket: SupportFilterCategory | 'other',
-): boolean {
-  const anyOn = personalizeByAge || personalizeByCondition
-  if (!anyOn) return true
-  if (bucket === 'other') return false
+      {resource.description && (
+        <p style={{ margin: 0, fontSize: '0.875rem', color: '#acb7a8', lineHeight: 1.65, fontFamily: 'Inter, system-ui, sans-serif' }}>
+          {resource.description}
+        </p>
+      )}
 
-  const isMentalOrFamily = bucket === 'Mental Health' || bucket === 'Family Support'
-  const isFinOrCommunity = bucket === 'Financial Aid' || bucket === 'Community'
+      {(resource.city || resource.zipcode) && (
+        <p style={{ margin: 0, fontSize: '0.78rem', color: '#acb7a8', fontFamily: 'Inter, system-ui, sans-serif' }}>
+          📍 {[resource.city, resource.zipcode].filter(Boolean).join(', ')}
+        </p>
+      )}
 
-  let allowed = true
-
-  if (personalizeByAge) {
-    const age = profile?.current_age_category
-    if (age?.trim()) {
-      const below = isSchoolAgeOrBelow(age)
-      const ageOk = below ? isMentalOrFamily : isFinOrCommunity
-      allowed = allowed && ageOk
-    }
-  }
-
-  if (personalizeByCondition) {
-    const cond = profile?.condition
-    if (cond?.trim()) {
-      const geneticOrMental = conditionIsGeneticOrMentalHealth(cond)
-      const condOk = geneticOrMental ? isMentalOrFamily : isFinOrCommunity
-      allowed = allowed && condOk
-    }
-  }
-
-  return allowed
+      {resource.link && (
+        <a
+          href={resource.link}
+          target="_blank"
+          rel="noopener noreferrer"
+          style={{
+            marginTop: '4px',
+            display: 'inline-flex',
+            alignItems: 'center',
+            gap: '6px',
+            background: '#577568',
+            color: '#f5f9f9',
+            padding: '8px 18px',
+            borderRadius: '10px',
+            fontSize: '0.85rem',
+            fontWeight: 600,
+            textDecoration: 'none',
+            fontFamily: 'Inter, system-ui, sans-serif',
+            transition: 'background 0.2s ease',
+            width: 'fit-content',
+          }}
+          onMouseEnter={e => (e.currentTarget.style.background = '#192b3f')}
+          onMouseLeave={e => (e.currentTarget.style.background = '#577568')}
+        >
+          Visit Website ↗
+        </a>
+      )}
+    </li>
+  )
 }
 
 const categoryColors: Record<
@@ -89,9 +122,34 @@ const categoryColors: Record<
   other: { bg: '#f3f4f6', text: '#4b5563', border: '#d1d5db' },
 }
 
-function normalizeCategoryLabel(raw: string | number | null | undefined): string {
-  if (raw == null) return ''
-  return String(raw).trim()
+function CategoryChips({ active, onChange }: { active: Category; onChange: (c: Category) => void }) {
+  return (
+    <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+      {CATEGORIES.map((cat) => {
+        const isActive = cat === active
+        return (
+          <button
+            key={cat}
+            onClick={() => onChange(cat)}
+            style={{
+              padding: '7px 16px',
+              borderRadius: '100px',
+              fontSize: '0.8rem',
+              fontWeight: 600,
+              fontFamily: 'Inter, system-ui, sans-serif',
+              cursor: 'pointer',
+              border: `1.5px solid ${isActive ? '#577568' : '#c6d9e5'}`,
+              background: isActive ? '#577568' : '#fff',
+              color: isActive ? '#f5f9f9' : '#577568',
+              transition: 'all 0.15s ease',
+            }}
+          >
+            {cat}
+          </button>
+        )
+      })}
+    </div>
+  )
 }
 
 function normalizeSupportCategoryBucket(raw: string | number | null | undefined): SupportFilterCategory | 'other' {
@@ -217,309 +275,106 @@ export default function FindSupport() {
       const name = String(r.name ?? '').toLowerCase()
       const desc = String(r.description ?? '').toLowerCase()
       const city = String(r.city ?? '').toLowerCase()
-      const zip = String(r.zipcode ?? '').toLowerCase()
+      const hasLocation = zip || city
 
-      return (
-        name.includes(q) ||
-        desc.includes(q) ||
-        (city.length > 0 && city.includes(q)) ||
-        (zip.length > 0 && zip.includes(q))
-      )
+      if (city === query || zip === query) return [{ r, score: 0 }]
+      if (city.startsWith(query)) return [{ r, score: 1 }]
+      if (query.length >= 3 && zip.startsWith(query.slice(0, 3))) return [{ r, score: 2 }]
+      if (city.includes(query) || zip.includes(query)) return [{ r, score: 3 }]
+      if (!hasLocation) return [{ r, score: 4 }]
+      return []
     })
   }, [resources, query, selectedCategory])
 
-  const personalizedResources = useMemo(() => {
-    return filteredResources.filter((r) => {
-      const bucket = normalizeSupportCategoryBucket(r.category)
-      return passesPersonalizationFilters(
-        personalizeByAge,
-        personalizeByCondition,
-        userProfile,
-        bucket,
-      )
-    })
-  }, [filteredResources, personalizeByAge, personalizeByCondition, userProfile])
+    scored.sort((a, b) => a.score - b.score || (a.r.name ?? '').localeCompare(b.r.name ?? ''))
+    return scored.map(({ r }) => r)
+  }, [resources, activeCategory, locationQuery])
 
   return (
-    <div
-      style={{
-        minHeight: '100vh',
-        background: 'linear-gradient(135deg, #fdfbfb 0%, #ebedee 100%)',
-        padding: '0',
-      }}
-    >
-      <div
-        style={{
-          background: 'linear-gradient(135deg, #ec4899 0%, #f472b6 45%, #a78bfa 100%)',
-          padding: '40px 24px',
-          textAlign: 'center',
-          position: 'relative',
-          overflow: 'hidden',
-        }}
-      >
-        <div
-          style={{
-            position: 'absolute',
-            top: '-50px',
-            left: '-50px',
-            width: '200px',
-            height: '200px',
-            background: 'rgba(255,255,255,0.1)',
-            borderRadius: '50%',
-          }}
-        />
-        <div
-          style={{
-            position: 'absolute',
-            bottom: '-30px',
-            right: '10%',
-            width: '150px',
-            height: '150px',
-            background: 'rgba(255,255,255,0.1)',
-            borderRadius: '50%',
-          }}
-        />
-        <div
-          style={{
-            position: 'absolute',
-            top: '20px',
-            right: '20%',
-            width: '80px',
-            height: '80px',
-            background: 'rgba(255,255,255,0.08)',
-            borderRadius: '50%',
-          }}
-        />
+    <div style={{ minHeight: '100vh', background: '#f5f9f9', fontFamily: 'Inter, system-ui, sans-serif' }}>
+      <div style={{ maxWidth: '720px', margin: '0 auto', padding: '40px 24px 72px' }}>
 
-        <h1
-          style={{
-            fontSize: '2.5rem',
-            fontWeight: 800,
-            color: '#ffffff',
-            margin: 0,
-            textShadow: '0 2px 10px rgba(0,0,0,0.2)',
-            position: 'relative',
-          }}
-        >
-          🤝 Find Support
-        </h1>
-        <p
-          style={{
-            color: 'rgba(255,255,255,0.9)',
-            fontSize: '1.1rem',
-            marginTop: '12px',
-            position: 'relative',
-          }}
-        >
-          Community resources and connections for heart families
-        </p>
-      </div>
-
-      <div
-        style={{
-          maxWidth: '800px',
-          margin: '-30px auto 30px',
-          padding: '0 20px',
-          position: 'relative',
-          zIndex: 10,
-        }}
-      >
-        <div
-          style={{
-            background: '#ffffff',
-            borderRadius: '20px',
-            padding: '24px',
-            boxShadow: '0 10px 40px rgba(236, 72, 153, 0.18)',
-          }}
-        >
-          <SearchBar value={query} onChange={setQuery} placeholder="Search resources..." />
-
-          <div style={{ marginTop: '16px' }}>
-            <p
-              style={{
-                fontSize: '0.85rem',
-                color: '#888',
-                marginBottom: '10px',
-                fontWeight: 600,
-              }}
-            >
-              Filter by category:
-            </p>
-            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
-              <button
-                type="button"
-                onClick={() => setSelectedCategory(null)}
-                style={{
-                  padding: '8px 16px',
-                  borderRadius: '20px',
-                  border: selectedCategory === null ? '2px solid #ec4899' : '2px solid #e0e0e0',
-                  background: selectedCategory === null ? '#ec4899' : '#ffffff',
-                  color: selectedCategory === null ? '#ffffff' : '#666',
-                  fontSize: '0.85rem',
-                  fontWeight: 600,
-                  cursor: 'pointer',
-                  transition: 'all 0.2s ease',
-                }}
-              >
-                All
-              </button>
-              {FILTER_CATEGORIES.map((cat) => {
-                const colors = categoryColors[cat]
-                const isSelected = selectedCategory === cat
-                return (
-                  <button
-                    type="button"
-                    key={cat}
-                    onClick={() => setSelectedCategory(isSelected ? null : cat)}
-                    style={{
-                      padding: '8px 16px',
-                      borderRadius: '20px',
-                      border: isSelected ? `2px solid ${colors.text}` : `2px solid ${colors.border}`,
-                      background: isSelected ? colors.text : colors.bg,
-                      color: isSelected ? '#ffffff' : colors.text,
-                      fontSize: '0.85rem',
-                      fontWeight: 600,
-                      cursor: 'pointer',
-                      transition: 'all 0.2s ease',
-                    }}
-                  >
-                    {cat}
-                  </button>
-                )
-              })}
-            </div>
-          </div>
-
-          <div
-            style={{
-              marginTop: '20px',
-              paddingTop: '16px',
-              borderTop: '1px solid #f3f4f6',
-            }}
-          >
-            <p
-              style={{
-                fontSize: '0.85rem',
-                color: '#888',
-                marginBottom: '12px',
-                fontWeight: 600,
-              }}
-            >
-              Personalize from your profile (PLACEHOLDER RULES CURRENTLY):
-            </p>
-            <label
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: '10px',
-                cursor: 'pointer',
-                marginBottom: '10px',
-                fontSize: '0.9rem',
-                color: '#444',
-              }}
-            >
-              <input
-                type="checkbox"
-                checked={personalizeByAge}
-                onChange={(e) => setPersonalizeByAge(e.target.checked)}
-                style={{ width: '18px', height: '18px', accentColor: '#ec4899' }}
-              />
-              Related to age
-            </label>
-            <label
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: '10px',
-                cursor: 'pointer',
-                fontSize: '0.9rem',
-                color: '#444',
-              }}
-            >
-              <input
-                type="checkbox"
-                checked={personalizeByCondition}
-                onChange={(e) => setPersonalizeByCondition(e.target.checked)}
-                style={{ width: '18px', height: '18px', accentColor: '#ec4899' }}
-              />
-              Related to condition
-            </label>
-          </div>
-
-          <p
-            style={{
-              marginTop: '14px',
-              marginBottom: 0,
-              fontSize: '0.8rem',
-              color: '#9ca3af',
-              lineHeight: 1.45,
-            }}
-          >
-            Tap a card to open the resource website.
+        {/* Header */}
+        <div style={{ marginBottom: '32px' }}>
+          <p style={{
+            margin: '0 0 6px',
+            fontSize: '10px',
+            fontWeight: 700,
+            letterSpacing: '0.12em',
+            textTransform: 'uppercase',
+            color: '#acb7a8',
+            fontFamily: 'Inter, system-ui, sans-serif',
+          }}>
+            Cardea
           </p>
+          <h1 style={{
+            margin: '0 0 10px',
+            fontFamily: 'var(--font-display, "Bebas Neue", sans-serif)',
+            fontSize: 'clamp(2.2rem, 4vw, 3rem)',
+            letterSpacing: '0.04em',
+            color: '#192b3f',
+            lineHeight: 1,
+          }}>
+            Find Support
+          </h1>
+          <p style={{ margin: 0, fontSize: '0.875rem', color: '#acb7a8', lineHeight: 1.65, fontFamily: 'Inter, system-ui, sans-serif' }}>
+            Resources for heart families — near you and online.
+          </p>
+        </div>
+
+        {/* Search */}
+        <div style={{ position: 'relative', marginBottom: '16px' }}>
+          <span style={{ position: 'absolute', left: '14px', top: '50%', transform: 'translateY(-50%)', color: '#acb7a8', fontSize: '1rem' }}>
+            📍
+          </span>
+          <input
+            type="text"
+            value={locationQuery}
+            onChange={(e) => setLocationQuery(e.target.value)}
+            placeholder="Search by city or zip code..."
+            style={{
+              width: '100%',
+              padding: '12px 16px 12px 40px',
+              borderRadius: '12px',
+              border: '1.5px solid #c6d9e5',
+              background: '#fff',
+              fontSize: '0.9rem',
+              color: '#192b3f',
+              fontFamily: 'Inter, system-ui, sans-serif',
+              outline: 'none',
+              boxSizing: 'border-box',
+              transition: 'border-color 0.2s ease',
+            }}
+          />
         </div>
       </div>
 
-      <div style={{ maxWidth: '1000px', margin: '0 auto', padding: '0 20px 40px' }}>
-        {loading && (
-          <div style={{ textAlign: 'center', padding: '60px 20px' }}>
-            <div style={{ fontSize: '3rem' }}>⏳</div>
-            <p style={{ color: '#ec4899', fontSize: '1.2rem', fontWeight: 600 }}>Loading resources...</p>
-          </div>
-        )}
+        {/* Category chips */}
+        <div style={{ marginBottom: '28px' }}>
+          <CategoryChips active={activeCategory} onChange={setActiveCategory} />
+        </div>
 
-        {!loading && error && (
-          <div
-            style={{
-              background: '#ffebee',
-              border: '2px solid #ffcdd2',
-              borderRadius: '16px',
-              padding: '24px',
-              textAlign: 'center',
-            }}
-          >
-            <span style={{ fontSize: '2rem' }}>⚠️</span>
-            <p style={{ color: '#c62828', fontWeight: 600, marginTop: '8px' }}>{error}</p>
-          </div>
-        )}
+        {/* Divider */}
+        <div style={{ height: '1px', background: '#c6d9e5', marginBottom: '28px' }} />
 
-        {!loading && !error && resources.length === 0 && (
-          <div
-            style={{
-              background: '#fff8e1',
-              border: '2px solid #ffe082',
-              borderRadius: '16px',
-              padding: '40px 24px',
-              textAlign: 'center',
-            }}
-          >
-            <span style={{ fontSize: '3rem' }}>📋</span>
-            <p style={{ color: '#f57f17', fontSize: '1.2rem', fontWeight: 600, marginTop: '12px' }}>
-              No resources yet
+        {/* Results */}
+        {loading ? (
+          <p style={{ textAlign: 'center', color: '#acb7a8', fontSize: '0.9rem', padding: '48px 0' }}>
+            Loading resources…
+          </p>
+        ) : sortedResources.length === 0 ? (
+          <div style={{ textAlign: 'center', padding: '64px 0' }}>
+            <div style={{ fontSize: '2.5rem', marginBottom: '12px' }}>💛</div>
+            <p style={{ margin: 0, fontSize: '0.9rem', color: '#acb7a8' }}>
+              No resources found — try adjusting your filters.
             </p>
           </div>
-        )}
-
-        {!loading && !error && resources.length > 0 && filteredResources.length === 0 && (
-          <div
-            style={{
-              background: '#fff8e1',
-              border: '2px solid #ffe082',
-              borderRadius: '16px',
-              padding: '40px 24px',
-              textAlign: 'center',
-            }}
-          >
-            <span style={{ fontSize: '3rem' }}>🔍</span>
-            <p style={{ color: '#f57f17', fontSize: '1.2rem', fontWeight: 600, marginTop: '12px' }}>
-              {selectedCategory
-                ? `No ${selectedCategory} resources match`
-                : 'No resources match your search'}
-            </p>
-            <p style={{ color: '#f57f17', opacity: 0.85, marginTop: '8px', fontSize: '0.95rem' }}>
-              Try another search or category.
-            </p>
-          </div>
+        ) : (
+          <ul style={{ listStyle: 'none', margin: 0, padding: 0, display: 'flex', flexDirection: 'column', gap: '16px' }}>
+            {sortedResources.map((r) => (
+              <ResourceCard key={r.id} resource={r} />
+            ))}
+          </ul>
         )}
 
         {!loading &&
