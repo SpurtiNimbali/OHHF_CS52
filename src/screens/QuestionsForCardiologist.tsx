@@ -1,11 +1,29 @@
-import { useEffect, useRef, useState, useMemo } from 'react'
-import { supabase, CardiologistQuestion, SavedQuestion } from '../lib/supabase'
+import { useCallback, useEffect, useMemo, useState } from 'react'
+// @ts-expect-error - SearchBar is a JSX component without type declarations
+import SearchBar from '../components/SearchBar'
+import { supabase, ensureAuthUserId, CardiologistQuestion, SavedQuestion } from '../lib/supabase'
 
-const CURRENT_USER_ID = 'demo-user-id'
+const FILTER_CATEGORIES = ['Diagnosis', 'Treatment', 'Lifestyle', 'Monitoring'] as const
+type FilterCategory = (typeof FILTER_CATEGORIES)[number]
 
-type GroupedQuestions = Record<string, CardiologistQuestion[]>
+/** Matches `welcomeScreen` age option labels; school age and younger vs older. */
+const SCHOOL_AGE_OR_BELOW_LABELS = [
+  'Prenatal',
+  'Infant (1 and under)',
+  'Preschooler (2-5)',
+  'School Age (6-12)',
+] as const
 
-// ── QuestionItem ─────────────────────────────────────────────────────────────
+type UserProfileFields = {
+  diagnosis_age_category: string | null
+  current_age_category: string | null
+  condition: string | null
+}
+
+function isSchoolAgeOrBelow(currentAgeCategory: string | null | undefined): boolean {
+  if (!currentAgeCategory?.trim()) return false
+  return (SCHOOL_AGE_OR_BELOW_LABELS as readonly string[]).includes(currentAgeCategory.trim())
+}
 
 function QuestionItem({
   question,
@@ -97,11 +115,7 @@ function QuestionDropdown({
         : questions
       if (matches.length > 0) result[category] = matches
     }
-    return result
-  }, [grouped, q])
-
-  const hasResults = Object.keys(filteredGroups).length > 0
-  const totalQuestions = Object.values(grouped).flat().length
+  }
 
   return (
     <div style={{
@@ -342,19 +356,25 @@ function SavedQuestionsList({
   )
 }
 
-// ── Main Screen ──────────────────────────────────────────────────────────────
+function categoryStyle(cat: FilterCategory | 'other') {
+  return categoryColors[cat] ?? categoryColors.other
+}
 
 export default function QuestionsForCardiologist() {
-  const [grouped, setGrouped] = useState<GroupedQuestions>({})
+  const [questions, setQuestions] = useState<CardiologistQuestion[]>([])
   const [saved, setSaved] = useState<SavedQuestion[]>([])
   const [savedIds, setSavedIds] = useState<Set<string>>(new Set())
-  const [searchQuery, setSearchQuery] = useState('')
-  const [dropdownOpen, setDropdownOpen] = useState(false)
-  const [customText, setCustomText] = useState('')
+  const [userId, setUserId] = useState<string | null>(null)
+  const [authBootstrapped, setAuthBootstrapped] = useState(false)
+  const [query, setQuery] = useState('')
+  const [selectedTag, setSelectedTag] = useState<FilterCategory | null>(null)
   const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
+  const [customText, setCustomText] = useState('')
   const [adding, setAdding] = useState(false)
-
-  const containerRef = useRef<HTMLDivElement>(null)
+  const [userProfile, setUserProfile] = useState<UserProfileFields | null>(null)
+  const [personalizeByAge, setPersonalizeByAge] = useState(false)
+  const [personalizeByCondition, setPersonalizeByCondition] = useState(false)
 
   useEffect(() => {
     async function load() {
@@ -380,70 +400,169 @@ export default function QuestionsForCardiologist() {
         }
         setGrouped(groups)
       }
-
-      if (savedRows) {
-        setSaved(savedRows as SavedQuestion[])
-        setSavedIds(new Set((savedRows as SavedQuestion[]).map((r) => String(r.question_id ?? ''))))
-      }
-
-      setLoading(false)
+    })()
+    return () => {
+      cancelled = true
     }
-    load()
   }, [])
 
   useEffect(() => {
-    function handleClick(e: MouseEvent) {
-      if (containerRef.current && !containerRef.current.contains(e.target as Node)) {
-        setDropdownOpen(false)
-      }
+    if (!authBootstrapped) return
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      setUserId(session?.user?.id ?? null)
+    })
+    return () => subscription.unsubscribe()
+  }, [authBootstrapped])
+
+  const load = useCallback(async (uid: string | null) => {
+    setLoading(true)
+    setError(null)
+
+    const questionsQuery = supabase
+      .from('cardiologist_questions')
+      .select('id, category, question_text')
+      .order('category', { ascending: true })
+
+    const savedQuery = uid
+      ? supabase.from('saved_questions').select('*').eq('user_id', uid)
+      : Promise.resolve({ data: [] as SavedQuestion[], error: null })
+
+    const profileQuery = uid
+      ? supabase
+          .from('users')
+          .select('diagnosis_age_category, current_age_category, condition')
+          .eq('id', uid)
+          .maybeSingle()
+      : Promise.resolve({ data: null as UserProfileFields | null, error: null })
+
+    const [
+      { data: rows, error: qError },
+      { data: savedRows, error: sError },
+      { data: profileRow, error: profileError },
+    ] = await Promise.all([questionsQuery, savedQuery, profileQuery])
+
+    if (!profileError && profileRow) {
+      setUserProfile(profileRow as UserProfileFields)
+    } else {
+      setUserProfile(null)
     }
-    document.addEventListener('mousedown', handleClick)
-    return () => document.removeEventListener('mousedown', handleClick)
+
+    if (qError) {
+      setQuestions([])
+      setError(qError.message)
+    } else {
+      setQuestions((rows as CardiologistQuestion[]) ?? [])
+    }
+
+    if (!qError && sError) {
+      setError((prev) => prev ?? sError.message)
+    }
+
+    if (savedRows) {
+      setSaved(savedRows as SavedQuestion[])
+      setSavedIds(
+        new Set(
+          (savedRows as SavedQuestion[])
+            .filter((r) => r.question_id != null)
+            .map((r) => String(r.question_id)),
+        ),
+      )
+    } else if (!uid) {
+      setSaved([])
+      setSavedIds(new Set())
+    }
+
+    if (!uid && !qError) {
+      setError((prev) => prev ?? 'Sign in to save questions for your account.')
+    }
+
+    setLoading(false)
   }, [])
 
+  useEffect(() => {
+    if (!authBootstrapped) return
+    load(userId)
+  }, [authBootstrapped, userId, load])
+
+  const filteredQuestions = useMemo(() => {
+    const q = query.trim().toLowerCase()
+    return questions.filter((row) => {
+      const text = (row.question_text ?? '').toLowerCase()
+      if (q && !text.includes(q)) return false
+      if (!selectedTag) return true
+      return normalizeCategory(row.category) === selectedTag
+    })
+  }, [questions, query, selectedTag])
+
+  const personalizedQuestions = useMemo(() => {
+    return filteredQuestions.filter((row) => {
+      const bucket = normalizeCategory(row.category)
+      return passesPersonalizationFilters(
+        personalizeByAge,
+        personalizeByCondition,
+        userProfile,
+        bucket,
+      )
+    })
+  }, [filteredQuestions, personalizeByAge, personalizeByCondition, userProfile])
+
   async function toggleQuestion(question: CardiologistQuestion) {
-    if (savedIds.has(String(question.id))) {
-      const { error } = await supabase
+    if (!userId) {
+      setError('Sign in to save questions for your account.')
+      return
+    }
+    const idStr = String(question.id)
+    if (savedIds.has(idStr)) {
+      const { error: delErr } = await supabase
         .from('saved_questions')
         .delete()
-        .eq('user_id', CURRENT_USER_ID)
+        .eq('user_id', userId)
         .eq('question_id', question.id)
-      console.log('[toggleQuestion] delete:', { error })
+      if (delErr) return
 
       setSavedIds((prev) => {
         const next = new Set(prev)
-        next.delete(String(question.id))
+        next.delete(idStr)
         return next
       })
-      setSaved((prev) => prev.filter((r) => String(r.question_id) !== String(question.id)))
+      setSaved((prev) => prev.filter((r) => String(r.question_id) !== idStr))
     } else {
-      const row = { user_id: CURRENT_USER_ID, question_id: question.id, custom_text: null }
-      const { data, error } = await supabase.from('saved_questions').upsert(row).select().single()
-      console.log('[toggleQuestion] upsert:', { data, error })
-      setSavedIds((prev) => new Set([...prev, String(question.id)]))
+      const row = { user_id: userId, question_id: question.id, custom_text: null }
+      const { data, error: upErr } = await supabase
+        .from('saved_questions')
+        .upsert(row)
+        .select()
+        .single()
+      if (upErr) return
+
+      setSavedIds((prev) => new Set([...prev, idStr]))
       if (data) setSaved((prev) => [...prev, data as SavedQuestion])
     }
   }
 
   async function addCustomQuestion() {
+    if (!userId) {
+      setError('Sign in to save questions for your account.')
+      return
+    }
     if (!customText.trim()) return
     setAdding(true)
-    const row = { user_id: CURRENT_USER_ID, question_id: null, custom_text: customText.trim() }
-    const { data, error } = await supabase.from('saved_questions').insert(row).select().single()
-    console.log('[addCustomQuestion]', { data, error })
-    if (data) setSaved((prev) => [...prev, data as SavedQuestion])
+    const row = { user_id: userId, question_id: null, custom_text: customText.trim() }
+    const { data, error: insErr } = await supabase.from('saved_questions').insert(row).select().single()
+    if (!insErr && data) setSaved((prev) => [...prev, data as SavedQuestion])
     setCustomText('')
     setAdding(false)
   }
 
   async function removeQuestion(row: SavedQuestion) {
-    const { error } = await supabase.from('saved_questions').delete().eq('id', row.id)
-    console.log('[removeQuestion]', { error })
+    const { error: delErr } = await supabase.from('saved_questions').delete().eq('id', row.id)
+    if (delErr) return
+
     setSaved((prev) => prev.filter((r) => r.id !== row.id))
     if (row.question_id) {
       setSavedIds((prev) => {
         const next = new Set(prev)
-        next.delete(row.question_id!)
+        next.delete(String(row.question_id))
         return next
       })
     }
@@ -454,8 +573,6 @@ export default function QuestionsForCardiologist() {
       <div style={{ minHeight: '100vh', background: '#f5f9f9', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
         <p style={{ color: '#acb7a8', fontSize: '0.9rem', fontFamily: 'Inter, system-ui, sans-serif' }}>Loading questions…</p>
       </div>
-    )
-  }
 
   return (
     <div style={{ minHeight: '100vh', background: '#f5f9f9', fontFamily: 'Inter, system-ui, sans-serif' }}>
@@ -517,19 +634,60 @@ export default function QuestionsForCardiologist() {
             />
           </div>
 
-          {dropdownOpen && (
-            <QuestionDropdown
-              grouped={grouped}
-              searchQuery={searchQuery}
-              savedIds={savedIds}
-              customText={customText}
-              adding={adding}
-              onToggle={toggleQuestion}
-              onCustomChange={setCustomText}
-              onCustomSubmit={addCustomQuestion}
-            />
-          )}
+          <div
+            style={{
+              marginTop: '20px',
+              paddingTop: '20px',
+              borderTop: '1px solid #fce7f3',
+            }}
+          >
+            <p
+              style={{
+                fontSize: '0.85rem',
+                color: '#888',
+                marginBottom: '10px',
+                fontWeight: 600,
+              }}
+            >
+              Add your own question
+            </p>
+            <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
+              <input
+                type="text"
+                value={customText}
+                onChange={(e) => setCustomText(e.target.value)}
+                onKeyDown={(e) => e.key === 'Enter' && addCustomQuestion()}
+                placeholder="Type your question..."
+                style={{
+                  flex: '1 1 200px',
+                  border: '1px solid #fbcfe8',
+                  borderRadius: '12px',
+                  padding: '10px 14px',
+                  fontSize: '0.95rem',
+                  outline: 'none',
+                }}
+              />
+              <button
+                type="button"
+                onClick={addCustomQuestion}
+                disabled={adding || !customText.trim()}
+                style={{
+                  padding: '10px 20px',
+                  borderRadius: '12px',
+                  border: 'none',
+                  background: adding || !customText.trim() ? '#fda4af' : '#f43f5e',
+                  color: '#fff',
+                  fontWeight: 600,
+                  cursor: adding || !customText.trim() ? 'not-allowed' : 'pointer',
+                  fontSize: '0.9rem',
+                }}
+              >
+                + Add
+              </button>
+            </div>
+          </div>
         </div>
+      </div>
 
         {/* Divider */}
         <div style={{ height: '1px', background: '#c6d9e5', marginBottom: '32px' }} />
@@ -546,7 +704,277 @@ export default function QuestionsForCardiologist() {
           </div>
         )}
 
+        {!loading && !error && questions.length > 0 && filteredQuestions.length === 0 && (
+          <div
+            style={{
+              background: '#fff8e1',
+              border: '2px solid #ffe082',
+              borderRadius: '16px',
+              padding: '40px 24px',
+              textAlign: 'center',
+            }}
+          >
+            <span style={{ fontSize: '3rem' }}>🔍</span>
+            <p style={{ color: '#f57f17', fontSize: '1.2rem', fontWeight: 600, marginTop: '12px' }}>
+              {selectedTag ? `No ${selectedTag} questions match` : 'No questions match your search'}
+            </p>
+          </div>
+        )}
+
+        {!loading &&
+          !error &&
+          questions.length > 0 &&
+          filteredQuestions.length > 0 &&
+          personalizedQuestions.length === 0 && (
+            <div
+              style={{
+                background: '#fff8e1',
+                border: '2px solid #ffe082',
+                borderRadius: '16px',
+                padding: '40px 24px',
+                textAlign: 'center',
+              }}
+            >
+              <span style={{ fontSize: '3rem' }}>✨</span>
+              <p style={{ color: '#f57f17', fontSize: '1.2rem', fontWeight: 600, marginTop: '12px' }}>
+                No questions match your personalization settings
+              </p>
+              <p style={{ color: '#b45309', fontSize: '0.95rem', marginTop: '8px', lineHeight: 1.5 }}>
+                Try turning off the age or condition options above, or adjust your topic filter.
+              </p>
+            </div>
+          )}
+
+        {!loading && !error && personalizedQuestions.length > 0 && (
+          <div
+            style={{
+              display: 'grid',
+              gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))',
+              gap: '20px',
+            }}
+          >
+            {personalizedQuestions.map((question, index) => {
+              const bucket = normalizeCategory(question.category)
+              const displayCat = bucket === 'other' ? question.category?.trim() || 'General' : bucket
+              const colors = categoryStyle(bucket)
+
+              return (
+                <div
+                  key={question.id}
+                  style={{
+                    background: '#ffffff',
+                    borderRadius: '20px',
+                    padding: '24px',
+                    boxShadow: '0 4px 20px rgba(0,0,0,0.08)',
+                    border: '2px solid transparent',
+                    transition: 'all 0.3s ease',
+                    animation: `fadeInUp 0.5s ease ${index * 0.04}s both`,
+                  }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.transform = 'translateY(-5px)'
+                    e.currentTarget.style.boxShadow = '0 12px 40px rgba(244, 63, 94, 0.18)'
+                    e.currentTarget.style.borderColor = colors.border
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.transform = 'translateY(0)'
+                    e.currentTarget.style.boxShadow = '0 4px 20px rgba(0,0,0,0.08)'
+                    e.currentTarget.style.borderColor = 'transparent'
+                  }}
+                >
+                  <div
+                    style={{
+                      display: 'flex',
+                      alignItems: 'flex-start',
+                      justifyContent: 'space-between',
+                      gap: '12px',
+                      marginBottom: '12px',
+                    }}
+                  >
+                    <div
+                      style={{
+                        display: 'inline-block',
+                        background: colors.bg,
+                        color: colors.text,
+                        padding: '4px 12px',
+                        borderRadius: '20px',
+                        fontSize: '0.75rem',
+                        fontWeight: 700,
+                        letterSpacing: '0.5px',
+                        border: `1px solid ${colors.border}`,
+                      }}
+                    >
+                      {displayCat}
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => toggleQuestion(question)}
+                      aria-label={savedIds.has(String(question.id)) ? 'Remove from saved' : 'Save question'}
+                      style={{
+                        border: 'none',
+                        background: savedIds.has(String(question.id)) ? '#fce7f3' : '#f3f4f6',
+                        borderRadius: '12px',
+                        padding: '8px 12px',
+                        cursor: 'pointer',
+                        fontSize: '1.1rem',
+                        lineHeight: 1,
+                      }}
+                    >
+                      {savedIds.has(String(question.id)) ? '❤️' : '🤍'}
+                    </button>
+                  </div>
+
+                  <p
+                    style={{
+                      color: '#2c3e50',
+                      fontSize: '1.05rem',
+                      lineHeight: 1.55,
+                      margin: 0,
+                      fontWeight: 500,
+                    }}
+                  >
+                    {question.question_text}
+                  </p>
+
+                  <div
+                    style={{
+                      marginTop: '16px',
+                      height: '4px',
+                      background: `linear-gradient(90deg, ${colors.border}, ${colors.bg})`,
+                      borderRadius: '2px',
+                    }}
+                  />
+                </div>
+              )
+            })}
+          </div>
+        )}
+
+        {saved.length > 0 && (
+          <section style={{ marginTop: '40px' }}>
+            <h2
+              style={{
+                fontSize: '1.25rem',
+                fontWeight: 700,
+                color: '#2c3e50',
+                marginBottom: '16px',
+                textAlign: 'center',
+              }}
+            >
+              Your saved questions ({saved.length})
+            </h2>
+            <ul style={{ listStyle: 'none', padding: 0, margin: 0, display: 'flex', flexDirection: 'column', gap: '12px' }}>
+              {saved.map((row) => {
+                const isCustom = !row.question_id
+                const matched = questions.find((q) => String(q.id) === String(row.question_id))
+                const label = row.custom_text ?? matched?.question_text ?? ''
+                const catBucket = matched ? normalizeCategory(matched.category) : 'other'
+                const catLabel =
+                  matched && catBucket !== 'other'
+                    ? catBucket
+                    : matched?.category?.trim() || null
+
+                return (
+                  <li
+                    key={row.id}
+                    style={{
+                      display: 'flex',
+                      alignItems: 'flex-start',
+                      justifyContent: 'space-between',
+                      gap: '16px',
+                      background: '#ffffff',
+                      borderRadius: '16px',
+                      padding: '16px 20px',
+                      boxShadow: '0 2px 12px rgba(0,0,0,0.06)',
+                      border: '1px solid #fce7f3',
+                    }}
+                  >
+                    <div style={{ minWidth: 0 }}>
+                      <p style={{ margin: '0 0 8px', color: '#374151', lineHeight: 1.5, fontSize: '0.95rem' }}>
+                        {label}
+                      </p>
+                      <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', alignItems: 'center' }}>
+                        {catLabel && (
+                          <span
+                            style={{
+                              fontSize: '0.7rem',
+                              fontWeight: 700,
+                              textTransform: 'uppercase',
+                              padding: '4px 10px',
+                              borderRadius: '999px',
+                              background: categoryStyle(catBucket === 'other' ? 'other' : catBucket).bg,
+                              color: categoryStyle(catBucket === 'other' ? 'other' : catBucket).text,
+                            }}
+                          >
+                            {catLabel}
+                          </span>
+                        )}
+                        {isCustom && (
+                          <span
+                            style={{
+                              fontSize: '0.7rem',
+                              fontWeight: 700,
+                              padding: '4px 10px',
+                              borderRadius: '999px',
+                              background: '#ede9fe',
+                              color: '#5b21b6',
+                            }}
+                          >
+                            CUSTOM
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => removeQuestion(row)}
+                      aria-label="Remove question"
+                      style={{
+                        border: 'none',
+                        background: 'transparent',
+                        color: '#9ca3af',
+                        fontSize: '1.5rem',
+                        lineHeight: 1,
+                        cursor: 'pointer',
+                        padding: '0 4px',
+                      }}
+                    >
+                      ×
+                    </button>
+                  </li>
+                )
+              })}
+            </ul>
+          </section>
+        )}
+
+        {!loading && !error && personalizedQuestions.length > 0 && (
+          <p
+            style={{
+              textAlign: 'center',
+              color: '#888',
+              marginTop: '30px',
+              fontSize: '0.9rem',
+            }}
+          >
+            Showing {personalizedQuestions.length} question{personalizedQuestions.length !== 1 ? 's' : ''}
+            {selectedTag ? ` in ${selectedTag}` : ''}
+            {(personalizeByAge || personalizeByCondition) && ' (personalized)'}
+          </p>
+        )}
+
+        {!loading && !error && saved.length === 0 && questions.length > 0 && (
+          <p style={{ textAlign: 'center', color: '#9ca3af', marginTop: '24px', fontSize: '0.9rem' }}>
+            Tap the heart on a card to save it for your visit.
+          </p>
+        )}
       </div>
+
+      <style>{`
+        @keyframes fadeInUp {
+          from { opacity: 0; transform: translateY(20px); }
+          to { opacity: 1; transform: translateY(0); }
+        }
+      `}</style>
     </div>
   )
 }

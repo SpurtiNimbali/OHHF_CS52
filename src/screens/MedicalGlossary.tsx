@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react'
 import { createClient } from '@supabase/supabase-js'
 
 interface GlossaryTerm {
-  id: number
+  id: string | number
   term: string
   definition: string
   category?: string
@@ -114,14 +114,6 @@ function MedicalGlossary() {
       }
 
       try {
-        const supabaseUrl = (import.meta as any).env.VITE_SUPABASE_URL
-        const supabaseKey = (import.meta as any).env.VITE_SUPABASE_PUBLISHABLE_KEY
-
-        if (!supabaseUrl || !supabaseKey) {
-          throw new Error('Missing Supabase environment variables')
-        }
-
-        const supabase = createClient(supabaseUrl, supabaseKey)
         const search = query.trim()
 
         let dbQuery = supabase

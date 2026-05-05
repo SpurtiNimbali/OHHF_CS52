@@ -1,9 +1,23 @@
-import { useEffect, useMemo, useState } from 'react'
-import { supabase, SupportResource } from '../lib/supabase'
+import { useCallback, useEffect, useMemo, useState, type CSSProperties } from 'react'
+// @ts-expect-error - SearchBar is a JSX component without type declarations
+import SearchBar from '../components/SearchBar'
+import { supabase, ensureAuthUserId, SupportResource } from '../lib/supabase'
 
-type Category = 'All' | 'Mental Health' | 'Family Support' | 'Financial Aid' | 'Community'
+const FILTER_CATEGORIES = [
+  'Mental Health',
+  'Family Support',
+  'Financial Aid',
+  'Community',
+] as const
+type SupportFilterCategory = (typeof FILTER_CATEGORIES)[number]
 
-const CATEGORIES: Category[] = ['All', 'Mental Health', 'Family Support', 'Financial Aid', 'Community']
+/** Matches `welcomeScreen` age option labels; school age and younger vs older. */
+const SCHOOL_AGE_OR_BELOW_LABELS = [
+  'Prenatal',
+  'Infant (1 and under)',
+  'Preschooler (2-5)',
+  'School Age (6-12)',
+] as const
 
 // ── ResourceCard ─────────────────────────────────────────────────────────────
 
@@ -97,7 +111,16 @@ function ResourceCard({ resource }: { resource: SupportResource }) {
   )
 }
 
-// ── CategoryChips ─────────────────────────────────────────────────────────────
+const categoryColors: Record<
+  (typeof FILTER_CATEGORIES)[number] | 'other',
+  { bg: string; text: string; border: string }
+> = {
+  'Mental Health': { bg: '#f3e8ff', text: '#7c3aed', border: '#d8b4fe' },
+  'Family Support': { bg: '#dbeafe', text: '#1d4ed8', border: '#93c5fd' },
+  'Financial Aid': { bg: '#d1fae5', text: '#047857', border: '#6ee7b7' },
+  Community: { bg: '#ffedd5', text: '#c2410c', border: '#fdba74' },
+  other: { bg: '#f3f4f6', text: '#4b5563', border: '#d1d5db' },
+}
 
 function CategoryChips({ active, onChange }: { active: Category; onChange: (c: Category) => void }) {
   return (
@@ -129,36 +152,128 @@ function CategoryChips({ active, onChange }: { active: Category; onChange: (c: C
   )
 }
 
-// ── Main Screen ───────────────────────────────────────────────────────────────
+function normalizeSupportCategoryBucket(raw: string | number | null | undefined): SupportFilterCategory | 'other' {
+  const label = normalizeCategoryLabel(raw)
+  const key = FILTER_CATEGORIES.find((c) => c.toLowerCase() === label.toLowerCase())
+  return key ?? 'other'
+}
+
+function categoryStyle(label: string) {
+  const key = FILTER_CATEGORIES.find((c) => c.toLowerCase() === label.toLowerCase())
+  return key ? categoryColors[key] : categoryColors.other
+}
+
+function normalizeExternalUrl(raw: string): string {
+  const t = raw.trim()
+  if (!t) return ''
+  if (/^https?:\/\//i.test(t)) return t
+  return `https://${t}`
+}
+
+/** Only allow http(s) URLs for clickable cards. */
+function safeExternalHref(raw: string | number | null | undefined): string | null {
+  const s = String(raw ?? '').trim()
+  if (!s) return null
+  try {
+    const u = new URL(normalizeExternalUrl(s))
+    if (u.protocol === 'http:' || u.protocol === 'https:') return u.href
+  } catch {
+    /* ignore */
+  }
+  return null
+}
 
 export default function FindSupport() {
   const [resources, setResources] = useState<SupportResource[]>([])
-  const [activeCategory, setActiveCategory] = useState<Category>('All')
-  const [locationQuery, setLocationQuery] = useState('')
+  const [query, setQuery] = useState('')
+  const [selectedCategory, setSelectedCategory] = useState<string | null>(null)
   const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
+  const [userId, setUserId] = useState<string | null>(null)
+  const [authBootstrapped, setAuthBootstrapped] = useState(false)
+  const [userProfile, setUserProfile] = useState<UserProfileFields | null>(null)
+  const [personalizeByAge, setPersonalizeByAge] = useState(false)
+  const [personalizeByCondition, setPersonalizeByCondition] = useState(false)
 
   useEffect(() => {
-    async function load() {
-      setLoading(true)
-      const { data, error } = await supabase.from('support_resources').select('*').order('name')
-      console.log('[FindSupport] fetch:', { count: data?.length, error })
-      if (data) setResources(data as SupportResource[])
-      setLoading(false)
+    let cancelled = false
+    ;(async () => {
+      const uid = await ensureAuthUserId()
+      if (!cancelled) {
+        setUserId(uid)
+        setAuthBootstrapped(true)
+      }
+    })()
+    return () => {
+      cancelled = true
     }
-    load()
   }, [])
 
-  const sortedResources = useMemo(() => {
-    const query = locationQuery.trim().toLowerCase()
+  useEffect(() => {
+    if (!authBootstrapped) return
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((_event, session) => {
+      setUserId(session?.user?.id ?? null)
+    })
+    return () => subscription.unsubscribe()
+  }, [authBootstrapped])
 
-    const categoryFiltered = resources.filter(
-      (r) => activeCategory === 'All' || r.category === activeCategory,
-    )
+  const load = useCallback(async (uid: string | null) => {
+    setLoading(true)
+    setError(null)
 
-    if (!query) return categoryFiltered
+    const resourcesQuery = supabase
+      .from('support_resources')
+      .select('id, name, description, link, city, zipcode, category')
+      .order('name', { ascending: true })
 
-    const scored = categoryFiltered.flatMap((r) => {
-      const zip = String(r.zipcode ?? '').toLowerCase()
+    const profileQuery = uid
+      ? supabase
+          .from('users')
+          .select('diagnosis_age_category, current_age_category, condition')
+          .eq('id', uid)
+          .maybeSingle()
+      : Promise.resolve({ data: null as UserProfileFields | null, error: null })
+
+    const [{ data, error: dbError }, { data: profileRow, error: profileError }] = await Promise.all([
+      resourcesQuery,
+      profileQuery,
+    ])
+
+    if (!profileError && profileRow) {
+      setUserProfile(profileRow as UserProfileFields)
+    } else {
+      setUserProfile(null)
+    }
+
+    if (dbError) {
+      setResources([])
+      setError(dbError.message)
+    } else {
+      setResources((data as SupportResource[]) ?? [])
+    }
+    setLoading(false)
+  }, [])
+
+  useEffect(() => {
+    if (!authBootstrapped) return
+    load(userId)
+  }, [authBootstrapped, userId, load])
+
+  const filteredResources = useMemo(() => {
+    const q = query.trim().toLowerCase()
+
+    return resources.filter((r) => {
+      const cat = normalizeCategoryLabel(r.category)
+      if (selectedCategory) {
+        if (cat.toLowerCase() !== selectedCategory.toLowerCase()) return false
+      }
+
+      if (!q) return true
+
+      const name = String(r.name ?? '').toLowerCase()
+      const desc = String(r.description ?? '').toLowerCase()
       const city = String(r.city ?? '').toLowerCase()
       const hasLocation = zip || city
 
@@ -169,6 +284,7 @@ export default function FindSupport() {
       if (!hasLocation) return [{ r, score: 4 }]
       return []
     })
+  }, [resources, query, selectedCategory])
 
     scored.sort((a, b) => a.score - b.score || (a.r.name ?? '').localeCompare(b.r.name ?? ''))
     return scored.map(({ r }) => r)
@@ -231,6 +347,7 @@ export default function FindSupport() {
             }}
           />
         </div>
+      </div>
 
         {/* Category chips */}
         <div style={{ marginBottom: '28px' }}>
@@ -260,7 +377,212 @@ export default function FindSupport() {
           </ul>
         )}
 
+        {!loading &&
+          !error &&
+          resources.length > 0 &&
+          filteredResources.length > 0 &&
+          personalizedResources.length === 0 && (
+            <div
+              style={{
+                background: '#fff8e1',
+                border: '2px solid #ffe082',
+                borderRadius: '16px',
+                padding: '40px 24px',
+                textAlign: 'center',
+              }}
+            >
+              <span style={{ fontSize: '3rem' }}>✨</span>
+              <p style={{ color: '#f57f17', fontSize: '1.2rem', fontWeight: 600, marginTop: '12px' }}>
+                No resources match your personalization settings
+              </p>
+              <p style={{ color: '#b45309', fontSize: '0.95rem', marginTop: '8px', lineHeight: 1.5 }}>
+                Try turning off the age or condition options above, or adjust your search or category filter.
+              </p>
+            </div>
+          )}
+
+        {!loading && !error && personalizedResources.length > 0 && (
+          <div
+            style={{
+              display: 'grid',
+              gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))',
+              gap: '20px',
+            }}
+          >
+            {personalizedResources.map((r, index) => {
+              const catLabel = normalizeCategoryLabel(r.category) || 'Resource'
+              const colors = categoryStyle(catLabel)
+              const href = safeExternalHref(r.link)
+              const locationLine = [r.city, r.zipcode]
+                .filter((v) => v != null && String(v).trim() !== '')
+                .map((v) => String(v))
+                .join(', ')
+
+              const cardInner = (
+                <>
+                  <div
+                    style={{
+                      display: 'flex',
+                      alignItems: 'flex-start',
+                      justifyContent: 'space-between',
+                      gap: '12px',
+                      marginBottom: '12px',
+                    }}
+                  >
+                    <h3
+                      style={{
+                        fontSize: '1.2rem',
+                        fontWeight: 700,
+                        color: '#2c3e50',
+                        margin: 0,
+                        lineHeight: 1.35,
+                        flex: 1,
+                        minWidth: 0,
+                      }}
+                    >
+                      {r.name}
+                    </h3>
+                    <span
+                      style={{
+                        flexShrink: 0,
+                        fontSize: '0.7rem',
+                        fontWeight: 700,
+                        textTransform: 'uppercase',
+                        letterSpacing: '0.4px',
+                        padding: '4px 10px',
+                        borderRadius: '999px',
+                        background: colors.bg,
+                        color: colors.text,
+                        border: `1px solid ${colors.border}`,
+                        maxWidth: '46%',
+                        textAlign: 'right',
+                      }}
+                    >
+                      {catLabel}
+                    </span>
+                  </div>
+
+                  {r.description ? (
+                    <p
+                      style={{
+                        color: '#666',
+                        fontSize: '0.95rem',
+                        lineHeight: 1.55,
+                        margin: '0 0 12px',
+                      }}
+                    >
+                      {r.description}
+                    </p>
+                  ) : null}
+
+                  {locationLine ? (
+                    <p
+                      style={{
+                        margin: '0 0 12px',
+                        fontSize: '0.85rem',
+                        color: '#6b7280',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '6px',
+                      }}
+                    >
+                      <span aria-hidden>📍</span>
+                      {locationLine}
+                    </p>
+                  ) : null}
+
+                  <div
+                    style={{
+                      marginTop: 'auto',
+                      paddingTop: '14px',
+                      height: '4px',
+                      background: `linear-gradient(90deg, ${colors.border}, ${colors.bg})`,
+                      borderRadius: '2px',
+                    }}
+                  />
+                </>
+              )
+
+              const cardShellStyle: CSSProperties = {
+                background: '#ffffff',
+                borderRadius: '20px',
+                padding: '24px',
+                boxShadow: '0 4px 20px rgba(0,0,0,0.08)',
+                border: '2px solid transparent',
+                transition: 'all 0.3s ease',
+                animation: `fadeInUp 0.5s ease ${index * 0.04}s both`,
+                height: '100%',
+                boxSizing: 'border-box',
+                display: 'flex',
+                flexDirection: 'column',
+                cursor: href ? 'pointer' : 'default',
+                textDecoration: 'none',
+                color: 'inherit',
+              }
+
+              if (href) {
+                return (
+                  <a
+                    key={r.id}
+                    href={href}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    aria-label={`${r.name} — opens in a new tab`}
+                    style={cardShellStyle}
+                    onMouseEnter={(e) => {
+                      e.currentTarget.style.transform = 'translateY(-5px)'
+                      e.currentTarget.style.boxShadow = '0 12px 40px rgba(236, 72, 153, 0.2)'
+                      e.currentTarget.style.borderColor = colors.border
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.transform = 'translateY(0)'
+                      e.currentTarget.style.boxShadow = '0 4px 20px rgba(0,0,0,0.08)'
+                      e.currentTarget.style.borderColor = 'transparent'
+                    }}
+                  >
+                    {cardInner}
+                  </a>
+                )
+              }
+
+              return (
+                <div
+                  key={r.id}
+                  style={cardShellStyle}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.borderColor = colors.border
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.borderColor = 'transparent'
+                  }}
+                >
+                  {cardInner}
+                </div>
+              )
+            })}
+          </div>
+        )}
+
+        {!loading && !error && personalizedResources.length > 0 && (
+          <p
+            style={{
+              textAlign: 'center',
+              color: '#888',
+              marginTop: '30px',
+              fontSize: '0.9rem',
+            }}
+          >
+            Showing {personalizedResources.length} resource{personalizedResources.length !== 1 ? 's' : ''}
+          </p>
+        )}
       </div>
+
+      <style>{`
+        @keyframes fadeInUp {
+          from { opacity: 0; transform: translateY(20px); }
+          to { opacity: 1; transform: translateY(0); }
+        }
+      `}</style>
     </div>
   )
 }

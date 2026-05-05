@@ -8,25 +8,26 @@
     "build": "vite build",
     "preview": "vite preview",
     "scrape:ohhf": "tsx scripts/scrapeOHHFResources.ts",
-    "upload:ohhf": "tsx scripts/uploadOHHFResources.ts"
+    "upload:ohhf": "tsx scripts/uploadOHHFResources.ts",
+    "pipeline:export": "py -3 supabase_data_scripts/data_pipeline/run_pipeline.py"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.104.0",
+    "bcryptjs": "^3.0.3",
     "cheerio": "^1.2.0",
     "dotenv": "^17.4.2",
     "react": "^19.2.4",
     "react-dom": "^19.2.4",
-    "react-router-dom": "^7.14.2",
-    "tsx": "^4.21",
-    "bcryptjs": "^3.0.3"
+    "react-router-dom": "^7.14.2"
   },
   "devDependencies": {
+    "@tailwindcss/vite": "^4.2.4",
     "@types/bcryptjs": "^2.4.6",
     "@types/react": "^19.2.14",
     "@types/react-dom": "^19.2.3",
     "@vitejs/plugin-react": "^6.0.1",
     "tailwindcss": "^4.2.4",
-    "@tailwindcss/vite": "^4.2.4",
+    "tsx": "^4.21",
     "typescript": "^6.0.3",
     "vite": "^8.0.8"
   }
