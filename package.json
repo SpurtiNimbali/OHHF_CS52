@@ -9,7 +9,7 @@
     "preview": "vite preview",
     "scrape:ohhf": "tsx scripts/scrapeOHHFResources.ts",
     "upload:ohhf": "tsx scripts/uploadOHHFResources.ts",
-    "pipeline:export": "py -3 scripts/data_pipeline/run_pipeline.py"
+    "pipeline:export": "py -3 supabase_data_scripts/data_pipeline/run_pipeline.py"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.104.0",

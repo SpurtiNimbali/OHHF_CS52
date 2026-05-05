@@ -103,9 +103,9 @@ def dedupe_glossary(entries: list[dict[str, str]]) -> tuple[list[dict[str, str]]
 def main() -> None:
     root = repo_root()
     parser = argparse.ArgumentParser(description="OHHF scrape JSON + therapist PDF → four Supabase-oriented JSON files.")
-    parser.add_argument("--resources", type=Path, default=root / "scripts" / "ohhf_resources.json")
-    parser.add_argument("--pdf", type=Path, default=None, help="Therapist guide PDF (default: match in ~/Downloads).")
-    parser.add_argument("--out", type=Path, default=root / "scripts" / "data_pipeline" / "output")
+    parser.add_argument("--resources", type=Path, default=root / "supabase_data_scripts" / "data_pipeline" / "input" / "ohhf_resources.json")
+    parser.add_argument("--pdf", type=Path, default=root / "supabase_data_scripts" / "data_pipeline" / "input" / "OHHF_pdf.pdf")
+    parser.add_argument("--out", type=Path, default=root / "supabase_data_scripts" / "data_pipeline" / "output")
     parser.add_argument("--pdf-slug", type=str, default=None, help="Override slug used in PDF source + synthetic URLs.")
     args = parser.parse_args()
     pdf_path = args.pdf or default_pdf_path()

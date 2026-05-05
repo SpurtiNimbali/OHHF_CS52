@@ -1,9 +1,9 @@
 {
-  "resources_json": "C:\\Users\\penae\\Desktop\\Academics\\Spring 2026\\CS 52\\OHHF Product\\OHHF_CS52\\scripts\\data_pipeline\\output\\resources.json",
+  "resources_json": "C:\\Users\\penae\\Desktop\\Academics\\Spring 2026\\CS 52\\OHHF Product\\OHHF_CS52\\supabase_data_scripts\\data_pipeline\\output\\resources.json",
   "inputs": {
     "web_count": 80,
-    "pdf": "C:\\Users\\penae\\Downloads\\Ollie's Branch Therapist Guide_ Understanding Pediatric Heart Disease Version 2 (04.2026).pdf",
-    "pdf_slug": "ollie-s-branch-therapist-guide-understanding-pediatric-heart-disease-version-2-04-2026"
+    "pdf": "C:\\Users\\penae\\Desktop\\Academics\\Spring 2026\\CS 52\\OHHF Product\\OHHF_CS52\\supabase_data_scripts\\data_pipeline\\input\\OHHF_pdf.pdf",
+    "pdf_slug": "ohhf-pdf"
   },
   "web": {
     "dropped_junk": 0,
