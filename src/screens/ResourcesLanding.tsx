@@ -4,22 +4,20 @@ import { motion } from 'motion/react'
 import { Users, MessageCircle, BookOpen } from 'lucide-react'
 import BackButton from '../components/BackButton'
 import { ResourcesRightNav } from '../components/ResourcesRightNav'
-import { useMood } from '../mood'
+import { useMood, moodShellBackgroundClasses, MoodHeartFill } from '../mood'
 import MedicalGlossary from './MedicalGlossary'
 import FindSupport from './FindSupport'
 import QuestionsForCardiologist from './QuestionsForCardiologist'
 
 const NAVY = '#192b3f'
 const LIGHT_BLUE = '#c6d9e5'
-const ALMOST_WHITE = '#f5f9f9'
-const DARK_GREEN = '#577568'
 const MUTED_BODY = '#acb7a8'
 const FONT = 'Inter, -apple-system, BlinkMacSystemFont, "SF Pro Text", sans-serif'
 
 type Screen = 'landing' | 'glossary' | 'support' | 'questions'
 
 function screenFromParams(searchParams: URLSearchParams): Screen {
-  const v = searchParams.get('view')
+  const v = searchParams.get('view')?.trim().toLowerCase()
   if (v === 'glossary') return 'glossary'
   if (v === 'support') return 'support'
   if (v === 'questions') return 'questions'
@@ -27,9 +25,10 @@ function screenFromParams(searchParams: URLSearchParams): Screen {
 }
 
 function ResourcesShell({ children }: { children: ReactNode }) {
+  const { theme, moodId } = useMood()
   return (
     <div
-      className="min-h-screen flex bg-[#f5f9f9]"
+      className={`min-h-screen flex transition-all duration-700 ${moodShellBackgroundClasses(moodId, theme.pageBg)}`}
       style={{ fontFamily: FONT, color: NAVY }}
     >
       <div className="flex-1 min-w-0 flex flex-col">{children}</div>
@@ -55,8 +54,7 @@ function SubpageChrome({
         <BackButton onClick={onBack} text="Back to Resources" variant="onLight" />
       </header>
       <div
-        className="flex-1 px-6 sm:px-8 py-8 sm:py-10 pb-14 w-full max-w-[960px] mx-auto box-border"
-        style={{ background: ALMOST_WHITE }}
+        className="flex-1 px-6 sm:px-8 py-8 sm:py-10 pb-14 w-full max-w-[960px] mx-auto box-border border border-white/50 bg-white/55 shadow-[0_4px_30px_rgba(25,43,63,0.04)] backdrop-blur-sm transition-all duration-700"
       >
         {children}
       </div>
@@ -101,8 +99,8 @@ const landingCards: {
 const ResourcesLanding: FC = () => {
   const navigate = useNavigate()
   const [searchParams, setSearchParams] = useSearchParams()
-  const { theme } = useMood()
   const currentScreen = screenFromParams(searchParams)
+  const { theme } = useMood()
 
   const goLanding = () => setSearchParams({})
 
@@ -179,15 +177,14 @@ const ResourcesLanding: FC = () => {
               className="inline-flex mb-5"
               aria-hidden
             >
-              <svg width="56" height="56" viewBox="0 0 24 24" fill="none">
-                <path
-                  d="M12 20.5l-1.05-.95C6.4 15.65 3 12.55 3 8.8 3 6.6 4.68 5 6.75 5c1.02 0 2.01.48 2.7 1.23L12 8.9l2.55-2.67A3.47 3.47 0 0117.25 5C19.32 5 21 6.6 21 8.8c0 3.75-3.4 6.85-7.95 10.75L12 20.5z"
-                  fill={theme.heartFill}
-                  stroke="rgba(255,255,255,0.35)"
-                  strokeWidth="0.8"
-                  strokeLinejoin="round"
-                />
-              </svg>
+              <MoodHeartFill
+                theme={theme}
+                size={56}
+                viewBox="0 0 24 24"
+                pathD="M12 20.5l-1.05-.95C6.4 15.65 3 12.55 3 8.8 3 6.6 4.68 5 6.75 5c1.02 0 2.01.48 2.7 1.23L12 8.9l2.55-2.67A3.47 3.47 0 0117.25 5C19.32 5 21 6.6 21 8.8c0 3.75-3.4 6.85-7.95 10.75L12 20.5z"
+                stroke="rgba(255,255,255,0.35)"
+                strokeWidth={0.8}
+              />
             </motion.div>
 
             <h1

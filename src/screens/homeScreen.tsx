@@ -7,6 +7,8 @@ import {
   MOOD_VARIANTS,
   getChatPromptHint,
   getMoodMessage,
+  moodShellBackgroundClasses,
+  MoodHeartFill,
   useMood,
   type MoodId,
 } from '../mood'
@@ -84,7 +86,7 @@ export function HomeScreen() {
 
   return (
     <div
-      className={`min-h-screen flex bg-gradient-to-br ${theme.pageBg} transition-all duration-700`}
+      className={`min-h-screen flex transition-all duration-700 ${moodShellBackgroundClasses(moodId, theme.pageBg)}`}
       style={{ fontFamily: FONT, color: NAVY }}
     >
       <div className="flex-1 min-w-0 pb-10">
@@ -105,24 +107,14 @@ export function HomeScreen() {
             animate={{ scale: 1 }}
             className="flex items-center justify-center mb-4"
           >
-            <motion.svg
-              width="52"
-              height="52"
+            <MoodHeartFill
+              theme={theme}
+              size={52}
               viewBox="0 0 100 100"
-              fill="none"
-              animate={{
-                fill: theme.heartFill,
-                stroke: theme.heartStroke,
-              }}
-              transition={{ duration: 0.6 }}
-            >
-              <path
-                d="M50 85C50 85 20 65 20 40C20 25 30 15 40 15C45 15 50 20 50 20C50 20 55 15 60 15C70 15 80 25 80 40C80 65 50 85 50 85Z"
-                fill={theme.heartFill}
-                stroke={theme.heartStroke}
-                strokeWidth="2"
-              />
-            </motion.svg>
+              pathD="M50 85C50 85 20 65 20 40C20 25 30 15 40 15C45 15 50 20 50 20C50 20 55 15 60 15C70 15 80 25 80 40C80 65 50 85 50 85Z"
+              stroke={theme.heartStroke}
+              strokeWidth={2}
+            />
           </motion.div>
 
           <h1

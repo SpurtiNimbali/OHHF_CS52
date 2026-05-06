@@ -1,6 +1,7 @@
 import { Link, useLocation, useSearchParams } from 'react-router-dom'
 import { motion } from 'motion/react'
 import { Home, Activity, MessageCircle, Heart } from 'lucide-react'
+import { moodColorWithAlpha, useMood } from '../mood'
 
 const FONT_UI = "'Montserrat', Inter, system-ui, sans-serif"
 
@@ -47,6 +48,7 @@ const items: {
 ]
 
 export function ResourcesRightNav() {
+  const { theme } = useMood()
   const location = useLocation()
   const [searchParams] = useSearchParams()
   const view = searchParams.get('view')
@@ -63,8 +65,11 @@ export function ResourcesRightNav() {
       initial={{ opacity: 0, x: 20 }}
       animate={{ opacity: 1, x: 0 }}
       transition={{ delay: 0.15 }}
-      className="flex w-20 shrink-0 flex-col items-center border-l border-gray-200 bg-white py-8 shadow-lg"
-      style={{ fontFamily: FONT_UI }}
+      className="flex w-20 shrink-0 flex-col items-center border-l py-8 shadow-lg backdrop-blur-md transition-all duration-700 bg-white/88"
+      style={{
+        fontFamily: FONT_UI,
+        borderLeftColor: moodColorWithAlpha(theme.heartFill, 0.28),
+      }}
     >
       <nav aria-label="Section" className="flex flex-1 flex-col items-center gap-6">
         {items.map((item) => {

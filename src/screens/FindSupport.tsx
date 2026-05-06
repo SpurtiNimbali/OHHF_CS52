@@ -290,7 +290,7 @@ export default function FindSupport() {
   }, [filteredResources])
 
   return (
-    <div style={{ minHeight: '100vh', background: '#f5f9f9', fontFamily: 'Inter, system-ui, sans-serif' }}>
+    <div style={{ minHeight: '100%', background: '#f5f9f9', fontFamily: 'Inter, system-ui, sans-serif' }}>
       <div style={{ maxWidth: '880px', margin: '0 auto', padding: '24px 24px 72px' }}>
 
         {/* Header — mood accent matches Home / Resources */}
