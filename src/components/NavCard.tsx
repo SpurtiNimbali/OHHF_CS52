@@ -2,12 +2,10 @@ import { useState, type FC, type ReactNode } from 'react'
 
 interface NavCardProps {
   title: string
-  /** Small icon shown in the top-left tile (e.g. SVG or emoji). */
   icon: ReactNode
   iconBackground: string
   onClick: () => void
   description?: string
-  /** Accent for arrow and focus ring (light blue in brand). */
   arrowColor?: string
 }
 

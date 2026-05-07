@@ -14,7 +14,6 @@ import {
 } from '../mood'
 
 const NAVY = '#192b3f'
-const BODY = '#3a525a'
 const MUTED = '#acb7a8'
 const FONT = 'Inter, -apple-system, BlinkMacSystemFont, "SF Pro Text", sans-serif'
 
@@ -28,7 +27,6 @@ type ResourceCard = {
   to: string
 }
 
-/** Pastel tiles aligned with HomePage / right nav: mint, coral, periwinkle */
 const BASE_CARDS: ResourceCard[] = [
   {
     id: 'learn',
@@ -224,12 +222,12 @@ export function HomeScreen() {
               <Sparkles className="w-6 h-6 shrink-0" style={{ color: theme.heartStroke }} strokeWidth={2} />
               <div>
                 <h3 className="font-semibold text-[#062A4A] text-sm mb-1" style={{ fontFamily: FONT }}>
-                  {variant ? `Feeling ${variant.label}` : 'Today’s gentle reminder'}
+                  {variant ? `Feeling ${variant.label}` : "Today's gentle reminder"}
                 </h3>
                 <p className="text-sm leading-relaxed text-[#3A525A]" style={{ fontFamily: FONT }}>
                   {moodId
                     ? getMoodMessage(moodId)
-                    : 'It’s okay to take things one step at a time. Small progress is still progress on your heart health journey.'}
+                    : "It's okay to take things one step at a time. Small progress is still progress on your heart health journey."}
                 </p>
               </div>
             </div>
