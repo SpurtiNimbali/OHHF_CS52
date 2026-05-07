@@ -1,9 +1,7 @@
 import React from 'react'
 import { Link } from 'react-router-dom'
 import welcomeHeart from '../assets/images/OHHF_heart.png'
-
-const COLOR_NAVY = '#0A2E5C'
-const FONT_UI = 'Montserrat, sans-serif' as const
+import { AUTH_FONT_FAMILY, AUTH_NAVY } from '../ui/authTokens'
 
 const containerStyle: React.CSSProperties = {
   minHeight: '100vh',
@@ -15,8 +13,8 @@ const containerStyle: React.CSSProperties = {
   boxSizing: 'border-box',
   background: '#EEF1F4',
   textAlign: 'center',
-  fontFamily: FONT_UI,
-  color: COLOR_NAVY,
+  fontFamily: AUTH_FONT_FAMILY,
+  color: AUTH_NAVY,
 }
 
 const titleStyle: React.CSSProperties = {
@@ -45,7 +43,7 @@ const buttonBase: React.CSSProperties = {
   padding: '12px 26px',
   borderRadius: 12,
   fontSize: 16,
-  fontFamily: FONT_UI,
+  fontFamily: AUTH_FONT_FAMILY,
   fontWeight: 650,
   cursor: 'pointer',
   minWidth: 180,
@@ -91,7 +89,7 @@ export function AuthLandingScreen() {
           to="/sign-in"
           style={{
             ...buttonBase,
-            background: COLOR_NAVY,
+            background: AUTH_NAVY,
             color: '#FFFFFF',
             boxShadow: '0 10px 28px rgba(10, 46, 92, 0.18), 0 2px 6px rgba(10, 46, 92, 0.08)',
             border: 'none',
@@ -104,7 +102,7 @@ export function AuthLandingScreen() {
           style={{
             ...buttonBase,
             background: 'transparent',
-            color: COLOR_NAVY,
+            color: AUTH_NAVY,
             border: '2px solid rgba(10, 46, 92, 0.35)',
           }}
         >

@@ -3,9 +3,7 @@ import { Link, useNavigate } from 'react-router-dom'
 import { CustomSelect } from '../components/CustomSelect'
 import { securityQuestionLabel, type SecurityQuestionId } from '../constants/securityQuestions'
 import { supabase } from '../lib/supabaseClient'
-
-const COLOR_NAVY = '#0A2E5C'
-const FONT_UI = 'Montserrat, sans-serif' as const
+import { AUTH_FONT_FAMILY, AUTH_NAVY } from '../ui/authTokens'
 
 const SECURITY_ANSWER_MIN_LENGTH = 3
 
@@ -18,8 +16,8 @@ const inputStyle: React.CSSProperties = {
   fontWeight: 500,
   border: '2px solid rgba(10, 46, 92, 0.22)',
   background: '#F1F5F9',
-  color: COLOR_NAVY,
-  fontFamily: FONT_UI,
+  color: AUTH_NAVY,
+  fontFamily: AUTH_FONT_FAMILY,
   boxSizing: 'border-box',
 }
 
@@ -228,8 +226,8 @@ export function SignInScreen() {
         justifyContent: 'center',
         padding: 24,
         background: '#EEF1F4',
-        color: COLOR_NAVY,
-        fontFamily: FONT_UI,
+        color: AUTH_NAVY,
+        fontFamily: AUTH_FONT_FAMILY,
         textAlign: 'center',
         boxSizing: 'border-box',
       }}
@@ -361,13 +359,13 @@ export function SignInScreen() {
                 borderRadius: 12,
                 fontSize: 16,
                 fontWeight: 650,
-                fontFamily: FONT_UI,
+                fontFamily: AUTH_FONT_FAMILY,
                 cursor: 'pointer',
                 minWidth: 168,
                 boxSizing: 'border-box',
                 textDecoration: 'none',
                 border: '2px solid rgba(10, 46, 92, 0.35)',
-                color: COLOR_NAVY,
+                color: AUTH_NAVY,
                 background: 'transparent',
               }}
             >
@@ -385,13 +383,13 @@ export function SignInScreen() {
                 borderRadius: 12,
                 fontSize: 16,
                 fontWeight: 650,
-                fontFamily: FONT_UI,
+                fontFamily: AUTH_FONT_FAMILY,
                 cursor: 'pointer',
                 minWidth: 168,
                 boxSizing: 'border-box',
                 textDecoration: 'none',
                 border: '2px solid rgba(10, 46, 92, 0.35)',
-                color: COLOR_NAVY,
+                color: AUTH_NAVY,
                 background: 'transparent',
               }}
             >
@@ -404,13 +402,13 @@ export function SignInScreen() {
             onClick={primaryOnClick}
             style={{
               border: 'none',
-              background: COLOR_NAVY,
+              background: AUTH_NAVY,
               color: '#FFFFFF',
               padding: '12px 28px',
               borderRadius: 12,
               fontSize: 16,
               fontWeight: 650,
-              fontFamily: FONT_UI,
+              fontFamily: AUTH_FONT_FAMILY,
               cursor:
                 (step === 'username' ? canContinueUsername : canContinueSecurity) && !isWorking
                   ? 'pointer'

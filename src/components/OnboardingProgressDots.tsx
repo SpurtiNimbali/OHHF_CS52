@@ -1,4 +1,4 @@
-import React from 'react'
+
 
 export type OnboardingProgressDotsProps = {
   totalSteps: number
@@ -48,7 +48,9 @@ export function OnboardingProgressDots({
               width: 8,
               height: 8,
               borderRadius: 9999,
-              backgroundColor: isActive ? 'currentColor' : 'rgba(0, 0, 0, 0.2)',
+              backgroundColor: isActive
+                ? 'currentColor'
+                : 'rgba(25, 43, 63, 0.28)',
               transition: 'background-color 150ms ease',
             }}
           />

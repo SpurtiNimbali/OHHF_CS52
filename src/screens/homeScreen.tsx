@@ -1,7 +1,9 @@
 import { useMemo } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { motion } from 'motion/react'
-import { BookOpen, ChevronRight, Heart, MessageCircle, Sparkles } from 'lucide-react'
+import { BookOpen, Heart, MessageCircle, Sparkles } from 'lucide-react'
+import { HomeResourceLinkCard } from '../components/home/HomeResourceLinkCard'
+import { HomeMoodChipButton } from '../components/home/HomeMoodChipButton'
 import { ResourcesRightNav } from '../components/ResourcesRightNav'
 import {
   MOOD_VARIANTS,
@@ -12,11 +14,7 @@ import {
   useMood,
   type MoodId,
 } from '../mood'
-
-const NAVY = '#192b3f'
-const BODY = '#3a525a'
-const MUTED = '#acb7a8'
-const FONT = 'Inter, -apple-system, BlinkMacSystemFont, "SF Pro Text", sans-serif'
+import { CARDEA_FONT_PRIMARY, CARDEA_MUTED, CARDEA_NAVY } from '../ui/cardeaTokens'
 
 type ResourceCard = {
   id: string
@@ -87,7 +85,7 @@ export function HomeScreen() {
   return (
     <div
       className={`min-h-screen flex transition-all duration-700 ${moodShellBackgroundClasses(moodId, theme.pageBg)}`}
-      style={{ fontFamily: FONT, color: NAVY }}
+      style={{ fontFamily: CARDEA_FONT_PRIMARY, color: CARDEA_NAVY }}
     >
       <div className="flex-1 min-w-0 pb-10">
         <motion.header
@@ -98,7 +96,7 @@ export function HomeScreen() {
         >
           <p
             className="text-center text-xs font-bold uppercase tracking-[0.2em] mb-3"
-            style={{ color: MUTED }}
+            style={{ color: CARDEA_MUTED }}
           >
             Cardea
           </p>
@@ -125,7 +123,7 @@ export function HomeScreen() {
           </h1>
           <p
             className="text-center text-sm sm:text-base max-w-md mx-auto leading-relaxed text-[#3A525A]"
-            style={{ fontFamily: FONT }}
+            style={{ fontFamily: CARDEA_FONT_PRIMARY }}
           >
             Taking care of your heart health can feel hard — Cardea is here with you.
           </p>
@@ -138,29 +136,19 @@ export function HomeScreen() {
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.12 }}
           >
-            <h2 className="text-sm font-medium mb-3 text-[#3A525A]" style={{ fontFamily: FONT }}>
+            <h2 className="text-sm font-medium mb-3 text-[#3A525A]" style={{ fontFamily: CARDEA_FONT_PRIMARY }}>
               How are you feeling today?
             </h2>
             <div className="flex flex-wrap gap-2">
               {MOOD_VARIANTS.map((m, index) => (
-                <motion.button
+                <HomeMoodChipButton
                   key={m.id}
-                  type="button"
-                  initial={{ opacity: 0, scale: 0.9 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                  transition={{ delay: 0.15 + index * 0.05 }}
-                  whileHover={{ scale: 1.05 }}
-                  whileTap={{ scale: 0.95 }}
+                  label={m.label}
+                  selected={moodId === m.id}
                   onClick={() => setMoodId(moodId === m.id ? null : m.id)}
-                  className={`px-4 py-2 rounded-full text-sm transition-all border ${
-                    moodId === m.id
-                      ? `${m.chipBg} ${m.chipText} shadow-md border-transparent`
-                      : 'bg-white text-[#3A525A] border-gray-200'
-                  }`}
-                  style={{ fontFamily: FONT }}
-                >
-                  {m.label}
-                </motion.button>
+                  activeClassNames={`${m.chipBg} ${m.chipText}`}
+                  index={index}
+                />
               ))}
             </div>
           </motion.section>
@@ -170,10 +158,10 @@ export function HomeScreen() {
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.22 }}
           >
-            <h2 className="text-sm font-medium mb-1 text-[#3A525A]" style={{ fontFamily: FONT }}>
+            <h2 className="text-sm font-medium mb-1 text-[#3A525A]" style={{ fontFamily: CARDEA_FONT_PRIMARY }}>
               Right for you now
             </h2>
-            <p className="text-xs mb-4 leading-relaxed text-[#acb7a8]" style={{ fontFamily: FONT }}>
+            <p className="text-xs mb-4 leading-relaxed text-[#acb7a8]" style={{ fontFamily: CARDEA_FONT_PRIMARY }}>
               {moodId
                 ? 'These pick up touches of your mood — tap a card to continue.'
                 : 'Choose a mood to tint these cards, or jump in anytime.'}
@@ -189,26 +177,14 @@ export function HomeScreen() {
                   whileHover={{ x: 4 }}
                   className="will-change-transform"
                 >
-                  <Link
+                  <HomeResourceLinkCard
                     to={resource.to}
-                    className="flex items-center gap-4 p-4 rounded-2xl bg-white border border-gray-100 shadow-sm hover:shadow-md transition-shadow min-h-[4.5rem]"
-                  >
-                    <div className={`${resource.iconWrapClass} p-3 rounded-xl shrink-0`}>
-                      <resource.icon className={`w-6 h-6 ${resource.iconClass}`} strokeWidth={2} />
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <h3
-                        className="text-[#062A4A] mb-0.5 font-semibold text-[15px] leading-snug"
-                        style={{ fontFamily: FONT }}
-                      >
-                        {resource.title}
-                      </h3>
-                      <p className="text-xs sm:text-sm mt-1 leading-relaxed text-[#3A525A]" style={{ fontFamily: FONT }}>
-                        {resource.description}
-                      </p>
-                    </div>
-                    <ChevronRight className="w-5 h-5 shrink-0 text-[#8BD7D2]" aria-hidden />
-                  </Link>
+                    Icon={resource.icon}
+                    title={resource.title}
+                    description={resource.description}
+                    iconWrapClass={resource.iconWrapClass}
+                    iconClass={resource.iconClass}
+                  />
                 </motion.div>
               ))}
             </div>
@@ -223,10 +199,10 @@ export function HomeScreen() {
             <div className="flex items-start gap-3 relative z-10">
               <Sparkles className="w-6 h-6 shrink-0" style={{ color: theme.heartStroke }} strokeWidth={2} />
               <div>
-                <h3 className="font-semibold text-[#062A4A] text-sm mb-1" style={{ fontFamily: FONT }}>
+                <h3 className="font-semibold text-[#062A4A] text-sm mb-1" style={{ fontFamily: CARDEA_FONT_PRIMARY }}>
                   {variant ? `Feeling ${variant.label}` : 'Today’s gentle reminder'}
                 </h3>
-                <p className="text-sm leading-relaxed text-[#3A525A]" style={{ fontFamily: FONT }}>
+                <p className="text-sm leading-relaxed text-[#3A525A]" style={{ fontFamily: CARDEA_FONT_PRIMARY }}>
                   {moodId
                     ? getMoodMessage(moodId)
                     : 'It’s okay to take things one step at a time. Small progress is still progress on your heart health journey.'}
@@ -235,7 +211,7 @@ export function HomeScreen() {
             </div>
           </motion.section>
 
-          <p className="text-center text-xs" style={{ color: MUTED }}>
+          <p className="text-center text-xs" style={{ color: CARDEA_MUTED }}>
             <Link to="/" className="underline underline-offset-2 hover:text-[#192b3f] transition-colors">
               Sign out flow
             </Link>

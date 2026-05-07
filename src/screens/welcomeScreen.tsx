@@ -1,9 +1,19 @@
 import React, { useEffect, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { motion } from 'motion/react'
 import { OnboardingProgressDots } from '../components/OnboardingProgressDots'
-import { CustomSelect } from '../components/CustomSelect'
-import welcomeHeart from '../assets/images/OHHF_heart.png'
 import { supabase } from '../lib/supabaseClient'
+import { moodShellBackgroundClasses, MoodHeartFill, useMood } from '../mood'
+import {
+  CARDEA_DARK_GREEN,
+  CARDEA_FONT_PRIMARY,
+  CARDEA_MUTED,
+  CARDEA_NAVY,
+} from '../ui/cardeaTokens'
+
+/** Matches home hero title color */
+const HOME_HEADING_BLUE = '#062A4A'
+const HOME_BODY = '#3A525A'
 
 type OnboardingStep =
   | 'welcome'
@@ -60,54 +70,54 @@ export type DiagnosisCategoryAnswer = {
   detail: string
 }
 
-/** Single app “dark blue” for text, borders, and primary actions. */
-const COLOR_NAVY = '#0A2E5C'
 
-const FONT_UI = 'Montserrat, sans-serif' as const
 
 const stepTitleStyle: React.CSSProperties = {
-  fontFamily: FONT_UI,
-  fontSize: 28,
+  fontFamily: "'Bebas Neue', sans-serif",
+  letterSpacing: '0.06em',
+  fontSize: 'clamp(1.5rem, 5vw, 2rem)',
   lineHeight: 1.15,
   margin: 0,
   fontWeight: 700,
-  color: COLOR_NAVY,
-  // Keep dropdowns aligned across steps even when titles wrap.
+  color: HOME_HEADING_BLUE,
   minHeight: 66,
+  textAlign: 'center',
+  width: '100%',
 }
 
 const stepSubtitleStyle: React.CSSProperties = {
-  fontFamily: FONT_UI,
+  fontFamily: CARDEA_FONT_PRIMARY,
   fontSize: 18,
   lineHeight: 1.35,
   margin: 0,
   fontWeight: 500,
-  color: 'rgba(10, 46, 92, 0.88)',
+  color: HOME_BODY,
+  textAlign: 'center',
 }
 
 const primaryButtonStyle: React.CSSProperties = {
   border: 'none',
-  background: COLOR_NAVY,
+  background: CARDEA_NAVY,
   color: '#FFFFFF',
   padding: '12px 28px',
-  borderRadius: 12,
+  borderRadius: 16,
   fontSize: 16,
-  fontWeight: 650,
-  fontFamily: FONT_UI,
+  fontWeight: 600,
+  fontFamily: CARDEA_FONT_PRIMARY,
   cursor: 'pointer',
   minWidth: 168,
   boxSizing: 'border-box',
 }
 
 const backButtonStyle: React.CSSProperties = {
-  border: '2px solid rgba(10, 46, 92, 0.35)',
+  border: '2px solid rgba(25, 43, 63, 0.18)',
   background: 'transparent',
-  color: COLOR_NAVY,
+  color: CARDEA_NAVY,
   padding: '12px 28px',
-  borderRadius: 12,
+  borderRadius: 16,
   fontSize: 16,
-  fontWeight: 650,
-  fontFamily: FONT_UI,
+  fontWeight: 600,
+  fontFamily: CARDEA_FONT_PRIMARY,
   cursor: 'pointer',
   minWidth: 168,
   boxSizing: 'border-box',
@@ -131,16 +141,7 @@ function OnboardingFormLayout({
   progressDots: React.ReactNode
 }) {
   return (
-    <div
-      style={{
-        flex: 1,
-        minHeight: 0,
-        width: '100%',
-        display: 'flex',
-        flexDirection: 'column',
-        alignItems: 'center',
-      }}
-    >
+    <div className="flex flex-1 min-h-0 w-full flex-col items-center px-5 sm:px-8 py-6 box-border">
       <div
         style={{
           flex: 1,
@@ -172,6 +173,76 @@ function OnboardingFormLayout({
         {nav}
         {progressDots}
       </div>
+    </div>
+  )
+}
+
+function AgeOptionList({
+  groupLabel,
+  value,
+  onChange,
+  isOptionDisabled,
+}: {
+  groupLabel: string
+  value: string | null
+  onChange: (next: (typeof ageOptions)[number]) => void
+  isOptionDisabled?: (label: (typeof ageOptions)[number]) => boolean
+}) {
+  return (
+    <div
+      role="radiogroup"
+      aria-label={groupLabel}
+      style={{
+        width: '100%',
+        display: 'flex',
+        flexDirection: 'column',
+        gap: 10,
+        textAlign: 'left',
+      }}
+    >
+      {ageOptions.map((label) => {
+        const disabled = isOptionDisabled?.(label) ?? false
+        const selected = value === label
+        return (
+          <button
+            key={label}
+            type="button"
+            role="radio"
+            aria-checked={selected}
+            aria-disabled={disabled}
+            disabled={disabled}
+            onClick={() => {
+              if (disabled) return
+              onChange(label)
+            }}
+            style={{
+              fontFamily: CARDEA_FONT_PRIMARY,
+              display: 'block',
+              width: '100%',
+              textAlign: 'left',
+              padding: '12px 14px',
+              borderRadius: 16,
+              border: selected
+                ? `2px solid ${CARDEA_DARK_GREEN}`
+                : '1px solid rgba(25, 43, 63, 0.12)',
+              background: selected ? 'rgba(172, 183, 168, 0.52)' : '#FFFFFF',
+              cursor: disabled ? 'not-allowed' : 'pointer',
+              fontSize: 16,
+              fontWeight: 600,
+              color: disabled
+                ? 'rgba(25, 43, 63, 0.35)'
+                : selected
+                  ? CARDEA_DARK_GREEN
+                  : CARDEA_NAVY,
+              opacity: disabled ? 0.55 : 1,
+              boxSizing: 'border-box',
+              transition: 'border-color 120ms ease, background-color 120ms ease, color 120ms ease',
+            }}
+          >
+            {label}
+          </button>
+        )
+      })}
     </div>
   )
 }
@@ -215,11 +286,11 @@ function PersonalizingSpinner() {
           width: 56,
           height: 56,
           borderRadius: '50%',
-          border: '3px solid rgba(10, 46, 92, 0.1)',
-          borderTopColor: COLOR_NAVY,
-          borderRightColor: 'rgba(10, 46, 92, 0.38)',
+          border: '3px solid rgba(25, 43, 63, 0.1)',
+          borderTopColor: CARDEA_NAVY,
+          borderRightColor: 'rgba(25, 43, 63, 0.32)',
           marginTop: 22,
-          boxShadow: '0 4px 20px rgba(10, 46, 92, 0.07)',
+          boxShadow: '0 4px 20px rgba(25, 43, 63, 0.08)',
           boxSizing: 'border-box',
         }}
       />
@@ -229,6 +300,7 @@ function PersonalizingSpinner() {
 
 export function WelcomeScreen() {
   const navigate = useNavigate()
+  const { moodId, theme } = useMood()
   const [step, setStep] = useState<OnboardingStep>('welcome')
   const [isSaving, setIsSaving] = useState(false)
   const [saveError, setSaveError] = useState<string | null>(null)
@@ -364,392 +436,370 @@ export function WelcomeScreen() {
     answers.currentChildAge,
   )
 
+  const showMiniHeader =
+    step === 'age-at-diagnosis' ||
+    step === 'current-age' ||
+    step === 'diagnosis-categories'
+
   return (
-    <main
-      style={{
-        minHeight: '100vh',
-        boxSizing: 'border-box',
-        display: 'flex',
-        flexDirection: 'column',
-        alignItems: 'center',
-        padding: 24,
-        paddingTop: step === 'welcome' ? 24 : 44,
-        textAlign: 'center',
-        color: COLOR_NAVY,
-        background: '#EEF1F4',
-        fontFamily: FONT_UI,
-      }}
+    <div
+      className={`min-h-screen flex flex-col transition-all duration-700 ${moodShellBackgroundClasses(moodId, theme.pageBg)}`}
+      style={{ fontFamily: CARDEA_FONT_PRIMARY, color: CARDEA_NAVY }}
     >
-      {step === 'welcome' && (
-        <>
-          <div
-            style={{
-              flex: 1,
-              minHeight: 0,
-              display: 'flex',
-              flexDirection: 'column',
-              justifyContent: 'center',
-              alignItems: 'center',
-              gap: 14,
-              width: '100%',
-            }}
+      {showMiniHeader && (
+        <header
+          className="shrink-0 bg-white px-5 sm:px-8 py-4 shadow-sm border-b-4 border-transparent transition-all duration-700"
+          style={{ borderImage: theme.borderGradient }}
+        >
+          <p
+            className="text-center text-xs font-bold uppercase tracking-[0.2em]"
+            style={{ color: CARDEA_MUTED }}
           >
+            Cardea
+          </p>
+        </header>
+      )}
+
+      <main className="flex flex-col flex-1 min-h-0 w-full box-border">
+        {step === 'welcome' && (
+          <>
+            <motion.header
+              initial={{ opacity: 0, y: -12 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="bg-white px-5 sm:px-8 pt-10 pb-8 shadow-sm border-b-4 border-transparent transition-all duration-700"
+              style={{ borderImage: theme.borderGradient }}
+            >
+              <p
+                className="text-center text-xs font-bold uppercase tracking-[0.2em] mb-3"
+                style={{ color: CARDEA_MUTED }}
+              >
+                Cardea
+              </p>
+              <motion.div
+                initial={{ scale: 0.92 }}
+                animate={{ scale: 1 }}
+                className="flex items-center justify-center mb-4"
+              >
+                <MoodHeartFill
+                  theme={theme}
+                  size={52}
+                  viewBox="0 0 100 100"
+                  pathD="M50 85C50 85 20 65 20 40C20 25 30 15 40 15C45 15 50 20 50 20C50 20 55 15 60 15C70 15 80 25 80 40C80 65 50 85 50 85Z"
+                  stroke={theme.heartStroke}
+                  strokeWidth={2}
+                />
+              </motion.div>
+
+              <h1
+                className="text-3xl sm:text-4xl text-center mb-2"
+                style={{
+                  fontFamily: "'Bebas Neue', sans-serif",
+                  letterSpacing: '0.06em',
+                  color: HOME_HEADING_BLUE,
+                }}
+              >
+                Welcome.
+              </h1>
+              <p
+                className="text-center text-lg sm:text-xl max-w-md mx-auto mb-3 font-medium leading-snug"
+                style={{ color: HOME_BODY }}
+              >
+                You are not alone in this journey.
+              </p>
+              <p
+                className="text-center text-sm sm:text-base max-w-xl mx-auto leading-relaxed"
+                style={{ color: CARDEA_MUTED }}
+              >
+                Caring for a child with complex medical needs can feel overwhelming.
+                <br />
+                You don’t have to navigate it alone.
+                <br />
+                This space is here to support you — gently and at your pace.
+              </p>
+            </motion.header>
+
+            <div className="flex flex-col items-center px-5 sm:px-8 py-8 pb-10 gap-4 w-full max-w-lg mx-auto sm:max-w-xl">
+              <button
+                type="button"
+                onClick={() => setStep('age-at-diagnosis')}
+                style={{
+                  ...primaryButtonStyle,
+                  boxShadow: '0 8px 24px rgba(25, 43, 63, 0.12)',
+                }}
+              >
+                Continue
+              </button>
+              <OnboardingProgressDots className="text-[#192b3f]" totalSteps={4} currentStep={0} />
+            </div>
+          </>
+        )}
+
+        {step === 'age-at-diagnosis' && (
+          <OnboardingFormLayout
+            nav={
+              <div style={navRowStyle}>
+                <button type="button" onClick={() => setStep('welcome')} style={backButtonStyle}>
+                  Back
+                </button>
+                <button
+                  type="button"
+                  disabled={answers.ageAtDiagnosis == null}
+                  onClick={() => setStep('current-age')}
+                  style={{
+                    ...primaryButtonStyle,
+                    opacity: answers.ageAtDiagnosis == null ? 0.45 : 1,
+                    cursor: answers.ageAtDiagnosis == null ? 'not-allowed' : 'pointer',
+                  }}
+                >
+                  Continue
+                </button>
+              </div>
+            }
+            progressDots={<OnboardingProgressDots className="text-[#192b3f]" totalSteps={4} currentStep={1} />}
+          >
+            <h1 style={stepTitleStyle}>What was your child&apos;s age at diagnosis?</h1>
+            <p style={stepSubtitleStyle}>
+              This helps us tailor resources and support to your caregiving stage.
+            </p>
             <div
-              aria-hidden="true"
               style={{
-                width: 140,
-                height: 140,
-                borderRadius: '50%',
-                display: 'grid',
-                placeItems: 'center',
-                background:
-                  'radial-gradient(circle at 30% 25%, rgba(255, 255, 255, 0.95), rgba(232, 223, 242, 0.92) 45%, rgba(216, 200, 238, 0.9) 100%)',
-                boxShadow:
-                  '0 12px 26px rgba(15, 23, 42, 0.12), 0 2px 4px rgba(15, 23, 42, 0.06)',
-                marginBottom: 6,
+                flex: 1,
+                minHeight: 0,
+                width: '100%',
+                alignSelf: 'stretch',
+                marginTop: 6,
+                overflowY: 'auto',
               }}
             >
-              <img
-                src={welcomeHeart}
-                alt=""
-                style={{
-                  width: 90,
-                  height: 90,
-                  objectFit: 'contain',
-                  filter: 'drop-shadow(0 6px 10px rgba(15, 23, 42, 0.12))',
+              <AgeOptionList
+                groupLabel="Child age at diagnosis"
+                value={answers.ageAtDiagnosis}
+                onChange={(next) =>
+                  setAnswers((prev) => ({
+                    ...prev,
+                    ageAtDiagnosis: next,
+                  }))
+                }
+              />
+            </div>
+          </OnboardingFormLayout>
+        )}
+
+        {step === 'current-age' && (
+          <OnboardingFormLayout
+            nav={
+              <div style={navRowStyle}>
+                <button type="button" onClick={() => setStep('age-at-diagnosis')} style={backButtonStyle}>
+                  Back
+                </button>
+                <button
+                  type="button"
+                  disabled={!currentAgeOk}
+                  onClick={() => setStep('diagnosis-categories')}
+                  style={{
+                    ...primaryButtonStyle,
+                    opacity: currentAgeOk ? 1 : 0.45,
+                    cursor: currentAgeOk ? 'pointer' : 'not-allowed',
+                  }}
+                >
+                  Continue
+                </button>
+              </div>
+            }
+            progressDots={<OnboardingProgressDots className="text-[#192b3f]" totalSteps={4} currentStep={2} />}
+          >
+            <h1 style={stepTitleStyle}>What is your child&apos;s current age?</h1>
+            <p style={stepSubtitleStyle}>
+              This helps us tailor resources and support to your caregiving stage.
+            </p>
+            <div
+              style={{
+                flex: 1,
+                minHeight: 0,
+                width: '100%',
+                alignSelf: 'stretch',
+                marginTop: 6,
+                overflowY: 'auto',
+              }}
+            >
+              <AgeOptionList
+                groupLabel="Child current age range"
+                value={answers.currentChildAge}
+                onChange={(next) =>
+                  setAnswers((prev) => ({
+                    ...prev,
+                    currentChildAge: next,
+                  }))
+                }
+                isOptionDisabled={(label) => {
+                  const diagnosisIdx = ageCategoryIndex(answers.ageAtDiagnosis)
+                  const optionIdx = ageCategoryIndex(label)
+                  return diagnosisIdx >= 0 && optionIdx >= 0 && optionIdx < diagnosisIdx
                 }}
               />
             </div>
+          </OnboardingFormLayout>
+        )}
 
-            <h1
-              style={{
-                fontFamily: FONT_UI,
-                fontSize: 50,
-                lineHeight: 1.05,
-                margin: 0,
-                fontWeight: 800,
-                letterSpacing: -0.8,
-                color: COLOR_NAVY,
-              }}
-            >
-              Welcome.
-            </h1>
-            <p
-              style={{
-                fontFamily: FONT_UI,
-                fontSize: 22,
-                lineHeight: 1.25,
-                margin: 0,
-                fontWeight: 500,
-                color: 'rgba(10, 46, 92, 0.72)',
-              }}
-            >
-              You are not alone in this journey.
-            </p>
-            <p
-              style={{
-                fontFamily: FONT_UI,
-                fontSize: 16,
-                lineHeight: 1.55,
-                margin: 0,
-                maxWidth: 600,
-                fontWeight: 500,
-                color: 'rgba(10, 46, 92, 0.62)',
-              }}
-            >
-              Caring for a child with complex medical needs can feel overwhelming.
-              <br />
-              You don’t have to navigate it alone.
-              <br />
-              This space is here to support you — gently and at your pace.
-            </p>
-          </div>
-
-          <div
-            style={{
-              flexShrink: 0,
-              width: '100%',
-              maxWidth: 560,
-              display: 'flex',
-              flexDirection: 'column',
-              alignItems: 'center',
-              gap: 18,
-              paddingTop: 16,
-            }}
-          >
-            <button
-              type="button"
-              onClick={() => setStep('age-at-diagnosis')}
-              style={{
-                ...primaryButtonStyle,
-                boxShadow:
-                  '0 10px 28px rgba(10, 46, 92, 0.18), 0 2px 6px rgba(10, 46, 92, 0.08)',
-              }}
-            >
-              Continue
-            </button>
-            <OnboardingProgressDots totalSteps={4} currentStep={0} />
-          </div>
-        </>
-      )}
-
-      {step === 'age-at-diagnosis' && (
-        <OnboardingFormLayout
-          nav={
-            <div style={navRowStyle}>
-              <button type="button" onClick={() => setStep('welcome')} style={backButtonStyle}>
-                Back
-              </button>
-              <button
-                type="button"
-                disabled={answers.ageAtDiagnosis == null}
-                onClick={() => setStep('current-age')}
-                style={{
-                  ...primaryButtonStyle,
-                  opacity: answers.ageAtDiagnosis == null ? 0.45 : 1,
-                  cursor: answers.ageAtDiagnosis == null ? 'not-allowed' : 'pointer',
-                }}
-              >
-                Continue
-              </button>
-            </div>
-          }
-          progressDots={<OnboardingProgressDots totalSteps={4} currentStep={1} />}
-        >
-          <h1 style={stepTitleStyle}>What was your child&apos;s age at diagnosis?</h1>
-          <p style={stepSubtitleStyle}>
-            This helps us tailor resources and support to your caregiving stage.
-          </p>
-          <div style={{ width: '100%', alignSelf: 'stretch' }}>
-            <CustomSelect
-              id="age-at-diagnosis"
-              label="Child age at diagnosis"
-              placeholder="Select age range"
-              value={(answers.ageAtDiagnosis as (typeof ageOptions)[number] | null) ?? null}
-              options={ageOptions.map((label) => ({ value: label, label }))}
-              maxWidth={560}
-              onChange={(next) =>
-                setAnswers((prev) => ({
-                  ...prev,
-                  ageAtDiagnosis: next,
-                }))
-              }
-            />
-          </div>
-        </OnboardingFormLayout>
-      )}
-
-      {step === 'current-age' && (
-        <OnboardingFormLayout
-          nav={
-            <div style={navRowStyle}>
-              <button type="button" onClick={() => setStep('age-at-diagnosis')} style={backButtonStyle}>
-                Back
-              </button>
-              <button
-                type="button"
-                disabled={!currentAgeOk}
-                onClick={() => setStep('diagnosis-categories')}
-                style={{
-                  ...primaryButtonStyle,
-                  opacity: currentAgeOk ? 1 : 0.45,
-                  cursor: currentAgeOk ? 'pointer' : 'not-allowed',
-                }}
-              >
-                Continue
-              </button>
-            </div>
-          }
-          progressDots={<OnboardingProgressDots totalSteps={4} currentStep={2} />}
-        >
-          <h1 style={stepTitleStyle}>What is your child&apos;s current age?</h1>
-          <p style={stepSubtitleStyle}>
-            This helps us tailor resources and support to your caregiving stage.
-          </p>
-          <div style={{ width: '100%', alignSelf: 'stretch' }}>
-            <CustomSelect
-              id="current-child-age"
-              label="Child current age range"
-              placeholder="Select age range"
-              value={(answers.currentChildAge as (typeof ageOptions)[number] | null) ?? null}
-              maxWidth={560}
-              options={ageOptions.map((label) => {
-                const diagnosisIdx = ageCategoryIndex(answers.ageAtDiagnosis)
-                const optionIdx = ageCategoryIndex(label)
-                const disabled =
-                  diagnosisIdx >= 0 && optionIdx >= 0 && optionIdx < diagnosisIdx
-                return { value: label, label, disabled }
-              })}
-              onChange={(next) =>
-                setAnswers((prev) => ({
-                  ...prev,
-                  currentChildAge: next,
-                }))
-              }
-            />
-          </div>
-        </OnboardingFormLayout>
-      )}
-
-      {step === 'diagnosis-categories' && (
-        <OnboardingFormLayout
-          nav={
-            <div style={navRowStyle}>
-              <button type="button" onClick={() => setStep('current-age')} style={backButtonStyle}>
-                Back
-              </button>
-              <button
-                type="button"
-                disabled={answers.diagnosisCategories.length === 0}
-                onClick={() => setStep('personalizing')}
-                style={{
-                  ...primaryButtonStyle,
-                  opacity: answers.diagnosisCategories.length === 0 ? 0.45 : 1,
-                  cursor: answers.diagnosisCategories.length === 0 ? 'not-allowed' : 'pointer',
-                }}
-              >
-                Continue
-              </button>
-            </div>
-          }
-          progressDots={<OnboardingProgressDots totalSteps={4} currentStep={3} />}
-        >
-          <h1 style={stepTitleStyle}>Which diagnosis categories fit your family?</h1>
-          <p style={stepSubtitleStyle}>You can pick more than one.</p>
-          <div
-            role="group"
-            aria-label="Diagnosis categories"
-            style={{
-              flex: 1,
-              minHeight: 0,
-              width: '100%',
-              alignSelf: 'stretch',
-              marginTop: 6,
-              display: 'flex',
-              flexDirection: 'column',
-              gap: 10,
-              textAlign: 'left',
-              overflowY: 'auto',
-            }}
-          >
-            {diagnosisCategoryOptions.map((cat) => {
-              const checked = answers.diagnosisCategories.some((d) => d.id === cat.id)
-              return (
-                <label
-                  key={cat.id}
-                  style={{
-                    fontFamily: FONT_UI,
-                    display: 'flex',
-                    alignItems: 'flex-start',
-                    gap: 10,
-                    padding: '10px 12px',
-                    borderRadius: 12,
-                    border: checked ? '2px solid #577568' : '1px solid rgba(10, 46, 92, 0.25)',
-                    background: checked ? 'rgba(172, 183, 168, 0.52)' : '#FFFFFF',
-                    cursor: 'pointer',
-                    fontSize: 15,
-                    fontWeight: 500,
-                    color: checked ? '#577568' : COLOR_NAVY,
-                  }}
-                >
-                  <input
-                    type="checkbox"
-                    checked={checked}
-                    onChange={() => toggleDiagnosisCategory(cat)}
-                    style={{
-                      marginTop: 1,
-                      width: 16,
-                      height: 16,
-                      flexShrink: 0,
-                      cursor: 'pointer',
-                      accentColor: checked ? '#577568' : COLOR_NAVY,
-                    }}
-                  />
-                  <span style={{ lineHeight: 1.45 }}>
-                    <span style={{ fontWeight: 600 }}>{cat.title}</span>
-                    <span style={{ fontWeight: 500 }}> ({cat.detail})</span>
-                  </span>
-                </label>
-              )
-            })}
-          </div>
-        </OnboardingFormLayout>
-      )}
-
-      {step === 'personalizing' && (
-        <div
-          style={{
-            flex: 1,
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            width: '100%',
-          }}
-        >
-          <div
-            role="status"
-            aria-live="polite"
-            aria-busy="true"
-            style={{
-              display: 'flex',
-              flexDirection: 'column',
-              alignItems: 'center',
-              gap: 8,
-              maxWidth: 480,
-            }}
-          >
-            <p
-              style={{
-                fontFamily: FONT_UI,
-                fontSize: 22,
-                lineHeight: 1.35,
-                margin: 0,
-                fontWeight: 650,
-                color: COLOR_NAVY,
-              }}
-            >
-              Personalizing your support experience...
-            </p>
-            <div aria-label="Loading">
-              <PersonalizingSpinner />
-            </div>
-            {saveError && (
-              <div style={{ marginTop: 10, textAlign: 'center' }}>
-                <p
-                  role="alert"
-                  style={{
-                    margin: 0,
-                    fontFamily: FONT_UI,
-                    fontSize: 14,
-                    lineHeight: 1.45,
-                    fontWeight: 650,
-                    color: '#9B1C31',
-                  }}
-                >
-                  {saveError}
-                </p>
+        {step === 'diagnosis-categories' && (
+          <OnboardingFormLayout
+            nav={
+              <div style={navRowStyle}>
+                <button type="button" onClick={() => setStep('current-age')} style={backButtonStyle}>
+                  Back
+                </button>
                 <button
                   type="button"
-                  onClick={() => {
-                    setDidPersist(false)
-                    setSaveError(null)
-                  }}
+                  disabled={answers.diagnosisCategories.length === 0}
+                  onClick={() => setStep('personalizing')}
                   style={{
-                    marginTop: 10,
                     ...primaryButtonStyle,
-                    opacity: isSaving ? 0.55 : 1,
-                    cursor: isSaving ? 'not-allowed' : 'pointer',
+                    opacity: answers.diagnosisCategories.length === 0 ? 0.45 : 1,
+                    cursor: answers.diagnosisCategories.length === 0 ? 'not-allowed' : 'pointer',
                   }}
-                  disabled={isSaving}
                 >
-                  Retry
+                  Continue
                 </button>
               </div>
-            )}
+            }
+            progressDots={<OnboardingProgressDots className="text-[#192b3f]" totalSteps={4} currentStep={3} />}
+          >
+            <h1 style={stepTitleStyle}>Which diagnosis categories fit your family?</h1>
+            <p style={stepSubtitleStyle}>You can pick more than one.</p>
+            <div
+              role="group"
+              aria-label="Diagnosis categories"
+              style={{
+                flex: 1,
+                minHeight: 0,
+                width: '100%',
+                alignSelf: 'stretch',
+                marginTop: 6,
+                display: 'flex',
+                flexDirection: 'column',
+                gap: 10,
+                textAlign: 'left',
+                overflowY: 'auto',
+              }}
+            >
+              {diagnosisCategoryOptions.map((cat) => {
+                const checked = answers.diagnosisCategories.some((d) => d.id === cat.id)
+                return (
+                  <label
+                    key={cat.id}
+                    style={{
+                      fontFamily: CARDEA_FONT_PRIMARY,
+                      display: 'flex',
+                      alignItems: 'flex-start',
+                      gap: 10,
+                      padding: '10px 12px',
+                      borderRadius: 16,
+                      border: checked
+                        ? `2px solid ${CARDEA_DARK_GREEN}`
+                        : '1px solid rgba(25, 43, 63, 0.12)',
+                      background: checked ? 'rgba(172, 183, 168, 0.52)' : '#FFFFFF',
+                      cursor: 'pointer',
+                      fontSize: 15,
+                      fontWeight: 500,
+                      color: checked ? CARDEA_DARK_GREEN : CARDEA_NAVY,
+                    }}
+                  >
+                    <input
+                      type="checkbox"
+                      checked={checked}
+                      onChange={() => toggleDiagnosisCategory(cat)}
+                      style={{
+                        marginTop: 1,
+                        width: 16,
+                        height: 16,
+                        flexShrink: 0,
+                        cursor: 'pointer',
+                        accentColor: checked ? CARDEA_DARK_GREEN : CARDEA_NAVY,
+                      }}
+                    />
+                    <span style={{ lineHeight: 1.45 }}>
+                      <span style={{ fontWeight: 600 }}>{cat.title}</span>
+                      <span style={{ fontWeight: 500 }}> ({cat.detail})</span>
+                    </span>
+                  </label>
+                )
+              })}
+            </div>
+          </OnboardingFormLayout>
+        )}
+
+        {step === 'personalizing' && (
+          <div
+            className="flex flex-1 items-center justify-center w-full px-5"
+            style={{ minHeight: '50vh' }}
+          >
+            <div
+              role="status"
+              aria-live="polite"
+              aria-busy="true"
+              style={{
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'center',
+                gap: 8,
+                maxWidth: 480,
+                textAlign: 'center',
+              }}
+            >
+              <p
+                style={{
+                  fontFamily: "'Bebas Neue', sans-serif",
+                  letterSpacing: '0.05em',
+                  fontSize: 'clamp(1.25rem, 4vw, 1.75rem)',
+                  lineHeight: 1.35,
+                  margin: 0,
+                  fontWeight: 700,
+                  color: HOME_HEADING_BLUE,
+                }}
+              >
+                Personalizing your support experience...
+              </p>
+              <div aria-label="Loading">
+                <PersonalizingSpinner />
+              </div>
+              {saveError && (
+                <div style={{ marginTop: 10, textAlign: 'center' }}>
+                  <p
+                    role="alert"
+                    style={{
+                      margin: 0,
+                      fontFamily: CARDEA_FONT_PRIMARY,
+                      fontSize: 14,
+                      lineHeight: 1.45,
+                      fontWeight: 600,
+                      color: '#9B1C31',
+                    }}
+                  >
+                    {saveError}
+                  </p>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setDidPersist(false)
+                      setSaveError(null)
+                    }}
+                    style={{
+                      marginTop: 10,
+                      ...primaryButtonStyle,
+                      opacity: isSaving ? 0.55 : 1,
+                      cursor: isSaving ? 'not-allowed' : 'pointer',
+                    }}
+                    disabled={isSaving}
+                  >
+                    Retry
+                  </button>
+                </div>
+              )}
+            </div>
           </div>
-        </div>
-      )}
-    </main>
+        )}
+      </main>
+    </div>
   )
 }
 
