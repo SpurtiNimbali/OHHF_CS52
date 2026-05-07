@@ -1,10 +1,11 @@
 import { useState } from 'react'
-import MedicalGlossary from './MedicalGlossary'
+import MedicalGlossary from '../screens/MedicalGlossary'
 import FindSupport from '../components/FindSupport'
 import QuestionsForCardiologist from '../components/QuestionsForCardiologist'
 import FloatingActions from '../components/FloatingActions'
+import ChatScreen from '../screens/ChatScreen'
 
-type Screen = 'home' | 'support' | 'questions' | 'glossary' | 'marketplace' | 'profile'
+type Screen = 'home' | 'support' | 'questions' | 'glossary' | 'marketplace' | 'profile' | 'chat'
 
 const BOTTOM_NAV_HEIGHT = 72
 
@@ -25,6 +26,15 @@ function ResourcesIcon({ active }: { active: boolean }) {
   return (
     <svg width="22" height="22" fill="none" stroke={c} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24">
       <path d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 000-7.78z"/>
+    </svg>
+  )
+}
+
+function ChatIcon({ active }: { active: boolean }) {
+  const c = active ? '#577568' : '#acb7a8'
+  return (
+    <svg width="22" height="22" fill="none" stroke={c} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24">
+      <path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/>
     </svg>
   )
 }
@@ -51,10 +61,11 @@ function ProfileIcon({ active }: { active: boolean }) {
 }
 
 const NAV_ITEMS: { id: Screen; label: string; Icon: React.FC<{ active: boolean }> }[] = [
-  { id: 'home',        label: 'Home',        Icon: HomeIcon },
-  { id: 'support',     label: 'Resources',   Icon: ResourcesIcon },
-  { id: 'marketplace', label: 'Marketplace', Icon: MarketplaceIcon },
-  { id: 'profile',     label: 'Profile',     Icon: ProfileIcon },
+  { id: 'home',        label: 'Home',      Icon: HomeIcon },
+  { id: 'support',     label: 'Resources', Icon: ResourcesIcon },
+  { id: 'chat',        label: 'Support',   Icon: ChatIcon },
+  { id: 'marketplace', label: 'Market',    Icon: MarketplaceIcon },
+  { id: 'profile',     label: 'Profile',   Icon: ProfileIcon },
 ]
 
 // ── BottomNav ─────────────────────────────────────────────────────────────────
@@ -347,11 +358,12 @@ const ResourcesLanding: React.FC = () => {
     <div style={{ display: 'flex', flexDirection: 'column', height: '100vh', background: '#f5f9f9' }}>
       <TopBar />
 
-      <main style={{ flex: 1, overflowY: 'auto', paddingBottom: `${BOTTOM_NAV_HEIGHT}px` }}>
+      <main style={{ flex: 1, overflowY: current === 'chat' ? 'hidden' : 'auto', paddingBottom: current === 'chat' ? 0 : `${BOTTOM_NAV_HEIGHT}px`, display: 'flex', flexDirection: 'column' }}>
         {current === 'home'        && <HomePanel onNavigate={setCurrent} />}
         {current === 'support'     && <FindSupport />}
         {current === 'questions'   && <QuestionsForCardiologist />}
         {current === 'glossary'    && <div style={{ padding: '40px' }}><MedicalGlossary /></div>}
+        {current === 'chat'        && <ChatScreen />}
         {current === 'marketplace' && <MarketplacePlaceholder />}
         {current === 'profile'     && <ProfilePlaceholder />}
       </main>

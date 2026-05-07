@@ -1,11 +1,10 @@
 import { Link, useLocation, useSearchParams } from 'react-router-dom'
 import { motion } from 'motion/react'
-import { Home, Activity, MessageCircle, Heart } from 'lucide-react'
+import { Home, Activity, MessageCircle, Heart, MessageSquare } from 'lucide-react'
 import { moodColorWithAlpha, useMood } from '../mood'
 
 const FONT_UI = "'Montserrat', Inter, system-ui, sans-serif"
 
-/** Three reference tiles: coral (heart), mint (pulse), periwinkle (chat) */
 export const NAV_TILE_PALETTE = {
   coral: {
     tile: '#FFAAA5',
@@ -28,9 +27,16 @@ export const NAV_TILE_PALETTE = {
     hoverTile: 'hover:bg-[#A8C5E6]/45',
     labelHover: 'hover:text-[#2d4f6f]',
   },
+  lavender: {
+    tile: '#C5B8E8',
+    icon: '#4a3580',
+    label: '#4a3580',
+    hoverTile: 'hover:bg-[#C5B8E8]/45',
+    labelHover: 'hover:text-[#4a3580]',
+  },
 } as const
 
-type TabId = 'home' | 'track' | 'learn' | 'support'
+type TabId = 'home' | 'track' | 'learn' | 'support' | 'chat'
 
 type PaletteKey = keyof typeof NAV_TILE_PALETTE
 
@@ -41,10 +47,11 @@ const items: {
   Icon: typeof Home
   palette: PaletteKey
 }[] = [
-  { id: 'home', label: 'Home', to: '/home', Icon: Home, palette: 'mint' },
-  { id: 'track', label: 'Track', to: '/home', Icon: Activity, palette: 'mint' },
-  { id: 'learn', label: 'Learn', to: '/resources', Icon: MessageCircle, palette: 'sky' },
-  { id: 'support', label: 'Support', to: '/resources?view=support', Icon: Heart, palette: 'coral' },
+  { id: 'home',    label: 'Home',    to: '/home',                   Icon: Home,          palette: 'mint'     },
+  { id: 'track',   label: 'Track',   to: '/home',                   Icon: Activity,      palette: 'mint'     },
+  { id: 'learn',   label: 'Learn',   to: '/resources',              Icon: MessageCircle, palette: 'sky'      },
+  { id: 'support', label: 'Support', to: '/resources?view=support', Icon: Heart,         palette: 'coral'    },
+  { id: 'chat',    label: 'Chat',    to: '/chat',                   Icon: MessageSquare, palette: 'lavender' },
 ]
 
 export function ResourcesRightNav() {
@@ -54,11 +61,13 @@ export function ResourcesRightNav() {
   const view = searchParams.get('view')
 
   const activeTab: TabId =
-    location.pathname === '/resources'
-      ? view === 'support'
-        ? 'support'
-        : 'learn'
-      : 'home'
+    location.pathname === '/chat'
+      ? 'chat'
+      : location.pathname === '/resources'
+        ? view === 'support'
+          ? 'support'
+          : 'learn'
+        : 'home'
 
   return (
     <motion.aside

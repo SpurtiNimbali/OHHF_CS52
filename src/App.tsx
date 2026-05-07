@@ -8,6 +8,8 @@ import { SignInScreen } from './screens/signInScreen'
 import { SignUpScreen } from './screens/signUpScreen'
 import { WelcomeScreen } from './screens/welcomeScreen'
 import ResourcesLanding from './screens/ResourcesLanding'
+import ChatScreen from './screens/ChatScreen'
+import { ResourcesRightNav } from './components/ResourcesRightNav'
 import { MoodProvider } from './mood'
 
 function App() {
@@ -21,6 +23,14 @@ function App() {
           <Route path="/onboarding" element={<WelcomeScreen />} />
           <Route path="/home" element={<HomeScreen />} />
           <Route path="/resources" element={<ResourcesLanding />} />
+          <Route path="/chat" element={
+            <div style={{ display: 'flex', height: '100vh', overflow: 'hidden' }}>
+              <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+                <ChatScreen />
+              </div>
+              <ResourcesRightNav />
+            </div>
+          } />
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </MoodProvider>
