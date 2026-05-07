@@ -9,6 +9,21 @@ if (!supabaseUrl || !supabaseAnonKey) {
 
 export const supabase = createClient(supabaseUrl, supabaseAnonKey)
 
+/**
+ * Returns `auth.users.id` for the current session, or creates an anonymous
+ * session if none exists (same idea as onboarding persistence).
+ */
+export async function ensureAuthUserId(): Promise<string | null> {
+  const { data: sessionData, error: sessionError } = await supabase.auth.getSession()
+  if (sessionError) return null
+  const existing = sessionData.session?.user?.id
+  if (existing) return existing
+
+  const { data: anonData, error: anonError } = await supabase.auth.signInAnonymously()
+  if (anonError || !anonData.user?.id) return null
+  return anonData.user.id
+}
+
 export type CardiologistQuestion = {
   id: string
   question_text: string
@@ -26,7 +41,7 @@ export type SupportResource = {
   id: string
   name: string
   description: string
-  category: 'Mental Health' | 'Family Support' | 'Financial Aid' | 'Community'
+  category: string
   link: string
   zipcode: string | null
   city: string | null

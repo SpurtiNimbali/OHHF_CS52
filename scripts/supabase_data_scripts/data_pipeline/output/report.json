@@ -1,0 +1,28 @@
+{
+  "resources_json": "C:\\Users\\penae\\Desktop\\Academics\\Spring 2026\\CS 52\\OHHF Product\\OHHF_CS52\\supabase_data_scripts\\data_pipeline\\output\\resources.json",
+  "inputs": {
+    "web_count": 80,
+    "pdf": "C:\\Users\\penae\\Desktop\\Academics\\Spring 2026\\CS 52\\OHHF Product\\OHHF_CS52\\supabase_data_scripts\\data_pipeline\\input\\OHHF_pdf.pdf",
+    "pdf_slug": "ohhf-pdf"
+  },
+  "web": {
+    "dropped_junk": 0,
+    "after_url_dedupe": 80,
+    "url_duplicate_merges": 0,
+    "final_resources": 80
+  },
+  "glossary": {
+    "raw_parsed": 22,
+    "fingerprint_deduped": 0,
+    "final": 22
+  },
+  "questions": {
+    "final": 0
+  },
+  "chat_knowledge": {
+    "web_rows": 80,
+    "pdf_rows": 22,
+    "after_url_dedupe": 102,
+    "url_duplicate_merges": 0
+  }
+}

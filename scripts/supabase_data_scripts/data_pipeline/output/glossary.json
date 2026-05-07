@@ -1,0 +1,90 @@
+[
+  {
+    "term": "Acquired Heart Disease",
+    "definition": "Heart condition that develops after birth (infection, inflammation, etc.)"
+  },
+  {
+    "term": "Cardiac Catheterization (Cath)",
+    "definition": "Minimally invasive procedure using tubes to diagnose or repair heart defects"
+  },
+  {
+    "term": "CICU",
+    "definition": "Cardiac-specific intensive care unit"
+  },
+  {
+    "term": "Congenital Heart Disease (CHD)",
+    "definition": "Heart condition present at birth affecting structure or function"
+  },
+  {
+    "term": "Daily Weights",
+    "definition": "Routine tracking of a child’s weight to monitor growth and fluid status"
+  },
+  {
+    "term": "Dialysis",
+    "definition": "Medical treatment that removes waste and extra fluid when kidneys are not functioning properly"
+  },
+  {
+    "term": "Echocardiogram (Echo)",
+    "definition": "Ultrasound used to view heart structure and blood flow"
+  },
+  {
+    "term": "ECMO",
+    "definition": "Life support machine that takes over heart and lung function"
+  },
+  {
+    "term": "Electrocardiogram (EKG/ECG)",
+    "definition": "Test measuring heart’s electrical activity"
+  },
+  {
+    "term": "G-Tube",
+    "definition": "Feeding tube placed directly into the stomach"
+  },
+  {
+    "term": "Heart Transplant",
+    "definition": "Replacement of a failing heart with a donor heart"
+  },
+  {
+    "term": "Hypoplastic Left Heart Syndrome (HLHS)",
+    "definition": "Underdevelopment of the left side of the heart"
+  },
+  {
+    "term": "Implantable Cardioverter Defibrillator (ICD)",
+    "definition": "Device that detects and corrects dangerous heart rhythms"
+  },
+  {
+    "term": "NG Tube",
+    "definition": "inserted through the nose for feeding"
+  },
+  {
+    "term": "NICU",
+    "definition": "Intensive care unit for newborns"
+  },
+  {
+    "term": "Open-Heart Surgery",
+    "definition": "Surgery requiring the chest to be opened and use of a heart-lung machine"
+  },
+  {
+    "term": "Pacemaker",
+    "definition": "Device that regulates heart rhythm"
+  },
+  {
+    "term": "PICU",
+    "definition": "Intensive care unit for children"
+  },
+  {
+    "term": "Pulse Oximetry",
+    "definition": "A device that measures oxygen levels in the blood using a sensor (usually on finger or toe)"
+  },
+  {
+    "term": "Tetralogy of Fallot (TOF)",
+    "definition": "Complex condition involving four heart defects affecting oxygen levels"
+  },
+  {
+    "term": "Ventricular Assist Device (VAD)",
+    "definition": "Mechanical pump that supports heart function"
+  },
+  {
+    "term": "Ventricular Septal Defect (VSD)",
+    "definition": "Hole between lower heart chambers"
+  }
+]
