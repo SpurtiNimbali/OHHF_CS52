@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { createClient } from '@supabase/supabase-js'
+import { supabase } from '../lib/supabase'
 
 interface GlossaryTerm {
   id: string | number
@@ -9,11 +9,9 @@ interface GlossaryTerm {
 }
 
 const NAVY = '#192b3f'
-const LIGHT_BLUE = '#c6d9e5'
 const ALMOST_WHITE = '#f5f9f9'
-const DARK_GREEN = '#577568'
 const LIGHT_GREEN = '#acb7a8'
-const BORDER_SOFT = `${LIGHT_BLUE}99`
+const BORDER_SOFT = 'rgba(25, 43, 63, 0.1)'
 const RADIUS = 14
 const FONT_SANS =
   '\'Inter\', system-ui, -apple-system, BlinkMacSystemFont, \'Segoe UI\', sans-serif'
@@ -157,43 +155,51 @@ function MedicalGlossary() {
     }
   }, [query])
 
-  const divider = (
-    <div
-      style={{
-        height: 1,
-        background: LIGHT_BLUE,
-        opacity: 0.55,
-        margin: 0,
-        border: 'none',
-      }}
-    />
-  )
-
   const filteredTerms = terms.filter((t) => !selectedTag || getCategory(t.term) === selectedTag)
+
+  const pillInactive = {
+    padding: '10px 18px',
+    borderRadius: 999,
+    border: '1px solid rgba(25, 43, 63, 0.12)',
+    background: '#ffffff',
+    color: NAVY,
+    fontSize: '0.875rem',
+    fontWeight: 600,
+    cursor: 'pointer',
+    fontFamily: FONT_SANS,
+    transition: 'background 0.2s ease, color 0.2s ease, border-color 0.2s ease',
+  } as const
+
+  const pillActive = {
+    ...pillInactive,
+    border: 'none',
+    background: NAVY,
+    color: '#ffffff',
+  }
 
   return (
     <div
       style={{
         minHeight: '100vh',
         background: ALMOST_WHITE,
-        padding: '0 0 48px',
+        padding: '0 0 56px',
         fontFamily: FONT_SANS,
         color: NAVY,
       }}
     >
       <div
         style={{
-          maxWidth: 720,
+          maxWidth: 960,
           margin: '0 auto',
-          padding: '8px 24px 0',
+          padding: '0 24px 0',
         }}
       >
-        <header style={{ paddingBottom: 28 }}>
+        <header style={{ padding: '8px 0 28px' }}>
           <h1
             style={{
-              fontSize: 'clamp(1.5rem, 4vw, 1.875rem)',
+              fontSize: 'clamp(1.5rem, 4vw, 2rem)',
               fontWeight: 700,
-              letterSpacing: '0.04em',
+              letterSpacing: '0.08em',
               color: NAVY,
               margin: '0 0 12px',
               textTransform: 'uppercase',
@@ -204,24 +210,27 @@ function MedicalGlossary() {
           <p
             style={{
               fontSize: '1rem',
-              lineHeight: 1.55,
-              color: DARK_GREEN,
+              lineHeight: 1.6,
+              color: LIGHT_GREEN,
               margin: 0,
+              fontWeight: 400,
             }}
           >
             Learn and understand common medical terms
           </p>
         </header>
-        {divider}
 
-        {/* Search */}
+        {/* Search band */}
         <section
           style={{
-            background: ALMOST_WHITE,
-            padding: '28px 0',
+            background: 'rgba(172, 183, 168, 0.22)',
+            marginLeft: '-24px',
+            marginRight: '-24px',
+            padding: '28px 24px',
+            borderRadius: 16,
           }}
         >
-          <div style={{ position: 'relative' }}>
+          <div style={{ position: 'relative', maxWidth: 800 }}>
             <span
               style={{
                 position: 'absolute',
@@ -232,7 +241,7 @@ function MedicalGlossary() {
                 pointerEvents: 'none',
               }}
             >
-              <BookSearchIcon color={`${NAVY}55`} />
+              <BookSearchIcon color={`${NAVY}45`} />
             </span>
             <input
               id="glossary-search"
@@ -245,7 +254,7 @@ function MedicalGlossary() {
                 padding: '16px 16px 16px 52px',
                 width: '100%',
                 fontSize: '1rem',
-                border: `1px solid ${BORDER_SOFT}`,
+                border: '1px solid rgba(25, 43, 63, 0.1)',
                 borderRadius: RADIUS,
                 outline: 'none',
                 transition: 'border-color 0.2s ease, box-shadow 0.2s ease',
@@ -256,33 +265,23 @@ function MedicalGlossary() {
               }}
               onFocus={(e) => {
                 e.target.style.borderColor = NAVY
-                e.target.style.boxShadow = `0 0 0 3px ${LIGHT_BLUE}`
+                e.target.style.boxShadow = `0 0 0 3px rgba(198, 217, 229, 0.65)`
               }}
               onBlur={(e) => {
-                e.target.style.borderColor = BORDER_SOFT
+                e.target.style.borderColor = 'rgba(25, 43, 63, 0.1)'
                 e.target.style.boxShadow = 'none'
               }}
             />
           </div>
         </section>
-        {divider}
 
         {/* Filters */}
-        <section
-          style={{
-            background: '#ffffff',
-            padding: '26px 0',
-            marginLeft: '-24px',
-            marginRight: '-24px',
-            paddingLeft: 24,
-            paddingRight: 24,
-          }}
-        >
+        <section style={{ padding: '28px 0 8px' }}>
           <p
             style={{
-              fontSize: '0.9375rem',
+              fontSize: '0.8125rem',
               fontWeight: 600,
-              color: NAVY,
+              color: LIGHT_GREEN,
               margin: '0 0 14px',
             }}
           >
@@ -298,18 +297,7 @@ function MedicalGlossary() {
             <button
               type="button"
               onClick={() => setSelectedTag(null)}
-              style={{
-                padding: '10px 18px',
-                borderRadius: 999,
-                border: selectedTag === null ? 'none' : `1px solid ${BORDER_SOFT}`,
-                background: selectedTag === null ? NAVY : LIGHT_BLUE,
-                color: selectedTag === null ? '#ffffff' : NAVY,
-                fontSize: '0.875rem',
-                fontWeight: 600,
-                cursor: 'pointer',
-                fontFamily: FONT_SANS,
-                transition: 'background 0.2s ease, color 0.2s ease',
-              }}
+              style={selectedTag === null ? pillActive : pillInactive}
             >
               All
             </button>
@@ -321,17 +309,8 @@ function MedicalGlossary() {
                   key={cat}
                   onClick={() => setSelectedTag(isSelected ? null : cat)}
                   style={{
-                    padding: '10px 18px',
-                    borderRadius: 999,
-                    border: isSelected ? 'none' : `1px solid ${BORDER_SOFT}`,
-                    background: isSelected ? NAVY : LIGHT_BLUE,
-                    color: isSelected ? '#ffffff' : NAVY,
-                    fontSize: '0.875rem',
-                    fontWeight: 600,
-                    cursor: 'pointer',
-                    fontFamily: FONT_SANS,
+                    ...(isSelected ? pillActive : pillInactive),
                     textTransform: 'capitalize',
-                    transition: 'background 0.2s ease, color 0.2s ease',
                   }}
                 >
                   {cat}
@@ -340,16 +319,15 @@ function MedicalGlossary() {
             })}
           </div>
         </section>
-        {divider}
 
-        {/* List */}
+        {/* Grid */}
         <section style={{ paddingTop: 28 }}>
           {loading && (
             <div
               style={{
                 textAlign: 'center',
                 padding: '48px 16px',
-                color: DARK_GREEN,
+                color: LIGHT_GREEN,
               }}
             >
               <p style={{ fontSize: '1rem', margin: 0, fontWeight: 500 }}>
@@ -389,7 +367,7 @@ function MedicalGlossary() {
                   ? `No ${formatCategoryLabel(selectedTag)} terms found`
                   : 'No terms match your search'}
               </p>
-              <p style={{ color: DARK_GREEN, marginTop: 10, marginBottom: 0 }}>
+              <p style={{ color: LIGHT_GREEN, marginTop: 10, marginBottom: 0 }}>
                 {selectedTag
                   ? 'Try a different category or search term'
                   : 'Try a different search term'}
@@ -414,7 +392,7 @@ function MedicalGlossary() {
               <p style={{ color: NAVY, fontWeight: 600, margin: 0 }}>
                 {`No ${formatCategoryLabel(selectedTag)} terms found`}
               </p>
-              <p style={{ color: DARK_GREEN, marginTop: 10, marginBottom: 0 }}>
+              <p style={{ color: LIGHT_GREEN, marginTop: 10, marginBottom: 0 }}>
                 Try a different category or search term
               </p>
             </div>
@@ -423,8 +401,8 @@ function MedicalGlossary() {
           {!loading && !error && filteredTerms.length > 0 && (
             <div
               style={{
-                display: 'flex',
-                flexDirection: 'column',
+                display: 'grid',
+                gridTemplateColumns: 'repeat(auto-fill, minmax(min(100%, 300px), 1fr))',
                 gap: 20,
               }}
             >
@@ -435,9 +413,10 @@ function MedicalGlossary() {
                     key={term.id}
                     style={{
                       background: '#ffffff',
-                      border: `1px solid ${BORDER_SOFT}`,
+                      border: '1px solid rgba(25, 43, 63, 0.1)',
                       borderRadius: RADIUS,
                       padding: '22px 24px',
+                      boxShadow: '0 2px 12px rgba(25, 43, 63, 0.04)',
                     }}
                   >
                     <div
@@ -451,7 +430,7 @@ function MedicalGlossary() {
                     >
                       <h3
                         style={{
-                          fontSize: '1.125rem',
+                          fontSize: '1.0625rem',
                           fontWeight: 700,
                           color: NAVY,
                           margin: 0,
@@ -463,13 +442,13 @@ function MedicalGlossary() {
                       <span
                         style={{
                           flexShrink: 0,
-                          background: ALMOST_WHITE,
-                          color: NAVY,
+                          background: 'rgba(245, 249, 249, 0.95)',
+                          color: 'rgba(25, 43, 63, 0.75)',
                           padding: '6px 12px',
                           borderRadius: 999,
-                          fontSize: '0.75rem',
+                          fontSize: '0.6875rem',
                           fontWeight: 600,
-                          border: `1px solid ${BORDER_SOFT}`,
+                          border: '1px solid rgba(25, 43, 63, 0.08)',
                           textTransform: 'capitalize',
                         }}
                       >
@@ -478,9 +457,9 @@ function MedicalGlossary() {
                     </div>
                     <p
                       style={{
-                        color: DARK_GREEN,
+                        color: LIGHT_GREEN,
                         fontSize: '0.9375rem',
-                        lineHeight: 1.65,
+                        lineHeight: 1.7,
                         margin: 0,
                       }}
                     >
@@ -496,7 +475,7 @@ function MedicalGlossary() {
             <p
               style={{
                 textAlign: 'center',
-                color: DARK_GREEN,
+                color: LIGHT_GREEN,
                 marginTop: 36,
                 fontSize: '0.875rem',
               }}
