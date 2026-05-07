@@ -1,0 +1,14 @@
+Clean Corpus Report
+Run at: 2026-05-07T16:28:34
+
+Files processed: 14
+Pages / resources extracted: 76
+Chunks created: 324
+PDF-like pages processed: 59
+HTML-like pages processed: 17
+Skipped (robot/security) pages: 9
+Skipped (empty / too short) pages: 0
+Skipped pages with no chunks after filtering: 0
+Skipped boilerplate chunks: 44
+
+Output folder: C:\Users\penae\Desktop\Academics\Spring 2026\CS 52\OHHF Product\OHHF_CS52\scripts\scrape_jina_corpus\corpus_cleaned_chunks
