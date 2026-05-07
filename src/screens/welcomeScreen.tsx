@@ -150,9 +150,9 @@ function OnboardingFormLayout({
           maxWidth: 560,
           display: 'flex',
           flexDirection: 'column',
-          alignItems: 'center',
+          alignItems: 'stretch',
           gap: 14,
-          overflow: 'hidden',
+          minHeight: 0,
           boxSizing: 'border-box',
         }}
       >
@@ -181,12 +181,10 @@ function AgeOptionList({
   groupLabel,
   value,
   onChange,
-  isOptionDisabled,
 }: {
   groupLabel: string
   value: string | null
   onChange: (next: (typeof ageOptions)[number]) => void
-  isOptionDisabled?: (label: (typeof ageOptions)[number]) => boolean
 }) {
   return (
     <div
@@ -201,7 +199,6 @@ function AgeOptionList({
       }}
     >
       {ageOptions.map((label) => {
-        const disabled = isOptionDisabled?.(label) ?? false
         const selected = value === label
         return (
           <button
@@ -209,12 +206,7 @@ function AgeOptionList({
             type="button"
             role="radio"
             aria-checked={selected}
-            aria-disabled={disabled}
-            disabled={disabled}
-            onClick={() => {
-              if (disabled) return
-              onChange(label)
-            }}
+            onClick={() => onChange(label)}
             style={{
               fontFamily: CARDEA_FONT_PRIMARY,
               display: 'block',
@@ -226,15 +218,10 @@ function AgeOptionList({
                 ? `2px solid ${CARDEA_DARK_GREEN}`
                 : '1px solid rgba(25, 43, 63, 0.12)',
               background: selected ? 'rgba(172, 183, 168, 0.52)' : '#FFFFFF',
-              cursor: disabled ? 'not-allowed' : 'pointer',
+              cursor: 'pointer',
               fontSize: 16,
               fontWeight: 600,
-              color: disabled
-                ? 'rgba(25, 43, 63, 0.35)'
-                : selected
-                  ? CARDEA_DARK_GREEN
-                  : CARDEA_NAVY,
-              opacity: disabled ? 0.55 : 1,
+              color: selected ? CARDEA_DARK_GREEN : CARDEA_NAVY,
               boxSizing: 'border-box',
               transition: 'border-color 120ms ease, background-color 120ms ease, color 120ms ease',
             }}
@@ -245,20 +232,6 @@ function AgeOptionList({
       })}
     </div>
   )
-}
-
-/** Index along `ageOptions`: higher means older (same ordering as the UI list). */
-function ageCategoryIndex(label: string | null): number {
-  if (!label) return -1
-  return ageOptions.indexOf(label as (typeof ageOptions)[number])
-}
-
-function isValidCurrentVsDiagnosisAge(
-  diagnosis: string | null,
-  current: string | null,
-): boolean {
-  if (diagnosis == null || current == null) return false
-  return ageCategoryIndex(current) >= ageCategoryIndex(diagnosis)
 }
 
 function PersonalizingSpinner() {
@@ -331,18 +304,6 @@ export function WelcomeScreen() {
     })
   }
 
-  useEffect(() => {
-    if (step !== 'current-age' || answers.ageAtDiagnosis == null) return
-    setAnswers((prev) => {
-      if (prev.currentChildAge == null) return prev
-      if (!isValidCurrentVsDiagnosisAge(prev.ageAtDiagnosis, prev.currentChildAge)) {
-        return { ...prev, currentChildAge: null }
-      }
-      return prev
-    })
-  }, [step, answers.ageAtDiagnosis])
-
-  // If the user ever leaves the personalizing step, allow re-save when they return.
   useEffect(() => {
     if (step !== 'personalizing') {
       persistStartedRef.current = false
@@ -431,10 +392,7 @@ export function WelcomeScreen() {
     return () => window.clearTimeout(t)
   }, [didPersist, navigate, saveError, step])
 
-  const currentAgeOk = isValidCurrentVsDiagnosisAge(
-    answers.ageAtDiagnosis,
-    answers.currentChildAge,
-  )
+  const currentAgeOk = answers.currentChildAge != null
 
   const showMiniHeader =
     step === 'age-at-diagnosis' ||
@@ -569,6 +527,7 @@ export function WelcomeScreen() {
                 alignSelf: 'stretch',
                 marginTop: 6,
                 overflowY: 'auto',
+                WebkitOverflowScrolling: 'touch',
               }}
             >
               <AgeOptionList
@@ -620,6 +579,7 @@ export function WelcomeScreen() {
                 alignSelf: 'stretch',
                 marginTop: 6,
                 overflowY: 'auto',
+                WebkitOverflowScrolling: 'touch',
               }}
             >
               <AgeOptionList
@@ -631,11 +591,6 @@ export function WelcomeScreen() {
                     currentChildAge: next,
                   }))
                 }
-                isOptionDisabled={(label) => {
-                  const diagnosisIdx = ageCategoryIndex(answers.ageAtDiagnosis)
-                  const optionIdx = ageCategoryIndex(label)
-                  return diagnosisIdx >= 0 && optionIdx >= 0 && optionIdx < diagnosisIdx
-                }}
               />
             </div>
           </OnboardingFormLayout>
