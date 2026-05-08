@@ -1,5 +1,22 @@
-import { useCallback, useEffect, useMemo, useState, type CSSProperties } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
+import {
+  ResourcesPageEmpty,
+  ResourcesPageError,
+  ResourcesPageLoading,
+} from '../components/ResourcesPageStates'
+import { PersonalizedSupportGridCard } from '../components/support/supportResourceGridCard'
+import { SupportResourceListCard } from '../components/support/supportResourceListCard'
+import { PersonalizationMismatchBanner } from '../components/ui/personalizationMismatchBanner'
+import { SupportCategoryChips } from '../components/ui/supportCategoryChips'
+import { normalizeCategoryLabel, safeExternalHref } from '../lib/supportResourceHref'
 import { supabase, ensureAuthUserId, SupportResource } from '../lib/supabase'
+import {
+  CARDEA_ALMOST_WHITE,
+  CARDEA_LIGHT_BLUE,
+  CARDEA_MUTED,
+  CARDEA_NAVY,
+} from '../ui/cardeaTokens'
+import { useMood } from '../mood'
 
 const FILTER_CATEGORIES = [
   'Mental Health',
@@ -7,7 +24,6 @@ const FILTER_CATEGORIES = [
   'Financial Aid',
   'Community',
 ] as const
-type SupportFilterCategory = (typeof FILTER_CATEGORIES)[number]
 
 const CATEGORIES = ['All', ...FILTER_CATEGORIES] as const
 type Category = (typeof CATEGORIES)[number]
@@ -195,6 +211,7 @@ function safeExternalHref(raw: string | number | null | undefined): string | nul
 }
 
 export default function FindSupport() {
+  const { theme } = useMood()
   const [resources, setResources] = useState<SupportResource[]>([])
   const [locationQuery, setLocationQuery] = useState('')
   const [activeCategory, setActiveCategory] = useState<Category>('All')
@@ -203,8 +220,8 @@ export default function FindSupport() {
   const [userId, setUserId] = useState<string | null>(null)
   const [authBootstrapped, setAuthBootstrapped] = useState(false)
   const [userProfile, setUserProfile] = useState<UserProfileFields | null>(null)
-  const [personalizeByAge, setPersonalizeByAge] = useState(false)
-  const [personalizeByCondition, setPersonalizeByCondition] = useState(false)
+  const [personalizeByAge] = useState(false)
+  const [personalizeByCondition] = useState(false)
 
   useEffect(() => {
     let cancelled = false
@@ -318,59 +335,39 @@ export default function FindSupport() {
   }, [sortedResources, personalizeByAge, personalizeByCondition])
 
   return (
-    <div style={{ minHeight: '100vh', background: '#f5f9f9', fontFamily: 'Inter, system-ui, sans-serif' }}>
-      <div style={{ maxWidth: '720px', margin: '0 auto', padding: '40px 24px 72px' }}>
-
-        {/* Header */}
-        <div style={{ marginBottom: '32px' }}>
-          <p style={{
-            margin: '0 0 6px',
-            fontSize: '10px',
-            fontWeight: 700,
-            letterSpacing: '0.12em',
-            textTransform: 'uppercase',
-            color: '#acb7a8',
-            fontFamily: 'Inter, system-ui, sans-serif',
-          }}>
-            Cardea
-          </p>
-          <h1 style={{
-            margin: '0 0 10px',
-            fontFamily: 'var(--font-display, "Bebas Neue", sans-serif)',
-            fontSize: 'clamp(2.2rem, 4vw, 3rem)',
-            letterSpacing: '0.04em',
-            color: '#192b3f',
-            lineHeight: 1,
-          }}>
+    <div style={{ minHeight: '100%', background: CARDEA_ALMOST_WHITE, fontFamily: 'Inter, system-ui, sans-serif' }}>
+      <div style={{ maxWidth: '880px', margin: '0 auto', padding: '24px 24px 72px' }}>
+        <div
+          style={{
+            marginBottom: '28px',
+            paddingBottom: '20px',
+            borderBottom: '4px solid transparent',
+            borderImage: theme.borderGradient,
+            transition: 'border-image 0.7s ease',
+          }}
+        >
+          <h1
+            style={{
+              margin: '0 0 10px',
+              fontFamily: 'Inter, system-ui, sans-serif',
+              fontSize: 'clamp(1.75rem, 4vw, 2.25rem)',
+              fontWeight: 700,
+              letterSpacing: '0.08em',
+              color: CARDEA_NAVY,
+              lineHeight: 1.15,
+              textTransform: 'uppercase',
+            }}
+          >
             Find Support
           </h1>
-          <p style={{ margin: 0, fontSize: '0.875rem', color: '#acb7a8', lineHeight: 1.65, fontFamily: 'Inter, system-ui, sans-serif' }}>
-            Resources for heart families — near you and online.
-          </p>
-        </div>
-
-        {/* Search */}
-        <div style={{ position: 'relative', marginBottom: '16px' }}>
-          <span style={{ position: 'absolute', left: '14px', top: '50%', transform: 'translateY(-50%)', color: '#acb7a8', fontSize: '1rem' }}>
-            📍
-          </span>
-          <input
-            type="text"
-            value={locationQuery}
-            onChange={(e) => setLocationQuery(e.target.value)}
-            placeholder="Search by city or zip code..."
+          <p
             style={{
-              width: '100%',
-              padding: '12px 16px 12px 40px',
-              borderRadius: '12px',
-              border: '1.5px solid #c6d9e5',
-              background: '#fff',
-              fontSize: '0.9rem',
-              color: '#192b3f',
+              margin: 0,
+              fontSize: '0.9375rem',
+              color: CARDEA_MUTED,
+              lineHeight: 1.65,
               fontFamily: 'Inter, system-ui, sans-serif',
-              outline: 'none',
-              boxSizing: 'border-box',
-              transition: 'border-color 0.2s ease',
+              maxWidth: '560px',
             }}
           />
         </div>
@@ -380,21 +377,10 @@ export default function FindSupport() {
           <CategoryChips active={activeCategory} onChange={setActiveCategory} />
         </div>
 
-        {/* Divider */}
-        <div style={{ height: '1px', background: '#c6d9e5', marginBottom: '28px' }} />
-
-        {/* Results */}
         {loading ? (
-          <p style={{ textAlign: 'center', color: '#acb7a8', fontSize: '0.9rem', padding: '48px 0' }}>
-            Loading resources…
-          </p>
-        ) : sortedResources.length === 0 ? (
-          <div style={{ textAlign: 'center', padding: '64px 0' }}>
-            <div style={{ fontSize: '2.5rem', marginBottom: '12px' }}>💛</div>
-            <p style={{ margin: 0, fontSize: '0.9rem', color: '#acb7a8' }}>
-              No resources found — try adjusting your filters.
-            </p>
-          </div>
+          <ResourcesPageLoading label="Loading resources…" />
+        ) : error ? (
+          <ResourcesPageError message={error} onRetry={() => load(userId)} />
         ) : (
           <ul style={{ listStyle: 'none', margin: 0, padding: 0, display: 'flex', flexDirection: 'column', gap: '16px' }}>
             {sortedResources.map((r) => (
@@ -411,196 +397,129 @@ export default function FindSupport() {
           personalizedResources.length === 0 && (
             <div
               style={{
-                background: '#fff8e1',
-                border: '2px solid #ffe082',
-                borderRadius: '16px',
-                padding: '40px 24px',
-                textAlign: 'center',
+                background: 'rgba(198, 217, 229, 0.42)',
+                borderRadius: 16,
+                padding: '18px 20px',
+                marginBottom: '22px',
+                border: '1px solid rgba(25, 43, 63, 0.06)',
               }}
             >
-              <span style={{ fontSize: '3rem' }}>✨</span>
-              <p style={{ color: '#f57f17', fontSize: '1.2rem', fontWeight: 600, marginTop: '12px' }}>
-                No resources match your personalization settings
-              </p>
-              <p style={{ color: '#b45309', fontSize: '0.95rem', marginTop: '8px', lineHeight: 1.5 }}>
-                Try turning off the age or condition options above, or adjust your search or category filter.
-              </p>
-            </div>
-          )}
-
-        {!loading && !error && personalizedResources.length > 0 && (
-          <div
-            style={{
-              display: 'grid',
-              gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))',
-              gap: '20px',
-            }}
-          >
-            {personalizedResources.map((r, index) => {
-              const catLabel = normalizeCategoryLabel(r.category) || 'Resource'
-              const colors = categoryStyle(catLabel)
-              const href = safeExternalHref(r.link)
-              const locationLine = [r.city, r.zipcode]
-                .filter((v) => v != null && String(v).trim() !== '')
-                .map((v) => String(v))
-                .join(', ')
-
-              const cardInner = (
-                <>
-                  <div
-                    style={{
-                      display: 'flex',
-                      alignItems: 'flex-start',
-                      justifyContent: 'space-between',
-                      gap: '12px',
-                      marginBottom: '12px',
-                    }}
-                  >
-                    <h3
-                      style={{
-                        fontSize: '1.2rem',
-                        fontWeight: 700,
-                        color: '#2c3e50',
-                        margin: 0,
-                        lineHeight: 1.35,
-                        flex: 1,
-                        minWidth: 0,
-                      }}
-                    >
-                      {r.name}
-                    </h3>
-                    <span
-                      style={{
-                        flexShrink: 0,
-                        fontSize: '0.7rem',
-                        fontWeight: 700,
-                        textTransform: 'uppercase',
-                        letterSpacing: '0.4px',
-                        padding: '4px 10px',
-                        borderRadius: '999px',
-                        background: colors.bg,
-                        color: colors.text,
-                        border: `1px solid ${colors.border}`,
-                        maxWidth: '46%',
-                        textAlign: 'right',
-                      }}
-                    >
-                      {catLabel}
-                    </span>
-                  </div>
-
-                  {r.description ? (
-                    <p
-                      style={{
-                        color: '#666',
-                        fontSize: '0.95rem',
-                        lineHeight: 1.55,
-                        margin: '0 0 12px',
-                      }}
-                    >
-                      {r.description}
-                    </p>
-                  ) : null}
-
-                  {locationLine ? (
-                    <p
-                      style={{
-                        margin: '0 0 12px',
-                        fontSize: '0.85rem',
-                        color: '#6b7280',
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: '6px',
-                      }}
-                    >
-                      <span aria-hidden>📍</span>
-                      {locationLine}
-                    </p>
-                  ) : null}
-
-                  <div
-                    style={{
-                      marginTop: 'auto',
-                      paddingTop: '14px',
-                      height: '4px',
-                      background: `linear-gradient(90deg, ${colors.border}, ${colors.bg})`,
-                      borderRadius: '2px',
-                    }}
-                  />
-                </>
-              )
-
-              const cardShellStyle: CSSProperties = {
-                background: '#ffffff',
-                borderRadius: '20px',
-                padding: '24px',
-                boxShadow: '0 4px 20px rgba(0,0,0,0.08)',
-                border: '2px solid transparent',
-                transition: 'all 0.3s ease',
-                animation: `fadeInUp 0.5s ease ${index * 0.04}s both`,
-                height: '100%',
-                boxSizing: 'border-box',
-                display: 'flex',
-                flexDirection: 'column',
-                cursor: href ? 'pointer' : 'default',
-                textDecoration: 'none',
-                color: 'inherit',
-              }
-
-              if (href) {
-                return (
-                  <a
-                    key={r.id}
-                    href={href}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    aria-label={`${r.name} — opens in a new tab`}
-                    style={cardShellStyle}
-                    onMouseEnter={(e) => {
-                      e.currentTarget.style.transform = 'translateY(-5px)'
-                      e.currentTarget.style.boxShadow = '0 12px 40px rgba(236, 72, 153, 0.2)'
-                      e.currentTarget.style.borderColor = colors.border
-                    }}
-                    onMouseLeave={(e) => {
-                      e.currentTarget.style.transform = 'translateY(0)'
-                      e.currentTarget.style.boxShadow = '0 4px 20px rgba(0,0,0,0.08)'
-                      e.currentTarget.style.borderColor = 'transparent'
-                    }}
-                  >
-                    {cardInner}
-                  </a>
-                )
-              }
-
-              return (
-                <div
-                  key={r.id}
-                  style={cardShellStyle}
-                  onMouseEnter={(e) => {
-                    e.currentTarget.style.borderColor = colors.border
-                  }}
-                  onMouseLeave={(e) => {
-                    e.currentTarget.style.borderColor = 'transparent'
+              <div style={{ position: 'relative' }}>
+                <span
+                  style={{
+                    position: 'absolute',
+                    left: '16px',
+                    top: '50%',
+                    transform: 'translateY(-50%)',
+                    color: CARDEA_MUTED,
+                    fontSize: '1rem',
                   }}
                 >
-                  {cardInner}
-                </div>
-              )
-            })}
-          </div>
-        )}
+                  📍
+                </span>
+                <input
+                  type="text"
+                  value={locationQuery}
+                  onChange={(e) => setLocationQuery(e.target.value)}
+                  placeholder="Search by city or zip code..."
+                  style={{
+                    width: '100%',
+                    padding: '14px 18px 14px 44px',
+                    borderRadius: 9999,
+                    border: '1px solid rgba(25, 43, 63, 0.12)',
+                    background: '#fff',
+                    fontSize: '0.9rem',
+                    color: CARDEA_NAVY,
+                    fontFamily: 'Inter, system-ui, sans-serif',
+                    outline: 'none',
+                    boxSizing: 'border-box',
+                    transition: 'border-color 0.2s ease',
+                  }}
+                />
+              </div>
+            </div>
 
-        {!loading && !error && personalizedResources.length > 0 && (
-          <p
-            style={{
-              textAlign: 'center',
-              color: '#888',
-              marginTop: '30px',
-              fontSize: '0.9rem',
-            }}
-          >
-            Showing {personalizedResources.length} resource{personalizedResources.length !== 1 ? 's' : ''}
-          </p>
+            <div style={{ marginBottom: '28px' }}>
+              <SupportCategoryChips options={CATEGORIES} active={activeCategory} onChange={setActiveCategory} />
+            </div>
+
+            <div style={{ height: '1px', background: CARDEA_LIGHT_BLUE, marginBottom: '28px' }} />
+
+            {sortedResources.length === 0 ? (
+              <ResourcesPageEmpty
+                icon={<span aria-hidden>💛</span>}
+                title="No resources match your filters"
+                description="Try a different city or zip, pick another category, or clear your search."
+              />
+            ) : (
+              <ul
+                style={{
+                  listStyle: 'none',
+                  margin: 0,
+                  padding: 0,
+                  display: 'flex',
+                  flexDirection: 'column',
+                  gap: '16px',
+                }}
+              >
+                {sortedResources.map((r) => (
+                  <SupportResourceListCard key={r.id} resource={r} />
+                ))}
+              </ul>
+            )}
+
+            {personalizeActive &&
+              resources.length > 0 &&
+              filteredResources.length > 0 &&
+              personalizedResources.length === 0 && (
+                <PersonalizationMismatchBanner
+                  title="No resources match your personalization settings"
+                  description="Try turning off the age or condition options above, or adjust your search or category filter."
+                />
+              )}
+
+            {personalizedResources.length > 0 && (
+              <div
+                style={{
+                  display: 'grid',
+                  gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))',
+                  gap: '20px',
+                }}
+              >
+                {personalizedResources.map((r, index) => {
+                  const catLabel = normalizeCategoryLabel(r.category) || 'Resource'
+                  const href = safeExternalHref(r.link)
+                  const locationLine = [r.city, r.zipcode]
+                    .filter((v) => v != null && String(v).trim() !== '')
+                    .map((v) => String(v))
+                    .join(', ')
+                  return (
+                    <PersonalizedSupportGridCard
+                      key={r.id}
+                      resource={r}
+                      categoryLabel={catLabel}
+                      locationLine={locationLine}
+                      href={href}
+                      index={index}
+                    />
+                  )
+                })}
+              </div>
+            )}
+
+            {personalizedResources.length > 0 && (
+              <p
+                style={{
+                  textAlign: 'center',
+                  color: '#888',
+                  marginTop: '30px',
+                  fontSize: '0.9rem',
+                }}
+              >
+                Showing {personalizedResources.length} resource{personalizedResources.length !== 1 ? 's' : ''}
+              </p>
+            )}
+          </>
         )}
       </div>
     </div>

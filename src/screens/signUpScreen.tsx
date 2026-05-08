@@ -7,9 +7,7 @@ import {
 } from '../constants/securityQuestions'
 import { hashSecurityAnswerBcrypt } from '../lib/securityAnswerBcrypt'
 import { supabase } from '../lib/supabaseClient'
-
-const COLOR_NAVY = '#0A2E5C'
-const FONT_UI = 'Montserrat, sans-serif' as const
+import { AUTH_FONT_FAMILY, AUTH_NAVY } from '../ui/authTokens'
 
 function randomUsername() {
   const nouns = [
@@ -64,8 +62,8 @@ const inputStyle: React.CSSProperties = {
   fontWeight: 500,
   border: '2px solid rgba(10, 46, 92, 0.22)',
   background: '#F1F5F9',
-  color: COLOR_NAVY,
-  fontFamily: FONT_UI,
+  color: AUTH_NAVY,
+  fontFamily: AUTH_FONT_FAMILY,
   boxSizing: 'border-box',
 }
 
@@ -502,8 +500,8 @@ export function SignUpScreen() {
         justifyContent: 'center',
         padding: 24,
         background: '#EEF1F4',
-        color: COLOR_NAVY,
-        fontFamily: FONT_UI,
+        color: AUTH_NAVY,
+        fontFamily: AUTH_FONT_FAMILY,
         textAlign: 'center',
         boxSizing: 'border-box',
       }}
@@ -547,7 +545,7 @@ export function SignUpScreen() {
                 fontSize: 16,
                 lineHeight: 1.35,
                 fontWeight: 700,
-                color: COLOR_NAVY,
+                color: AUTH_NAVY,
               }}
             >
               Security question {currentSecurityIndex} of {SECURITY_STEPS}
@@ -676,13 +674,13 @@ export function SignUpScreen() {
                 borderRadius: 12,
                 fontSize: 16,
                 fontWeight: 650,
-                fontFamily: FONT_UI,
+                fontFamily: AUTH_FONT_FAMILY,
                 cursor: 'pointer',
                 minWidth: 168,
                 boxSizing: 'border-box',
                 textDecoration: 'none',
                 border: '2px solid rgba(10, 46, 92, 0.35)',
-                color: COLOR_NAVY,
+                color: AUTH_NAVY,
                 background: 'transparent',
               }}
             >
@@ -700,12 +698,12 @@ export function SignUpScreen() {
                 borderRadius: 12,
                 fontSize: 16,
                 fontWeight: 650,
-                fontFamily: FONT_UI,
+                fontFamily: AUTH_FONT_FAMILY,
                 cursor: 'pointer',
                 minWidth: 168,
                 boxSizing: 'border-box',
                 border: '2px solid rgba(10, 46, 92, 0.35)',
-                color: COLOR_NAVY,
+                color: AUTH_NAVY,
                 background: 'transparent',
               }}
             >
@@ -724,13 +722,13 @@ export function SignUpScreen() {
             }}
             style={{
               border: 'none',
-              background: COLOR_NAVY,
+              background: AUTH_NAVY,
               color: '#FFFFFF',
               padding: '12px 28px',
               borderRadius: 12,
               fontSize: 16,
               fontWeight: 650,
-              fontFamily: FONT_UI,
+              fontFamily: AUTH_FONT_FAMILY,
               cursor:
                 step === 'username'
                   ? canContinueUsername
@@ -782,7 +780,7 @@ export function SignUpScreen() {
               color: 'rgba(10, 46, 92, 0.6)',
               fontSize: 13,
               fontWeight: 600,
-              fontFamily: FONT_UI,
+              fontFamily: AUTH_FONT_FAMILY,
               textDecoration: 'underline',
               cursor: 'pointer',
             }}

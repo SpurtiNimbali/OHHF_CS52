@@ -1,5 +1,22 @@
-import { useState, useEffect } from 'react'
+import { useEffect, useState } from 'react'
+
+import {
+  ResourcesPageLoading,
+  ResourcesPageError,
+  ResourcesPageEmpty,
+} from '../components/ResourcesPageStates'
+import { GlossaryCategoryFilters } from '../components/ui/glossaryCategoryFilters'
+import { GlossaryScreenHeading } from '../components/ui/glossaryScreenHeading'
+import { GlossaryTermCard } from '../components/ui/glossaryTermCard'
 import { supabase } from '../lib/supabase'
+import {
+  CARDEA_ALMOST_WHITE,
+  CARDEA_BORDER_SOFT,
+  CARDEA_FONT_SANS,
+  CARDEA_MUTED,
+  CARDEA_NAVY,
+  CARDEA_RADIUS_CARD,
+} from '../ui/cardeaTokens'
 
 interface GlossaryTerm {
   id: string | number
@@ -7,16 +24,6 @@ interface GlossaryTerm {
   definition: string
   category?: string
 }
-
-const NAVY = '#192b3f'
-const LIGHT_BLUE = '#c6d9e5'
-const ALMOST_WHITE = '#f5f9f9'
-const DARK_GREEN = '#577568'
-const LIGHT_GREEN = '#acb7a8'
-const BORDER_SOFT = `${LIGHT_BLUE}99`
-const RADIUS = 14
-const FONT_SANS =
-  '\'Inter\', system-ui, -apple-system, BlinkMacSystemFont, \'Segoe UI\', sans-serif'
 
 const CATEGORY_ORDER = [
   'anatomy',
@@ -103,6 +110,7 @@ function MedicalGlossary() {
   const [terms, setTerms] = useState<GlossaryTerm[]>([])
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [refreshNonce, setRefreshNonce] = useState(0)
 
   useEffect(() => {
     let isMounted = true
@@ -140,7 +148,7 @@ function MedicalGlossary() {
           setError(
             err instanceof Error
               ? err.message
-              : 'Could not load glossary terms. Check your Supabase configuration.'
+              : 'Could not load glossary terms. Check your Supabase configuration.',
           )
         }
       } finally {
@@ -155,19 +163,7 @@ function MedicalGlossary() {
     return () => {
       isMounted = false
     }
-  }, [query])
-
-  const divider = (
-    <div
-      style={{
-        height: 1,
-        background: LIGHT_BLUE,
-        opacity: 0.55,
-        margin: 0,
-        border: 'none',
-      }}
-    />
-  )
+  }, [query, refreshNonce])
 
   const filteredTerms = terms.filter((t) => !selectedTag || getCategory(t.term) === selectedTag)
 
@@ -175,53 +171,31 @@ function MedicalGlossary() {
     <div
       style={{
         minHeight: '100vh',
-        background: ALMOST_WHITE,
-        padding: '0 0 48px',
-        fontFamily: FONT_SANS,
-        color: NAVY,
+        background: CARDEA_ALMOST_WHITE,
+        padding: '0 0 56px',
+        fontFamily: CARDEA_FONT_SANS,
+        color: CARDEA_NAVY,
       }}
     >
       <div
         style={{
-          maxWidth: 720,
+          maxWidth: 960,
           margin: '0 auto',
-          padding: '8px 24px 0',
+          padding: '0 24px 0',
         }}
       >
-        <header style={{ paddingBottom: 28 }}>
-          <h1
-            style={{
-              fontSize: 'clamp(1.5rem, 4vw, 1.875rem)',
-              fontWeight: 700,
-              letterSpacing: '0.04em',
-              color: NAVY,
-              margin: '0 0 12px',
-              textTransform: 'uppercase',
-            }}
-          >
-            Medical Glossary
-          </h1>
-          <p
-            style={{
-              fontSize: '1rem',
-              lineHeight: 1.55,
-              color: DARK_GREEN,
-              margin: 0,
-            }}
-          >
-            Learn and understand common medical terms
-          </p>
-        </header>
-        {divider}
+        <GlossaryScreenHeading title="Medical Glossary" subtitle="Learn and understand common medical terms" />
 
-        {/* Search */}
         <section
           style={{
-            background: ALMOST_WHITE,
-            padding: '28px 0',
+            background: 'rgba(172, 183, 168, 0.22)',
+            marginLeft: '-24px',
+            marginRight: '-24px',
+            padding: '28px 24px',
+            borderRadius: 16,
           }}
         >
-          <div style={{ position: 'relative' }}>
+          <div style={{ position: 'relative', maxWidth: 800 }}>
             <span
               style={{
                 position: 'absolute',
@@ -232,7 +206,7 @@ function MedicalGlossary() {
                 pointerEvents: 'none',
               }}
             >
-              <BookSearchIcon color={`${NAVY}55`} />
+              <BookSearchIcon color={`${CARDEA_NAVY}45`} />
             </span>
             <input
               id="glossary-search"
@@ -245,156 +219,52 @@ function MedicalGlossary() {
                 padding: '16px 16px 16px 52px',
                 width: '100%',
                 fontSize: '1rem',
-                border: `1px solid ${BORDER_SOFT}`,
-                borderRadius: RADIUS,
+                border: `1px solid ${CARDEA_BORDER_SOFT}`,
+                borderRadius: CARDEA_RADIUS_CARD,
                 outline: 'none',
                 transition: 'border-color 0.2s ease, box-shadow 0.2s ease',
                 background: '#ffffff',
                 boxSizing: 'border-box',
-                fontFamily: FONT_SANS,
-                color: NAVY,
+                fontFamily: CARDEA_FONT_SANS,
+                color: CARDEA_NAVY,
               }}
               onFocus={(e) => {
-                e.target.style.borderColor = NAVY
-                e.target.style.boxShadow = `0 0 0 3px ${LIGHT_BLUE}`
+                e.target.style.borderColor = CARDEA_NAVY
+                e.target.style.boxShadow = `0 0 0 3px rgba(198, 217, 229, 0.65)`
               }}
               onBlur={(e) => {
-                e.target.style.borderColor = BORDER_SOFT
+                e.target.style.borderColor = CARDEA_BORDER_SOFT
                 e.target.style.boxShadow = 'none'
               }}
             />
           </div>
         </section>
-        {divider}
 
-        {/* Filters */}
-        <section
-          style={{
-            background: '#ffffff',
-            padding: '26px 0',
-            marginLeft: '-24px',
-            marginRight: '-24px',
-            paddingLeft: 24,
-            paddingRight: 24,
-          }}
-        >
-          <p
-            style={{
-              fontSize: '0.9375rem',
-              fontWeight: 600,
-              color: NAVY,
-              margin: '0 0 14px',
-            }}
-          >
-            Filter by category:
-          </p>
-          <div
-            style={{
-              display: 'flex',
-              flexWrap: 'wrap',
-              gap: 10,
-            }}
-          >
-            <button
-              type="button"
-              onClick={() => setSelectedTag(null)}
-              style={{
-                padding: '10px 18px',
-                borderRadius: 999,
-                border: selectedTag === null ? 'none' : `1px solid ${BORDER_SOFT}`,
-                background: selectedTag === null ? NAVY : LIGHT_BLUE,
-                color: selectedTag === null ? '#ffffff' : NAVY,
-                fontSize: '0.875rem',
-                fontWeight: 600,
-                cursor: 'pointer',
-                fontFamily: FONT_SANS,
-                transition: 'background 0.2s ease, color 0.2s ease',
-              }}
-            >
-              All
-            </button>
-            {CATEGORY_ORDER.map((cat) => {
-              const isSelected = selectedTag === cat
-              return (
-                <button
-                  type="button"
-                  key={cat}
-                  onClick={() => setSelectedTag(isSelected ? null : cat)}
-                  style={{
-                    padding: '10px 18px',
-                    borderRadius: 999,
-                    border: isSelected ? 'none' : `1px solid ${BORDER_SOFT}`,
-                    background: isSelected ? NAVY : LIGHT_BLUE,
-                    color: isSelected ? '#ffffff' : NAVY,
-                    fontSize: '0.875rem',
-                    fontWeight: 600,
-                    cursor: 'pointer',
-                    fontFamily: FONT_SANS,
-                    textTransform: 'capitalize',
-                    transition: 'background 0.2s ease, color 0.2s ease',
-                  }}
-                >
-                  {cat}
-                </button>
-              )
-            })}
-          </div>
-        </section>
-        {divider}
+        <GlossaryCategoryFilters
+          categories={CATEGORY_ORDER}
+          selectedTag={selectedTag}
+          onSelectTag={setSelectedTag}
+        />
 
-        {/* List */}
         <section style={{ paddingTop: 28 }}>
-          {loading && (
-            <div
-              style={{
-                textAlign: 'center',
-                padding: '48px 16px',
-                color: DARK_GREEN,
-              }}
-            >
-              <p style={{ fontSize: '1rem', margin: 0, fontWeight: 500 }}>
-                Loading terms…
-              </p>
-            </div>
-          )}
+          {loading && <ResourcesPageLoading label="Loading terms…" />}
 
           {!loading && error && (
-            <div
-              style={{
-                background: '#ffffff',
-                border: `1px solid ${BORDER_SOFT}`,
-                borderRadius: RADIUS,
-                padding: 28,
-                textAlign: 'center',
-              }}
-            >
-              <p style={{ color: NAVY, fontWeight: 600, margin: 0 }}>
-                {error}
-              </p>
-            </div>
+            <ResourcesPageError
+              message={error}
+              onRetry={() => setRefreshNonce((n) => n + 1)}
+            />
           )}
 
           {!loading && !error && terms.length === 0 && (
-            <div
-              style={{
-                background: '#ffffff',
-                border: `1px solid ${BORDER_SOFT}`,
-                borderRadius: RADIUS,
-                padding: 40,
-                textAlign: 'center',
-              }}
-            >
-              <p style={{ color: NAVY, fontWeight: 600, margin: 0 }}>
-                {selectedTag
-                  ? `No ${formatCategoryLabel(selectedTag)} terms found`
-                  : 'No terms match your search'}
-              </p>
-              <p style={{ color: DARK_GREEN, marginTop: 10, marginBottom: 0 }}>
-                {selectedTag
-                  ? 'Try a different category or search term'
-                  : 'Try a different search term'}
-              </p>
-            </div>
+            <ResourcesPageEmpty
+              title={
+                selectedTag ? `No ${formatCategoryLabel(selectedTag)} terms found` : 'No terms match your search'
+              }
+              description={
+                selectedTag ? 'Try a different category or search term' : 'Try a different search term'
+              }
+            />
           )}
 
           {!loading &&
@@ -402,91 +272,29 @@ function MedicalGlossary() {
             terms.length > 0 &&
             filteredTerms.length === 0 &&
             selectedTag && (
-            <div
-              style={{
-                background: '#ffffff',
-                border: `1px solid ${BORDER_SOFT}`,
-                borderRadius: RADIUS,
-                padding: 40,
-                textAlign: 'center',
-              }}
-            >
-              <p style={{ color: NAVY, fontWeight: 600, margin: 0 }}>
-                {`No ${formatCategoryLabel(selectedTag)} terms found`}
-              </p>
-              <p style={{ color: DARK_GREEN, marginTop: 10, marginBottom: 0 }}>
-                Try a different category or search term
-              </p>
-            </div>
-          )}
+              <ResourcesPageEmpty
+                title={`No ${formatCategoryLabel(selectedTag)} terms found`}
+                description="Try a different category or search term"
+              />
+            )}
 
           {!loading && !error && filteredTerms.length > 0 && (
             <div
               style={{
-                display: 'flex',
-                flexDirection: 'column',
+                display: 'grid',
+                gridTemplateColumns: 'repeat(auto-fill, minmax(min(100%, 300px), 1fr))',
                 gap: 20,
               }}
             >
               {filteredTerms.map((term) => {
                 const category = getCategory(term.term)
                 return (
-                  <article
+                  <GlossaryTermCard
                     key={term.id}
-                    style={{
-                      background: '#ffffff',
-                      border: `1px solid ${BORDER_SOFT}`,
-                      borderRadius: RADIUS,
-                      padding: '22px 24px',
-                    }}
-                  >
-                    <div
-                      style={{
-                        display: 'flex',
-                        alignItems: 'flex-start',
-                        justifyContent: 'space-between',
-                        gap: 16,
-                        marginBottom: 12,
-                      }}
-                    >
-                      <h3
-                        style={{
-                          fontSize: '1.125rem',
-                          fontWeight: 700,
-                          color: NAVY,
-                          margin: 0,
-                          lineHeight: 1.35,
-                        }}
-                      >
-                        {term.term}
-                      </h3>
-                      <span
-                        style={{
-                          flexShrink: 0,
-                          background: ALMOST_WHITE,
-                          color: NAVY,
-                          padding: '6px 12px',
-                          borderRadius: 999,
-                          fontSize: '0.75rem',
-                          fontWeight: 600,
-                          border: `1px solid ${BORDER_SOFT}`,
-                          textTransform: 'capitalize',
-                        }}
-                      >
-                        {category}
-                      </span>
-                    </div>
-                    <p
-                      style={{
-                        color: DARK_GREEN,
-                        fontSize: '0.9375rem',
-                        lineHeight: 1.65,
-                        margin: 0,
-                      }}
-                    >
-                      {term.definition}
-                    </p>
-                  </article>
+                    term={term.term}
+                    definition={term.definition}
+                    categoryLabel={category}
+                  />
                 )
               })}
             </div>
@@ -496,7 +304,7 @@ function MedicalGlossary() {
             <p
               style={{
                 textAlign: 'center',
-                color: DARK_GREEN,
+                color: CARDEA_MUTED,
                 marginTop: 36,
                 fontSize: '0.875rem',
               }}
