@@ -1,18 +1,12 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import {
-  ResourcesPageEmpty,
   ResourcesPageError,
   ResourcesPageLoading,
 } from '../components/ResourcesPageStates'
-import { PersonalizedSupportGridCard } from '../components/support/supportResourceGridCard'
-import { SupportResourceListCard } from '../components/support/supportResourceListCard'
-import { PersonalizationMismatchBanner } from '../components/ui/personalizationMismatchBanner'
-import { SupportCategoryChips } from '../components/ui/supportCategoryChips'
-import { normalizeCategoryLabel, safeExternalHref } from '../lib/supportResourceHref'
+import { normalizeCategoryLabel } from '../lib/supportResourceHref'
 import { supabase, ensureAuthUserId, SupportResource } from '../lib/supabase'
 import {
   CARDEA_ALMOST_WHITE,
-  CARDEA_LIGHT_BLUE,
   CARDEA_MUTED,
   CARDEA_NAVY,
 } from '../ui/cardeaTokens'
@@ -27,14 +21,7 @@ const FILTER_CATEGORIES = [
 
 const CATEGORIES = ['All', ...FILTER_CATEGORIES] as const
 type Category = (typeof CATEGORIES)[number]
-
-/** Matches `welcomeScreen` age option labels; school age and younger vs older. */
-const SCHOOL_AGE_OR_BELOW_LABELS = [
-  'Prenatal',
-  'Infant (1 and under)',
-  'Preschooler (2-5)',
-  'School Age (6-12)',
-] as const
+type SupportFilterCategory = (typeof FILTER_CATEGORIES)[number]
 
 // ── ResourceCard ─────────────────────────────────────────────────────────────
 
@@ -128,17 +115,6 @@ function ResourceCard({ resource }: { resource: SupportResource }) {
   )
 }
 
-const categoryColors: Record<
-  (typeof FILTER_CATEGORIES)[number] | 'other',
-  { bg: string; text: string; border: string }
-> = {
-  'Mental Health': { bg: '#f3e8ff', text: '#7c3aed', border: '#d8b4fe' },
-  'Family Support': { bg: '#dbeafe', text: '#1d4ed8', border: '#93c5fd' },
-  'Financial Aid': { bg: '#d1fae5', text: '#047857', border: '#6ee7b7' },
-  Community: { bg: '#ffedd5', text: '#c2410c', border: '#fdba74' },
-  other: { bg: '#f3f4f6', text: '#4b5563', border: '#d1d5db' },
-}
-
 function CategoryChips({ active, onChange }: { active: Category; onChange: (c: Category) => void }) {
   return (
     <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
@@ -169,45 +145,10 @@ function CategoryChips({ active, onChange }: { active: Category; onChange: (c: C
   )
 }
 
-function normalizeCategoryLabel(raw: string | number | null | undefined): string {
-  return String(raw ?? '').trim()
-}
-
-type UserProfileFields = {
-  diagnosis_age_category?: string | null
-  current_age_category?: string | null
-  condition?: string | null
-}
-
 function normalizeSupportCategoryBucket(raw: string | number | null | undefined): SupportFilterCategory | 'other' {
   const label = normalizeCategoryLabel(raw)
   const key = FILTER_CATEGORIES.find((c) => c.toLowerCase() === label.toLowerCase())
   return key ?? 'other'
-}
-
-function categoryStyle(label: string) {
-  const key = FILTER_CATEGORIES.find((c) => c.toLowerCase() === label.toLowerCase())
-  return key ? categoryColors[key] : categoryColors.other
-}
-
-function normalizeExternalUrl(raw: string): string {
-  const t = raw.trim()
-  if (!t) return ''
-  if (/^https?:\/\//i.test(t)) return t
-  return `https://${t}`
-}
-
-/** Only allow http(s) URLs for clickable cards. */
-function safeExternalHref(raw: string | number | null | undefined): string | null {
-  const s = String(raw ?? '').trim()
-  if (!s) return null
-  try {
-    const u = new URL(normalizeExternalUrl(s))
-    if (u.protocol === 'http:' || u.protocol === 'https:') return u.href
-  } catch {
-    /* ignore */
-  }
-  return null
 }
 
 export default function FindSupport() {
@@ -217,63 +158,15 @@ export default function FindSupport() {
   const [activeCategory, setActiveCategory] = useState<Category>('All')
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
-  const [userId, setUserId] = useState<string | null>(null)
-  const [authBootstrapped, setAuthBootstrapped] = useState(false)
-  const [userProfile, setUserProfile] = useState<UserProfileFields | null>(null)
-  const [personalizeByAge] = useState(false)
-  const [personalizeByCondition] = useState(false)
 
-  useEffect(() => {
-    let cancelled = false
-    ;(async () => {
-      const uid = await ensureAuthUserId()
-      if (!cancelled) {
-        setUserId(uid)
-        setAuthBootstrapped(true)
-      }
-    })()
-    return () => {
-      cancelled = true
-    }
-  }, [])
-
-  useEffect(() => {
-    if (!authBootstrapped) return
-    const {
-      data: { subscription },
-    } = supabase.auth.onAuthStateChange((_event, session) => {
-      setUserId(session?.user?.id ?? null)
-    })
-    return () => subscription.unsubscribe()
-  }, [authBootstrapped])
-
-  const load = useCallback(async (uid: string | null) => {
+  const load = useCallback(async () => {
     setLoading(true)
     setError(null)
 
-    const resourcesQuery = supabase
+    const { data, error: dbError } = await supabase
       .from('support_resources')
       .select('id, name, description, link, city, zipcode, category')
       .order('name', { ascending: true })
-
-    const profileQuery = uid
-      ? supabase
-          .from('users')
-          .select('diagnosis_age_category, current_age_category, condition')
-          .eq('id', uid)
-          .maybeSingle()
-      : Promise.resolve({ data: null as UserProfileFields | null, error: null })
-
-    const [{ data, error: dbError }, { data: profileRow, error: profileError }] = await Promise.all([
-      resourcesQuery,
-      profileQuery,
-    ])
-
-    if (!profileError && profileRow) {
-      setUserProfile(profileRow as UserProfileFields)
-    } else {
-      setUserProfile(null)
-    }
 
     if (dbError) {
       setResources([])
@@ -285,9 +178,15 @@ export default function FindSupport() {
   }, [])
 
   useEffect(() => {
-    if (!authBootstrapped) return
-    load(userId)
-  }, [authBootstrapped, userId, load])
+    let cancelled = false
+    ;(async () => {
+      await ensureAuthUserId()
+      if (!cancelled) load()
+    })()
+    return () => {
+      cancelled = true
+    }
+  }, [load])
 
   const filteredResources = useMemo(() => {
     const q = locationQuery.trim().toLowerCase()
@@ -329,11 +228,6 @@ export default function FindSupport() {
 
   const sortedResources = filteredResources
 
-  const personalizedResources = useMemo(() => {
-    if (!personalizeByAge && !personalizeByCondition) return []
-    return sortedResources
-  }, [sortedResources, personalizeByAge, personalizeByCondition])
-
   return (
     <div style={{ minHeight: '100%', background: CARDEA_ALMOST_WHITE, fontFamily: 'Inter, system-ui, sans-serif' }}>
       <div style={{ maxWidth: '880px', margin: '0 auto', padding: '24px 24px 72px' }}>
@@ -369,7 +263,9 @@ export default function FindSupport() {
               fontFamily: 'Inter, system-ui, sans-serif',
               maxWidth: '560px',
             }}
-          />
+          >
+            Local and national resources for mental health, family support, financial help, and community.
+          </p>
         </div>
 
         {/* Category chips */}
@@ -380,146 +276,13 @@ export default function FindSupport() {
         {loading ? (
           <ResourcesPageLoading label="Loading resources…" />
         ) : error ? (
-          <ResourcesPageError message={error} onRetry={() => load(userId)} />
+          <ResourcesPageError message={error} onRetry={() => load()} />
         ) : (
           <ul style={{ listStyle: 'none', margin: 0, padding: 0, display: 'flex', flexDirection: 'column', gap: '16px' }}>
             {sortedResources.map((r) => (
               <ResourceCard key={r.id} resource={r} />
             ))}
           </ul>
-        )}
-
-        {!loading &&
-          !error &&
-          resources.length > 0 &&
-          filteredResources.length > 0 &&
-          (personalizeByAge || personalizeByCondition) &&
-          personalizedResources.length === 0 && (
-            <div
-              style={{
-                background: 'rgba(198, 217, 229, 0.42)',
-                borderRadius: 16,
-                padding: '18px 20px',
-                marginBottom: '22px',
-                border: '1px solid rgba(25, 43, 63, 0.06)',
-              }}
-            >
-              <div style={{ position: 'relative' }}>
-                <span
-                  style={{
-                    position: 'absolute',
-                    left: '16px',
-                    top: '50%',
-                    transform: 'translateY(-50%)',
-                    color: CARDEA_MUTED,
-                    fontSize: '1rem',
-                  }}
-                >
-                  📍
-                </span>
-                <input
-                  type="text"
-                  value={locationQuery}
-                  onChange={(e) => setLocationQuery(e.target.value)}
-                  placeholder="Search by city or zip code..."
-                  style={{
-                    width: '100%',
-                    padding: '14px 18px 14px 44px',
-                    borderRadius: 9999,
-                    border: '1px solid rgba(25, 43, 63, 0.12)',
-                    background: '#fff',
-                    fontSize: '0.9rem',
-                    color: CARDEA_NAVY,
-                    fontFamily: 'Inter, system-ui, sans-serif',
-                    outline: 'none',
-                    boxSizing: 'border-box',
-                    transition: 'border-color 0.2s ease',
-                  }}
-                />
-              </div>
-            </div>
-
-            <div style={{ marginBottom: '28px' }}>
-              <SupportCategoryChips options={CATEGORIES} active={activeCategory} onChange={setActiveCategory} />
-            </div>
-
-            <div style={{ height: '1px', background: CARDEA_LIGHT_BLUE, marginBottom: '28px' }} />
-
-            {sortedResources.length === 0 ? (
-              <ResourcesPageEmpty
-                icon={<span aria-hidden>💛</span>}
-                title="No resources match your filters"
-                description="Try a different city or zip, pick another category, or clear your search."
-              />
-            ) : (
-              <ul
-                style={{
-                  listStyle: 'none',
-                  margin: 0,
-                  padding: 0,
-                  display: 'flex',
-                  flexDirection: 'column',
-                  gap: '16px',
-                }}
-              >
-                {sortedResources.map((r) => (
-                  <SupportResourceListCard key={r.id} resource={r} />
-                ))}
-              </ul>
-            )}
-
-            {personalizeActive &&
-              resources.length > 0 &&
-              filteredResources.length > 0 &&
-              personalizedResources.length === 0 && (
-                <PersonalizationMismatchBanner
-                  title="No resources match your personalization settings"
-                  description="Try turning off the age or condition options above, or adjust your search or category filter."
-                />
-              )}
-
-            {personalizedResources.length > 0 && (
-              <div
-                style={{
-                  display: 'grid',
-                  gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))',
-                  gap: '20px',
-                }}
-              >
-                {personalizedResources.map((r, index) => {
-                  const catLabel = normalizeCategoryLabel(r.category) || 'Resource'
-                  const href = safeExternalHref(r.link)
-                  const locationLine = [r.city, r.zipcode]
-                    .filter((v) => v != null && String(v).trim() !== '')
-                    .map((v) => String(v))
-                    .join(', ')
-                  return (
-                    <PersonalizedSupportGridCard
-                      key={r.id}
-                      resource={r}
-                      categoryLabel={catLabel}
-                      locationLine={locationLine}
-                      href={href}
-                      index={index}
-                    />
-                  )
-                })}
-              </div>
-            )}
-
-            {personalizedResources.length > 0 && (
-              <p
-                style={{
-                  textAlign: 'center',
-                  color: '#888',
-                  marginTop: '30px',
-                  fontSize: '0.9rem',
-                }}
-              >
-                Showing {personalizedResources.length} resource{personalizedResources.length !== 1 ? 's' : ''}
-              </p>
-            )}
-          </>
         )}
       </div>
     </div>
