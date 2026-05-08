@@ -26,7 +26,6 @@ type ResourceCard = {
   to: string
 }
 
-/** Pastel tiles aligned with HomePage / right nav: mint, coral, periwinkle */
 const BASE_CARDS: ResourceCard[] = [
   {
     id: 'learn',
@@ -205,7 +204,7 @@ export function HomeScreen() {
                 <p className="text-sm leading-relaxed text-[#3A525A]" style={{ fontFamily: CARDEA_FONT_PRIMARY }}>
                   {moodId
                     ? getMoodMessage(moodId)
-                    : 'It’s okay to take things one step at a time. Small progress is still progress on your heart health journey.'}
+                    : "It's okay to take things one step at a time. Small progress is still progress on your heart health journey."}
                 </p>
               </div>
             </div>

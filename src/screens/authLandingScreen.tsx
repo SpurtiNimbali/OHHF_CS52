@@ -79,7 +79,7 @@ export function AuthLandingScreen() {
           }}
         />
       </div>
-      <h1 style={titleStyle}>Insert app name here</h1>
+      <h1 style={titleStyle}>Cardea</h1>
       <p style={subtitleStyle}>
         Sign in to continue, or sign up if this is your first time.
       </p>

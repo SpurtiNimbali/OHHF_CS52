@@ -1,54 +1,91 @@
-/* Global theme + focus styles to avoid browser default orange rings. */
+@import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@400;500;600;700;800&display=swap');
 
 :root {
-  --ohhf-navy: #0a2e5c;
-  --ohhf-green: #577568;
-  --ohhf-green-ring: rgba(87, 117, 104, 0.55);
-  --ohhf-green-ring-strong: rgba(87, 117, 104, 0.75);
+  --navy:        #192b3f;
+  --light-blue:  #c6d9e5;
+  --off-white:   #f5f9f9;
+  --light-green: #acb7a8;
+  --dark-green:  #577568;
+  --ring:        rgba(87, 117, 104, 0.45);
+
+  --font-display: 'Bebas Neue', 'Arial Narrow', sans-serif;
+  --font-ui:      'Inter', system-ui, sans-serif;
 }
 
-html,
-body {
+html, body {
   height: 100%;
-}
-
-body {
+  font-family: var(--font-ui);
+  background: var(--off-white);
+  color: var(--navy);
   margin: 0;
 }
 
-/* Use the green theme for native controls. */
 * {
-  accent-color: var(--ohhf-green);
-  caret-color: var(--ohhf-green);
+  accent-color: var(--dark-green);
+  caret-color:  var(--dark-green);
+  box-sizing:   border-box;
 }
 
-/* Consistent accessible focus ring for keyboard users. */
 *:focus-visible {
-  outline: 3px solid var(--ohhf-green-ring-strong);
+  outline: 3px solid var(--ring);
   outline-offset: 2px;
 }
 
-/* Remove default outline on focus (we use :focus-visible above). */
-*:focus {
-  outline-color: transparent;
-}
+*:focus        { outline-color: transparent; }
+button:focus,
+a:focus        { outline-color: transparent; }
 
-/* Inputs: override the browser's orange focus highlight. */
 input:focus-visible,
 textarea:focus-visible,
 button:focus-visible,
 select:focus-visible,
 a:focus-visible {
-  box-shadow: 0 0 0 4px var(--ohhf-green-ring);
+  box-shadow: 0 0 0 4px var(--ring);
 }
 
 input:focus,
 textarea:focus {
-  border-color: var(--ohhf-green) !important;
+  border-color: var(--dark-green) !important;
 }
 
-button:focus,
-a:focus {
-  outline-color: transparent;
+/* ── Inline link style ─────────────────────────────────────── */
+a.ohhf-link {
+  color: var(--navy);
+  text-decoration: underline;
+  text-decoration-thickness: 1px;
+  text-underline-offset: 3px;
+  transition: text-decoration-thickness 0.15s ease;
+}
+a.ohhf-link:hover {
+  text-decoration-thickness: 3px;
 }
 
+/* ── Sidebar nav item ──────────────────────────────────────── */
+.sidebar-nav-item {
+  display: block;
+  width: 100%;
+  text-align: left;
+  font-family: var(--font-ui);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+  padding: 10px 20px;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  border-left: 3px solid transparent;
+  transition: all 0.15s ease;
+}
+.sidebar-nav-item.active {
+  color: var(--navy);
+  border-left-color: var(--dark-green);
+  background: rgba(198, 217, 229, 0.25);
+}
+.sidebar-nav-item:not(.active) {
+  color: var(--light-green);
+}
+.sidebar-nav-item:not(.active):hover {
+  color: var(--navy);
+  background: rgba(198, 217, 229, 0.15);
+}
