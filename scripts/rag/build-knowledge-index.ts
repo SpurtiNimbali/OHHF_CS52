@@ -1,6 +1,6 @@
 /**
- * Build `data/knowledge/index.json` from `corpus_cleaned_chunks/*.json`.
- * Requires OPENAI_API_KEY. Run from repo root: npm run rag:build
+ * Build `data/knowledge/index.json` from all JSON chunk files under each configured
+ * corpus tree (recursive). Requires OPENAI_API_KEY. Run: npm run rag:build
  */
 import 'dotenv/config'
 import fs from 'node:fs/promises'
@@ -18,7 +18,10 @@ import {
 const ROOT = process.cwd()
 loadEnv({ path: path.join(ROOT, '.env') })
 loadEnv({ path: path.join(ROOT, '.env.local'), override: true })
-const CHUNKS_DIR = path.join(ROOT, 'corpus_cleaned_chunks')
+const CHUNK_DIRS = [
+  path.join(ROOT, 'corpus_cleaned_chunks'),
+  path.join(ROOT, 'scripts', 'scrape_jina_corpus', 'corpus_cleaned_chunks'),
+]
 const OUT_DIR = path.join(ROOT, 'data', 'knowledge')
 const OUT_FILE = path.join(OUT_DIR, 'index.json')
 const EMBED_MODEL = process.env.OPENAI_EMBEDDING_MODEL ?? 'text-embedding-3-small'
@@ -34,9 +37,24 @@ type RawChunk = {
   originalFile?: string
 }
 
-async function listJsonFiles(dir: string): Promise<string[]> {
-  const names = await fs.readdir(dir)
-  return names.filter((n) => n.endsWith('.json')).map((n) => path.join(dir, n))
+async function listChunkJsonFiles(): Promise<string[]> {
+  const out: string[] = []
+  for (const dir of CHUNK_DIRS) {
+    try {
+      const names = await fs.readdir(dir)
+      for (const n of names) {
+        if (n.endsWith('.json')) out.push(path.join(dir, n))
+      }
+    } catch (e) {
+      const err = e as NodeJS.ErrnoException
+      if (err.code === 'ENOENT') {
+        console.warn(`[rag:build] skip missing directory: ${dir}`)
+        continue
+      }
+      throw e
+    }
+  }
+  return out
 }
 
 function toChunk(raw: RawChunk): KnowledgeChunk | null {
@@ -81,9 +99,10 @@ async function embedBatches(chunks: KnowledgeChunk[]): Promise<number[][]> {
 }
 
 async function main() {
-  const files = await listJsonFiles(CHUNKS_DIR)
+  const files = await listChunkJsonFiles()
+  console.log(`[rag:build] chunk JSON files: ${files.length}`)
   if (files.length === 0) {
-    console.error(`No JSON files under ${CHUNKS_DIR}`)
+    console.error('No chunk JSON files found. Expected dirs:', CHUNK_DIRS.join(', '))
     process.exit(1)
   }
 
