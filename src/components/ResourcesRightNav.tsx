@@ -2,8 +2,7 @@ import { Link, useLocation, useSearchParams } from 'react-router-dom'
 import { motion } from 'motion/react'
 import { Home, Activity, MessageCircle, Heart, MessageSquare } from 'lucide-react'
 import { moodColorWithAlpha, useMood } from '../mood'
-
-const FONT_UI = "'Montserrat', Inter, system-ui, sans-serif"
+import { CARDEA_FONT_MONTSERRAT_STACK } from '../ui/cardeaTokens'
 
 export const NAV_TILE_PALETTE = {
   coral: {
@@ -76,7 +75,7 @@ export function ResourcesRightNav() {
       transition={{ delay: 0.15 }}
       className="flex w-20 shrink-0 flex-col items-center border-l py-8 shadow-lg backdrop-blur-md transition-all duration-700 bg-white/88"
       style={{
-        fontFamily: FONT_UI,
+        fontFamily: CARDEA_FONT_MONTSERRAT_STACK,
         borderLeftColor: moodColorWithAlpha(theme.heartFill, 0.28),
       }}
     >

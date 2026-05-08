@@ -1,4 +1,10 @@
 import React, { useEffect, useId, useMemo, useRef, useState } from 'react'
+import {
+  CARDEA_ALMOST_WHITE,
+  CARDEA_DARK_GREEN,
+  CARDEA_FONT_PRIMARY,
+  CARDEA_NAVY,
+} from '../ui/cardeaTokens'
 
 export type CustomSelectOption<T extends string | number> = {
   value: T
@@ -25,14 +31,17 @@ export type CustomSelectProps<T extends string | number> = {
   variant?: 'default' | 'compact'
 }
 
-/** App “dark blue” — keep in sync with onboarding (`#0A2E5C`). */
+/** Cardea / home-aligned select chrome (matches resources & onboarding). */
 const palette = {
-  navy: '#0A2E5C',
-  lightBlue: '#C6D9E5',
-  almostWhite: '#F1F5F9',
-  lightGreen: '#ACB7A8',
-  darkGreen: '#577568',
+  navy: CARDEA_NAVY,
+  almostWhite: CARDEA_ALMOST_WHITE,
+  darkGreen: CARDEA_DARK_GREEN,
 } as const
+
+const NAVY_SOFT_22 = 'rgba(25, 43, 63, 0.22)'
+const NAVY_SOFT_14 = 'rgba(25, 43, 63, 0.14)'
+const NAVY_SOFT_35 = 'rgba(25, 43, 63, 0.35)'
+const NAVY_SOFT_32 = 'rgba(25, 43, 63, 0.32)'
 
 function useClickOutside(
   refs: Array<React.RefObject<HTMLElement | null>>,
@@ -202,11 +211,11 @@ export function CustomSelect<T extends string | number>({
           fontWeight: 500,
           border: value
             ? `2px solid ${palette.darkGreen}`
-            : '2px solid rgba(10, 46, 92, 0.22)',
+            : `2px solid ${NAVY_SOFT_22}`,
           background: value ? 'rgba(172, 183, 168, 0.5)' : palette.almostWhite,
           color: value ? palette.darkGreen : palette.navy,
           cursor: 'pointer',
-          fontFamily: 'inherit',
+          fontFamily: CARDEA_FONT_PRIMARY,
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'space-between',
@@ -238,7 +247,7 @@ export function CustomSelect<T extends string | number>({
             borderRadius: 16,
             padding: 10,
             background: '#FFFFFF',
-            border: '1px solid rgba(10, 46, 92, 0.14)',
+            border: `1px solid ${NAVY_SOFT_14}`,
             boxShadow: '0 20px 48px rgba(15, 23, 42, 0.18)',
             maxHeight: listMaxHeight,
             overflowY: 'auto',
@@ -282,7 +291,7 @@ export function CustomSelect<T extends string | number>({
                       ? 'rgba(172, 183, 168, 0.5)'
                       : 'transparent',
                   color: isDisabled
-                    ? 'rgba(10, 46, 92, 0.35)'
+                    ? NAVY_SOFT_35
                     : isSelected
                       ? palette.darkGreen
                       : palette.navy,
@@ -332,11 +341,11 @@ export function CustomSelect<T extends string | number>({
                 marginTop: 8,
                 borderRadius: 14,
                 padding: '12px 14px',
-                border: '1px dashed rgba(10, 46, 92, 0.32)',
-                background: 'rgba(241, 245, 249, 0.75)',
+                border: `1px dashed ${NAVY_SOFT_32}`,
+                background: 'rgba(245, 249, 249, 0.85)',
                 cursor: 'pointer',
                 color: palette.navy,
-                fontFamily: 'inherit',
+                fontFamily: CARDEA_FONT_PRIMARY,
                 fontWeight: 500,
               }}
             >

@@ -1,13 +1,24 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { motion, AnimatePresence } from 'motion/react'
 import { Bookmark, ChevronDown, Plus, Trash2 } from 'lucide-react'
+import {
+  ResourcesPageError,
+  ResourcesPageLoading,
+} from '../components/ResourcesPageStates'
+import { DashedEmptyNotice } from '../components/ui/dashedEmptyNotice'
+import { InlineAlertBanner } from '../components/ui/inlineAlertBanner'
+import { NavyToggleChip } from '../components/ui/navyToggleChip'
+import { QuestionTopicBadge } from '../components/ui/questionTopicBadge'
 import { supabase, ensureAuthUserId, CardiologistQuestion, SavedQuestion } from '../lib/supabase'
+import {
+  CARDEA_ALMOST_WHITE,
+  CARDEA_DARK_GREEN,
+  CARDEA_LIGHT_BLUE,
+  CARDEA_MUTED,
+  CARDEA_NAVY,
+} from '../ui/cardeaTokens'
 
-const NAVY = '#192b3f'
-const LIGHT_BLUE = '#c6d9e5'
-const ALMOST_WHITE = '#f5f9f9'
-const DARK_GREEN = '#577568'
-const MUTED_GREEN = '#acb7a8'
+const SIGN_IN_TO_SAVE_HINT = 'Sign in to save questions for your account.'
 
 const META_STORAGE_PREFIX = 'cardea-saved-q-meta'
 
@@ -371,7 +382,7 @@ export default function QuestionsForCardiologist() {
       }
 
       if (!uid && !qError) {
-        setError((prev) => prev ?? 'Sign in to save questions for your account.')
+        setError((prev) => prev ?? SIGN_IN_TO_SAVE_HINT)
       }
     } catch (e) {
       setQuestions([])
@@ -421,7 +432,7 @@ export default function QuestionsForCardiologist() {
 
   async function saveGeneratedLine(text: string, filter: VisitFilter | 'General') {
     if (!userId) {
-      setError('Sign in to save questions for your account.')
+      setError(SIGN_IN_TO_SAVE_HINT)
       return
     }
     const row = { user_id: userId, question_id: null, custom_text: text.trim() }
@@ -450,7 +461,7 @@ export default function QuestionsForCardiologist() {
 
   async function saveCustomQuestion() {
     if (!userId) {
-      setError('Sign in to save questions for your account.')
+      setError(SIGN_IN_TO_SAVE_HINT)
       return
     }
     if (!customLine.trim()) return
@@ -526,20 +537,20 @@ export default function QuestionsForCardiologist() {
   )
 
   if (loading) {
+    return <ResourcesPageLoading label="Loading questions…" />
+  }
+
+  const blockingLoadError =
+    Boolean(error) && questions.length === 0 && error !== SIGN_IN_TO_SAVE_HINT
+
+  if (blockingLoadError && error) {
     return (
-      <div
-        className="flex min-h-[40vh] items-center justify-center py-24"
-        style={{ background: ALMOST_WHITE, fontFamily: 'Inter, system-ui, sans-serif' }}
-      >
-        <p className="text-sm" style={{ color: MUTED_GREEN }}>
-          Loading…
-        </p>
-      </div>
+      <ResourcesPageError message={error} onRetry={() => load(userId)} />
     )
   }
 
   return (
-    <div className="-mx-2 w-full sm:mx-0" style={{ fontFamily: 'Inter, system-ui, sans-serif', color: NAVY }}>
+    <div className="-mx-2 w-full sm:mx-0" style={{ fontFamily: 'Inter, system-ui, sans-serif', color: CARDEA_NAVY }}>
       {/* Header */}
       <div
         className="mb-0 rounded-t-xl border-b bg-white px-3 py-6 sm:rounded-none sm:px-4 sm:py-8"
@@ -551,7 +562,7 @@ export default function QuestionsForCardiologist() {
         >
           QUESTIONS FOR YOUR CARDIOLOGIST
         </h1>
-        <p className="max-w-2xl text-sm leading-relaxed sm:text-base" style={{ color: MUTED_GREEN }}>
+        <p className="max-w-2xl text-sm leading-relaxed sm:text-base" style={{ color: CARDEA_MUTED }}>
           Describe your upcoming visit and we&apos;ll suggest questions to ask — or add your own.
         </p>
       </div>
@@ -575,7 +586,7 @@ export default function QuestionsForCardiologist() {
             onChange={(e) => setVisitContext(e.target.value)}
             placeholder="I have an appointment tomorrow. I want to discuss…"
             className="min-h-[7.5rem] w-full resize-y rounded-xl border-2 bg-white/95 px-4 py-3 text-sm text-[#192b3f] outline-none focus:ring-2 sm:text-base"
-            style={{ borderColor: LIGHT_BLUE, boxShadow: '0 2px 12px rgba(25, 43, 63, 0.06)' }}
+            style={{ borderColor: CARDEA_LIGHT_BLUE, boxShadow: '0 2px 12px rgba(25, 43, 63, 0.06)' }}
           />
 
           <button
@@ -583,7 +594,7 @@ export default function QuestionsForCardiologist() {
             disabled={generating}
             onClick={runGenerate}
             className="w-full rounded-xl px-5 py-3.5 text-sm font-semibold text-white shadow-sm transition-opacity disabled:opacity-60 sm:w-auto sm:min-w-[200px]"
-            style={{ background: DARK_GREEN }}
+            style={{ background: CARDEA_DARK_GREEN }}
           >
             {generating ? 'Generating…' : 'Generate Questions'}
           </button>
@@ -592,7 +603,7 @@ export default function QuestionsForCardiologist() {
             type="button"
             onClick={() => setShowCustomForm((open) => !open)}
             className="flex w-full items-center justify-center gap-2 rounded-xl border-2 bg-white/90 py-3 text-sm font-semibold shadow-sm transition-colors hover:bg-white sm:justify-start sm:px-4"
-            style={{ borderColor: DARK_GREEN, color: DARK_GREEN }}
+            style={{ borderColor: CARDEA_DARK_GREEN, color: CARDEA_DARK_GREEN }}
           >
             <Plus className="h-4 w-4 shrink-0" strokeWidth={2.5} />
             {showCustomForm ? 'Close — add your own question' : 'Add your own question'}
@@ -606,7 +617,7 @@ export default function QuestionsForCardiologist() {
                 exit={{ opacity: 0, height: 0 }}
                 transition={{ duration: 0.25 }}
                 className="overflow-hidden rounded-xl border-2 bg-white p-4 shadow-sm"
-                style={{ borderColor: DARK_GREEN }}
+                style={{ borderColor: CARDEA_DARK_GREEN }}
               >
                 <label htmlFor="custom-q-inline" className="mb-2 block text-sm font-semibold text-[#192b3f]">
                   Have a specific question in mind?
@@ -619,38 +630,29 @@ export default function QuestionsForCardiologist() {
                   onChange={(e) => setCustomLine(e.target.value)}
                   placeholder="Type your question…"
                   className="mb-3 w-full rounded-lg border px-4 py-2.5 text-sm text-[#192b3f] outline-none"
-                  style={{ borderColor: LIGHT_BLUE }}
+                  style={{ borderColor: CARDEA_LIGHT_BLUE }}
                 />
-                <p className="mb-2 text-xs font-semibold uppercase tracking-wider" style={{ color: MUTED_GREEN }}>
+                <p className="mb-2 text-xs font-semibold uppercase tracking-wider" style={{ color: CARDEA_MUTED }}>
                   Tags (optional)
                 </p>
-                <p className="mb-3 text-xs leading-snug" style={{ color: MUTED_GREEN }}>
+                <p className="mb-3 text-xs leading-snug" style={{ color: CARDEA_MUTED }}>
                   Categories from the question library — same labels as on saved questions.
                 </p>
                 <div className="mb-4 flex flex-wrap gap-2">
                   {bankCategoryTags.length === 0 ? (
-                    <p className="text-xs italic" style={{ color: MUTED_GREEN }}>
+                    <p className="text-xs italic" style={{ color: CARDEA_MUTED }}>
                       No categories are available in the question library yet.
                     </p>
                   ) : (
-                    bankCategoryTags.map((tag) => {
-                      const on = customQuestionTags.has(tag)
-                      return (
-                        <button
-                          key={`custom-tag-${tag}`}
-                          type="button"
-                          onClick={() => toggleCustomQuestionTag(tag)}
-                          className={`rounded-full border-2 px-3 py-1.5 text-left text-xs font-medium transition-colors sm:text-sm ${
-                            on
-                              ? 'border-transparent text-white'
-                              : 'border-[rgba(25,43,63,0.15)] bg-white/90 text-[#192b3f] hover:border-[rgba(87,117,104,0.4)]'
-                          }`}
-                          style={on ? { background: DARK_GREEN, borderColor: DARK_GREEN } : undefined}
-                        >
-                          {tag}
-                        </button>
-                      )
-                    })
+                    bankCategoryTags.map((tag) => (
+                      <NavyToggleChip
+                        key={`custom-tag-${tag}`}
+                        selected={customQuestionTags.has(tag)}
+                        onClick={() => toggleCustomQuestionTag(tag)}
+                      >
+                        {tag}
+                      </NavyToggleChip>
+                    ))
                   )}
                 </div>
                 <div className="flex flex-wrap gap-2">
@@ -659,7 +661,7 @@ export default function QuestionsForCardiologist() {
                     disabled={adding || !customLine.trim()}
                     onClick={saveCustomQuestion}
                     className="rounded-lg px-5 py-2.5 text-sm font-semibold text-white disabled:opacity-50"
-                    style={{ background: DARK_GREEN }}
+                    style={{ background: CARDEA_DARK_GREEN }}
                   >
                     Save question
                   </button>
@@ -680,59 +682,33 @@ export default function QuestionsForCardiologist() {
           </AnimatePresence>
 
           <div>
-            <p className="mb-2 text-xs font-semibold uppercase tracking-wider" style={{ color: MUTED_GREEN }}>
+            <p className="mb-2 text-xs font-semibold uppercase tracking-wider" style={{ color: CARDEA_MUTED }}>
               My visit context:
             </p>
             <div className="flex flex-wrap gap-2">
-              {VISIT_CONTEXT_FILTERS.map((f) => {
-                const on = selectedFilters.has(f)
-                return (
-                  <button
-                    key={f}
-                    type="button"
-                    onClick={() => toggleFilter(f)}
-                    className={`rounded-full border-2 px-3 py-1.5 text-left text-xs font-medium transition-colors sm:text-sm ${
-                      on
-                        ? 'border-transparent text-white'
-                        : 'border-[rgba(25,43,63,0.15)] bg-white/90 text-[#192b3f] hover:border-[rgba(87,117,104,0.4)]'
-                    }`}
-                    style={on ? { background: DARK_GREEN, borderColor: DARK_GREEN } : undefined}
-                  >
-                    {f}
-                  </button>
-                )
-              })}
+              {VISIT_CONTEXT_FILTERS.map((f) => (
+                <NavyToggleChip key={f} selected={selectedFilters.has(f)} onClick={() => toggleFilter(f)}>
+                  {f}
+                </NavyToggleChip>
+              ))}
             </div>
           </div>
         </div>
       </div>
 
-      {error && (
-        <div
-          role="alert"
-          className="mx-3 mt-4 rounded-xl border bg-white px-4 py-3 text-sm sm:mx-4"
-          style={{ borderColor: 'rgba(25, 43, 63, 0.15)', color: NAVY }}
-        >
-          {error}
-        </div>
-      )}
+      {error && <InlineAlertBanner>{error}</InlineAlertBanner>}
 
       {/* Saved */}
       <div className="px-3 py-8 sm:px-4">
         <div className="mb-4 flex items-center gap-2">
-          <Bookmark className="h-5 w-5 shrink-0" style={{ color: DARK_GREEN }} />
+          <Bookmark className="h-5 w-5 shrink-0" style={{ color: CARDEA_DARK_GREEN }} />
           <h2 className="text-lg font-semibold text-[#192b3f]">Saved questions ({saved.length})</h2>
         </div>
 
         {saved.length === 0 ? (
-          <div
-            className="rounded-xl border border-dashed bg-white/70 py-12 text-center"
-            style={{ borderColor: LIGHT_BLUE }}
-          >
-            <p className="text-sm" style={{ color: MUTED_GREEN }}>
-              No saved questions yet. Generate suggestions or add your own below.
-            </p>
-          </div>
+          <DashedEmptyNotice>
+            No saved questions yet. Generate suggestions or add your own below.
+          </DashedEmptyNotice>
         ) : (
           <div className="space-y-3">
             <AnimatePresence>
@@ -761,16 +737,11 @@ export default function QuestionsForCardiologist() {
                       >
                         <ChevronDown
                           className={`mt-0.5 h-5 w-5 shrink-0 transition-transform ${open ? 'rotate-180' : ''}`}
-                          style={{ color: MUTED_GREEN }}
+                          style={{ color: CARDEA_MUTED }}
                         />
                         <div className="min-w-0 flex-1">
                           <p className="text-sm font-medium leading-snug text-[#192b3f] sm:text-base">{label}</p>
-                          <span
-                            className="mt-2 inline-block rounded-full px-2.5 py-0.5 text-xs font-semibold"
-                            style={{ background: 'rgba(198, 217, 229, 0.45)', color: NAVY }}
-                          >
-                            {badge.label}
-                          </span>
+                          <QuestionTopicBadge label={badge.label} accent="saved" />
                         </div>
                       </button>
                       <button
@@ -797,10 +768,10 @@ export default function QuestionsForCardiologist() {
                             <textarea
                               value={notes}
                               onChange={(e) => patchMeta(item.id, { notes: e.target.value })}
-                              placeholder="Doctor&apos;s answer, follow-up thoughts…"
+                              placeholder="Doctor's answer, follow-up thoughts…"
                               rows={3}
                               className="w-full resize-y rounded-lg border px-3 py-2 text-sm text-[#192b3f] outline-none"
-                              style={{ borderColor: LIGHT_BLUE }}
+                              style={{ borderColor: CARDEA_LIGHT_BLUE }}
                             />
                           </div>
                         </motion.div>
@@ -823,10 +794,10 @@ export default function QuestionsForCardiologist() {
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -8 }}
             className="scroll-mt-4 border-t px-3 py-8 sm:px-4 sm:scroll-mt-6"
-            style={{ borderColor: 'rgba(25, 43, 63, 0.08)', background: ALMOST_WHITE }}
+            style={{ borderColor: 'rgba(25, 43, 63, 0.08)', background: CARDEA_ALMOST_WHITE }}
           >
             <h2 className="mb-1 text-lg font-semibold text-[#192b3f]">Suggested for your visit</h2>
-            <p className="mb-5 max-w-2xl text-sm leading-relaxed" style={{ color: MUTED_GREEN }}>
+            <p className="mb-5 max-w-2xl text-sm leading-relaxed" style={{ color: CARDEA_MUTED }}>
               Based on what you shared. Tap to save any question.
             </p>
             <ul className="mx-auto max-w-3xl space-y-3">
@@ -838,18 +809,13 @@ export default function QuestionsForCardiologist() {
                 >
                   <div className="min-w-0 flex-1">
                     <p className="text-sm font-medium leading-snug text-[#192b3f]">{g.text}</p>
-                    <span
-                      className="mt-2 inline-block rounded-full px-2.5 py-0.5 text-xs font-semibold"
-                      style={{ background: 'rgba(198, 217, 229, 0.5)', color: NAVY }}
-                    >
-                      {g.filter}
-                    </span>
+                    <QuestionTopicBadge label={String(g.filter)} accent="suggested" />
                   </div>
                   <button
                     type="button"
                     onClick={() => saveGeneratedLine(g.text, g.filter)}
                     className="shrink-0 rounded-lg border-2 px-4 py-2 text-sm font-semibold transition-colors"
-                    style={{ borderColor: DARK_GREEN, color: DARK_GREEN }}
+                    style={{ borderColor: CARDEA_DARK_GREEN, color: CARDEA_DARK_GREEN }}
                   >
                     + Save
                   </button>
