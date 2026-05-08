@@ -36,7 +36,9 @@ const VISIT_CONTEXT_FILTERS = [
   'Care coordination & referrals',
 ] as const
 
-type VisitFilter = (typeof VISIT_CONTEXT_FILTERS)[number]
+const FILTER_CATEGORIES = ['Diagnosis', 'Treatment', 'Lifestyle', 'Monitoring'] as const
+type FilterCategory = (typeof FILTER_CATEGORIES)[number]
+type GroupedQuestions = Record<string, CardiologistQuestion[]>
 
 type SavedQuestionMeta = {
   source: 'generated' | 'custom' | 'bank'
@@ -65,100 +67,132 @@ function normalizeStoredMeta(raw: unknown): Record<string, SavedQuestionMeta> {
   return out
 }
 
-function loadAllMeta(userId: string | null): Record<string, SavedQuestionMeta> {
-  try {
-    const raw = localStorage.getItem(metaStorageKey(userId))
-    if (!raw) return {}
-    return normalizeStoredMeta(JSON.parse(raw) as unknown)
-  } catch {
-    return {}
+/** Stored `condition` is comma-separated category titles from onboarding. */
+function conditionIsGeneticOrMentalHealth(condition: string | null | undefined): boolean {
+  if (!condition?.trim()) return false
+  const c = condition.toLowerCase()
+  return /\bgenetic\b/.test(c) || /mental health/.test(c)
+}
+
+/**
+ * Placeholder rules (will be replaced later).
+ * Age: school-or-below → Diagnosis/Treatment only; older → Lifestyle/Monitoring only.
+ * Condition: Genetic or Mental Health → Diagnosis/Treatment; else → Lifestyle/Monitoring.
+ */
+function passesPersonalizationFilters(
+  personalizeByAge: boolean,
+  personalizeByCondition: boolean,
+  profile: UserProfileFields | null,
+  bucket: FilterCategory | 'other',
+): boolean {
+  const anyOn = personalizeByAge || personalizeByCondition
+  if (!anyOn) return true
+  if (bucket === 'other') return false
+
+  const isDxOrTx = bucket === 'Diagnosis' || bucket === 'Treatment'
+  const isLifeOrMon = bucket === 'Lifestyle' || bucket === 'Monitoring'
+
+  let allowed = true
+
+  if (personalizeByAge) {
+    const age = profile?.current_age_category
+    if (age?.trim()) {
+      const below = isSchoolAgeOrBelow(age)
+      const ageOk = below ? isDxOrTx : isLifeOrMon
+      allowed = allowed && ageOk
+    }
   }
-}
 
-function persistAllMeta(userId: string | null, meta: Record<string, SavedQuestionMeta>) {
-  try {
-    localStorage.setItem(metaStorageKey(userId), JSON.stringify(meta))
-  } catch {
-    /* ignore */
+  if (personalizeByCondition) {
+    const cond = profile?.condition
+    if (cond?.trim()) {
+      const geneticOrMental = conditionIsGeneticOrMentalHealth(cond)
+      const condOk = geneticOrMental ? isDxOrTx : isLifeOrMon
+      allowed = allowed && condOk
+    }
   }
+
+  return allowed
 }
 
-type GeneratedItem = {
-  tempId: string
-  text: string
-  filter: VisitFilter | 'General'
+const categoryColors: Record<
+  FilterCategory | 'other',
+  { bg: string; text: string; border: string }
+> = {
+  Diagnosis: { bg: '#fff3e0', text: '#e65100', border: '#ffcc80' },
+  Treatment: { bg: '#e3f2fd', text: '#1565c0', border: '#90caf9' },
+  Lifestyle: { bg: '#e8f5e9', text: '#2e7d32', border: '#a5d6a7' },
+  Monitoring: { bg: '#f3e5f5', text: '#6a1b9a', border: '#ce93d8' },
+  other: { bg: '#fff8e1', text: '#f57f17', border: '#ffe082' },
 }
 
-const FILTER_TEMPLATES: Partial<Record<VisitFilter, string[]>> = {
-  'Surgery or procedure': [
-    'What do I need to stop or change before a procedure (medications, food, supplements)?',
-    'What activity limits apply after my procedure, and for how long?',
-    'What symptoms should prompt me to call you or seek emergency care?',
-    'Who will coordinate updates with my other doctors?',
-  ],
-  'New diagnosis': [
-    'Can you explain my diagnosis in plain language and what it means day to day?',
-    'What caused this condition, and could it affect my family?',
-    'What are the treatment options and the goals of each?',
-    'What should I read or avoid reading online about this?',
-  ],
-  'Routine follow-up': [
-    'Are my symptoms stable, or should we change the plan?',
-    'When is my next follow-up, and what will you check?',
-    'How do I reach your team between visits if something changes?',
-    'What targets should I aim for (blood pressure, weight, exercise)?',
-  ],
-  Medications: [
-    'What is each medication for, and what are the most important side effects?',
-    'Are any of my medications risky when combined?',
-    'Is there a simpler or less expensive option for any of these?',
-    'What should I do if I miss a dose?',
-  ],
-  'Test results': [
-    'Can you walk through my recent test results and what they mean for my heart?',
-    'Do I need repeat testing, and on what schedule?',
-    'Were there any findings that need a new treatment or referral?',
-    'How will we track whether treatment is working?',
-  ],
-  'Lifestyle & wellbeing': [
-    'How can stress or anxiety affect my heart, and what supports do you recommend?',
-    'What diet changes matter most for my condition?',
-    'What type and amount of exercise is safe for me?',
-    'Is a cardiac rehab or counseling referral appropriate?',
-  ],
-  'Symptoms & concerns': [
-    'Could my symptoms be heart-related, and what should I watch for?',
-    'When should I call your office vs. go to the ER for these symptoms?',
-    'Are there triggers I should avoid or track day to day?',
-    'What tests would help clarify what I am feeling?',
-  ],
-  'Family history & genetics': [
-    'Given my family history, what is my risk and how often should I be checked?',
-    'Would genetic testing or screening for relatives be useful?',
-    'What symptoms should family members report to a doctor?',
-    'Does my family history change my treatment or monitoring plan?',
-  ],
-  'Prevention & heart health': [
-    'What can I do to lower my risk of a heart event in the next few years?',
-    'How do blood pressure, cholesterol, and weight goals apply to me?',
-    'Are vaccines or other preventive steps especially important for my heart?',
-    'What follow-up schedule makes sense if I stay stable?',
-  ],
-  'Care coordination & referrals': [
-    'Do I need referrals to other specialists, and who will coordinate my care?',
-    'How do I get records or test results to you from other hospitals?',
-    'What should my primary care doctor know or monitor between visits?',
-    'Who do I contact after-hours if something changes?',
-  ],
+function normalizeCategory(cat: string | null | undefined): FilterCategory | 'other' {
+  const c = (cat ?? '').trim().toLowerCase()
+  for (const label of FILTER_CATEGORIES) {
+    if (label.toLowerCase() === c) return label
+  }
+  return 'other'
 }
 
-function tokenize(s: string): Set<string> {
-  return new Set(
-    s
-      .toLowerCase()
-      .replace(/[^a-z0-9\s]/g, ' ')
-      .split(/\s+/)
-      .filter((w) => w.length > 2),
+function categoryStyle(cat: FilterCategory | 'other') {
+  return categoryColors[cat] ?? categoryColors.other
+}
+
+function QuestionItem({
+  question,
+  saved,
+  onToggle,
+}: {
+  question: CardiologistQuestion
+  saved: boolean
+  onToggle: () => void
+}) {
+  const [hovered, setHovered] = useState(false)
+
+  return (
+    <button
+      onMouseDown={(e) => e.preventDefault()}
+      onClick={onToggle}
+      onMouseEnter={() => setHovered(true)}
+      onMouseLeave={() => setHovered(false)}
+      style={{
+        width: '100%',
+        display: 'flex',
+        alignItems: 'flex-start',
+        gap: '12px',
+        padding: '10px 16px',
+        background: hovered ? '#f5f9f9' : 'transparent',
+        border: 'none',
+        borderRadius: '10px',
+        cursor: 'pointer',
+        textAlign: 'left',
+        transition: 'background 0.15s ease',
+      }}
+    >
+      {/* Checkbox */}
+      <div style={{
+        marginTop: '2px',
+        width: '18px',
+        height: '18px',
+        borderRadius: '5px',
+        border: '2px solid ' + (saved ? '#577568' : '#c6d9e5'),
+        background: saved ? '#577568' : '#fff',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        flexShrink: 0,
+        transition: 'all 0.15s ease',
+      }}>
+        {saved && (
+          <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="#f5f9f9" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M5 13l4 4L19 7" />
+          </svg>
+        )}
+      </div>
+      <span style={{ fontSize: '0.875rem', color: '#192b3f', lineHeight: 1.55, fontFamily: 'Inter, system-ui, sans-serif' }}>
+        {question.question_text}
+      </span>
+    </button>
   )
 }
 
@@ -178,7 +212,14 @@ function scoreBankQuestion(
     for (const w of words) {
       if (w.length > 2 && text.includes(w)) score += 1
     }
-  }
+    return result
+  }, [grouped, q])
+
+  const totalQuestions = useMemo(
+    () => Object.values(grouped).reduce((sum, list) => sum + (list?.length ?? 0), 0),
+    [grouped],
+  )
+  const hasResults = Object.keys(filteredGroups).length > 0
 
   for (const t of ctxTokens) {
     if (text.includes(t)) score += 2
@@ -231,10 +272,20 @@ function generateSuggestions(
     if (out.length >= 14) break
   }
 
-  if (filters.size === 0 && visitContext.trim().length < 8) {
-    add('What is the most important thing I should understand about my heart health at this visit?', 'General')
-    add('What changes to my medications or lifestyle do you recommend?', 'General')
-  }
+  return (
+    <section style={{ marginTop: '32px', marginBottom: '48px' }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '14px' }}>
+        <span style={{ color: '#577568', fontSize: '1rem' }}>♥</span>
+        <h2 style={{
+          margin: 0,
+          fontFamily: 'var(--font-display, "Bebas Neue", sans-serif)',
+          fontSize: '1.4rem',
+          letterSpacing: '0.05em',
+          color: '#192b3f',
+        }}>
+          Saved Questions ({saved.length})
+        </h2>
+      </div>
 
   const scored = bank
     .map((q) => ({ q, s: scoreBankQuestion(q, ctxTokens, filters) }))
@@ -284,6 +335,9 @@ export default function QuestionsForCardiologist() {
   const [customQuestionTags, setCustomQuestionTags] = useState<Set<string>>(new Set())
   const bankCategoryTags = useMemo(() => distinctBankCategories(questions), [questions])
 
+  const containerRef = useRef<HTMLDivElement>(null)
+  const [dropdownOpen, setDropdownOpen] = useState(false)
+
   useEffect(() => {
     const valid = new Set(bankCategoryTags)
     setCustomQuestionTags((prev) => {
@@ -312,6 +366,18 @@ export default function QuestionsForCardiologist() {
       cancelled = true
     }
   }, [])
+
+  useEffect(() => {
+    if (!dropdownOpen) return
+    function onDocMouseDown(e: MouseEvent) {
+      const el = containerRef.current
+      if (el && !el.contains(e.target as Node)) {
+        setDropdownOpen(false)
+      }
+    }
+    document.addEventListener('mousedown', onDocMouseDown)
+    return () => document.removeEventListener('mousedown', onDocMouseDown)
+  }, [dropdownOpen])
 
   useEffect(() => {
     if (!authBootstrapped) return
@@ -398,6 +464,23 @@ export default function QuestionsForCardiologist() {
     load(userId)
   }, [authBootstrapped, userId, load])
 
+  const grouped = useMemo(() => {
+    const groups: GroupedQuestions = {}
+    for (const q of questions) {
+      const cat = (q.category ?? 'General').trim() || 'General'
+      if (!groups[cat]) groups[cat] = []
+      groups[cat].push(q)
+    }
+    return groups
+  }, [questions])
+
+  const filteredQuestions = useMemo(() => {
+    const q = query.trim().toLowerCase()
+    return questions.filter((row) => {
+      const text = (row.question_text ?? '').toLowerCase()
+      if (q && !text.includes(q)) return false
+      if (!selectedTag) return true
+      return normalizeCategory(row.category) === selectedTag
   const toggleFilter = (f: VisitFilter) => {
     setSelectedFilters((prev) => {
       const next = new Set(prev)
@@ -537,7 +620,11 @@ export default function QuestionsForCardiologist() {
   )
 
   if (loading) {
-    return <ResourcesPageLoading label="Loading questions…" />
+    return (
+      <div style={{ minHeight: '100vh', background: '#f5f9f9', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        <p style={{ color: '#acb7a8', fontSize: '0.9rem', fontFamily: 'Inter, system-ui, sans-serif' }}>Loading questions…</p>
+      </div>
+    )
   }
 
   const blockingLoadError =
@@ -674,8 +761,17 @@ export default function QuestionsForCardiologist() {
                     }}
                     className="rounded-lg bg-[#e8ecec] px-4 py-2.5 text-sm font-medium text-[#192b3f] hover:bg-[#dce2e2]"
                   >
-                    Cancel
-                  </button>
+                    {question.question_text}
+                  </p>
+
+                  <div
+                    style={{
+                      marginTop: '16px',
+                      height: '4px',
+                      background: 'linear-gradient(90deg, ' + colors.border + ', ' + colors.bg + ')',
+                      borderRadius: '2px',
+                    }}
+                  />
                 </div>
               </motion.div>
             )}
@@ -705,6 +801,27 @@ export default function QuestionsForCardiologist() {
           <h2 className="text-lg font-semibold text-[#192b3f]">Saved questions ({saved.length})</h2>
         </div>
 
+        {!loading && !error && personalizedQuestions.length > 0 && (
+          <p
+            style={{
+              textAlign: 'center',
+              color: '#888',
+              marginTop: '30px',
+              fontSize: '0.9rem',
+            }}
+          >
+            Showing {personalizedQuestions.length} question{personalizedQuestions.length !== 1 ? 's' : ''}
+            {selectedTag ? ' in ' + selectedTag : ''}
+            {(personalizeByAge || personalizeByCondition) && ' (personalized)'}
+          </p>
+        )}
+
+        {!loading && !error && saved.length === 0 && questions.length > 0 && (
+          <p style={{ textAlign: 'center', color: '#9ca3af', marginTop: '24px', fontSize: '0.9rem' }}>
+            Tap the heart on a card to save it for your visit.
+          </p>
+        )}
+      </div>
         {saved.length === 0 ? (
           <DashedEmptyNotice>
             No saved questions yet. Generate suggestions or add your own below.
