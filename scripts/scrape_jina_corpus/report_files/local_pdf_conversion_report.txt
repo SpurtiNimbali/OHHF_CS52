@@ -1,0 +1,90 @@
+Local PDF conversion report — 2026-05-07 23:17:44 UTC
+Script: C:\Users\penae\Desktop\Academics\Spring 2026\CS 52\OHHF Product\OHHF_CS52\scripts\scrape_jina_corpus\local_pdf_to_md.py
+Input:  C:\Users\penae\Desktop\Academics\Spring 2026\CS 52\OHHF Product\OHHF_CS52\scripts\scrape_jina_corpus\local_pdf_resources
+Output: C:\Users\penae\Desktop\Academics\Spring 2026\CS 52\OHHF Product\OHHF_CS52\scripts\scrape_jina_corpus\corpus_scraped_data
+
+------------------------------------------------------------------------
+Batch folder: mended_hearts_org__caregiver_support
+  Path: C:\Users\penae\Desktop\Academics\Spring 2026\CS 52\OHHF Product\OHHF_CS52\scripts\scrape_jina_corpus\local_pdf_resources\mended_hearts_org__caregiver_support
+  PDFs in folder: 6
+  Output: C:\Users\penae\Desktop\Academics\Spring 2026\CS 52\OHHF Product\OHHF_CS52\scripts\scrape_jina_corpus\corpus_scraped_data\mended_hearts_org__caregiver_support__local_pdfs.md
+  Successfully converted (6):
+    - C:\Users\penae\Desktop\Academics\Spring 2026\CS 52\OHHF Product\OHHF_CS52\scripts\scrape_jina_corpus\local_pdf_resources\mended_hearts_org__caregiver_support\Caregiver-Connections-Time-for-Caring-copy.pdf
+      source key: local_pdf_resources/mended_hearts_org__caregiver_support/Caregiver-Connections-Time-for-Caring-copy.pdf
+      pages: 3
+    - C:\Users\penae\Desktop\Academics\Spring 2026\CS 52\OHHF Product\OHHF_CS52\scripts\scrape_jina_corpus\local_pdf_resources\mended_hearts_org__caregiver_support\Caregiver-Depression-Piece.pdf
+      source key: local_pdf_resources/mended_hearts_org__caregiver_support/Caregiver-Depression-Piece.pdf
+      pages: 1
+    - C:\Users\penae\Desktop\Academics\Spring 2026\CS 52\OHHF Product\OHHF_CS52\scripts\scrape_jina_corpus\local_pdf_resources\mended_hearts_org__caregiver_support\Caregiving-One-Pager.pdf
+      source key: local_pdf_resources/mended_hearts_org__caregiver_support/Caregiving-One-Pager.pdf
+      pages: 2
+    - C:\Users\penae\Desktop\Academics\Spring 2026\CS 52\OHHF Product\OHHF_CS52\scripts\scrape_jina_corpus\local_pdf_resources\mended_hearts_org__caregiver_support\Caring-for-Yourself-WH-CHD.pdf
+      source key: local_pdf_resources/mended_hearts_org__caregiver_support/Caring-for-Yourself-WH-CHD.pdf
+      pages: 1
+    - C:\Users\penae\Desktop\Academics\Spring 2026\CS 52\OHHF Product\OHHF_CS52\scripts\scrape_jina_corpus\local_pdf_resources\mended_hearts_org__caregiver_support\MLH-Tips-for-Caregivers-1.docx.pdf
+      source key: local_pdf_resources/mended_hearts_org__caregiver_support/MLH-Tips-for-Caregivers-1.docx.pdf
+      pages: 2
+    - C:\Users\penae\Desktop\Academics\Spring 2026\CS 52\OHHF Product\OHHF_CS52\scripts\scrape_jina_corpus\local_pdf_resources\mended_hearts_org__caregiver_support\Taking the Stress Out of Caregiving - Mended Hearts.pdf
+      source key: local_pdf_resources/mended_hearts_org__caregiver_support/Taking the Stress Out of Caregiving - Mended Hearts.pdf
+      pages: 3
+
+------------------------------------------------------------------------
+Batch folder: mended_hearts_org__medical_navigation
+  Path: C:\Users\penae\Desktop\Academics\Spring 2026\CS 52\OHHF Product\OHHF_CS52\scripts\scrape_jina_corpus\local_pdf_resources\mended_hearts_org__medical_navigation
+  PDFs in folder: 5
+  Output: C:\Users\penae\Desktop\Academics\Spring 2026\CS 52\OHHF Product\OHHF_CS52\scripts\scrape_jina_corpus\corpus_scraped_data\mended_hearts_org__medical_navigation__local_pdfs.md
+  Successfully converted (5):
+    - C:\Users\penae\Desktop\Academics\Spring 2026\CS 52\OHHF Product\OHHF_CS52\scripts\scrape_jina_corpus\local_pdf_resources\mended_hearts_org__medical_navigation\Feeding-Issues-for-Babies-with-CHD.pdf
+      source key: local_pdf_resources/mended_hearts_org__medical_navigation/Feeding-Issues-for-Babies-with-CHD.pdf
+      pages: 13
+    - C:\Users\penae\Desktop\Academics\Spring 2026\CS 52\OHHF Product\OHHF_CS52\scripts\scrape_jina_corpus\local_pdf_resources\mended_hearts_org__medical_navigation\Feeding-Issues-WH-CHD-2026.pdf
+      source key: local_pdf_resources/mended_hearts_org__medical_navigation/Feeding-Issues-WH-CHD-2026.pdf
+      pages: 1
+    - C:\Users\penae\Desktop\Academics\Spring 2026\CS 52\OHHF Product\OHHF_CS52\scripts\scrape_jina_corpus\local_pdf_resources\mended_hearts_org__medical_navigation\Neurodevelopmental-Issues-WH-CHD.pdf
+      source key: local_pdf_resources/mended_hearts_org__medical_navigation/Neurodevelopmental-Issues-WH-CHD.pdf
+      pages: 1
+    - C:\Users\penae\Desktop\Academics\Spring 2026\CS 52\OHHF Product\OHHF_CS52\scripts\scrape_jina_corpus\local_pdf_resources\mended_hearts_org__medical_navigation\Preparing-for-a-doctor-appointment-WH-CHD.pdf
+      source key: local_pdf_resources/mended_hearts_org__medical_navigation/Preparing-for-a-doctor-appointment-WH-CHD.pdf
+      pages: 1
+    - C:\Users\penae\Desktop\Academics\Spring 2026\CS 52\OHHF Product\OHHF_CS52\scripts\scrape_jina_corpus\local_pdf_resources\mended_hearts_org__medical_navigation\Transitioning-from-Hospital-to-Home-WH-CHD.pdf
+      source key: local_pdf_resources/mended_hearts_org__medical_navigation/Transitioning-from-Hospital-to-Home-WH-CHD.pdf
+      pages: 1
+
+------------------------------------------------------------------------
+Batch folder: mended_hearts_org__mended_little_heart_guide_lite
+  Path: C:\Users\penae\Desktop\Academics\Spring 2026\CS 52\OHHF Product\OHHF_CS52\scripts\scrape_jina_corpus\local_pdf_resources\mended_hearts_org__mended_little_heart_guide_lite
+  PDFs in folder: 1
+  Output: C:\Users\penae\Desktop\Academics\Spring 2026\CS 52\OHHF Product\OHHF_CS52\scripts\scrape_jina_corpus\corpus_scraped_data\mended_hearts_org__mended_little_heart_guide_lite__local_pdfs.md
+  Successfully converted (1):
+    - C:\Users\penae\Desktop\Academics\Spring 2026\CS 52\OHHF Product\OHHF_CS52\scripts\scrape_jina_corpus\local_pdf_resources\mended_hearts_org__mended_little_heart_guide_lite\MLHGuide-Lite-New-1.pdf
+      source key: local_pdf_resources/mended_hearts_org__mended_little_heart_guide_lite/MLHGuide-Lite-New-1.pdf
+      pages: 21
+
+------------------------------------------------------------------------
+Batch folder: mended_hearts_org__mended_little_heartguide
+  Path: C:\Users\penae\Desktop\Academics\Spring 2026\CS 52\OHHF Product\OHHF_CS52\scripts\scrape_jina_corpus\local_pdf_resources\mended_hearts_org__mended_little_heartguide
+  PDFs in folder: 1
+  Output: C:\Users\penae\Desktop\Academics\Spring 2026\CS 52\OHHF Product\OHHF_CS52\scripts\scrape_jina_corpus\corpus_scraped_data\mended_hearts_org__mended_little_heartguide__local_pdfs.md
+  Successfully converted (1):
+    - C:\Users\penae\Desktop\Academics\Spring 2026\CS 52\OHHF Product\OHHF_CS52\scripts\scrape_jina_corpus\local_pdf_resources\mended_hearts_org__mended_little_heartguide\MLHG_2015-2025.pdf
+      source key: local_pdf_resources/mended_hearts_org__mended_little_heartguide/MLHG_2015-2025.pdf
+      pages: 88
+
+------------------------------------------------------------------------
+Batch folder: mended_hearts_org__neurodevelopmental_issues_chd
+  Path: C:\Users\penae\Desktop\Academics\Spring 2026\CS 52\OHHF Product\OHHF_CS52\scripts\scrape_jina_corpus\local_pdf_resources\mended_hearts_org__neurodevelopmental_issues_chd
+  PDFs in folder: 1
+  Output: C:\Users\penae\Desktop\Academics\Spring 2026\CS 52\OHHF Product\OHHF_CS52\scripts\scrape_jina_corpus\corpus_scraped_data\mended_hearts_org__neurodevelopmental_issues_chd__local_pdfs.md
+  Successfully converted (1):
+    - C:\Users\penae\Desktop\Academics\Spring 2026\CS 52\OHHF Product\OHHF_CS52\scripts\scrape_jina_corpus\local_pdf_resources\mended_hearts_org__neurodevelopmental_issues_chd\Neurodevelopmental-Issues-CHD.pdf
+      source key: local_pdf_resources/mended_hearts_org__neurodevelopmental_issues_chd/Neurodevelopmental-Issues-CHD.pdf
+      pages: 10
+
+------------------------------------------------------------------------
+Batch folder: report_files
+  Path: C:\Users\penae\Desktop\Academics\Spring 2026\CS 52\OHHF Product\OHHF_CS52\scripts\scrape_jina_corpus\local_pdf_resources\report_files
+  PDFs in folder: 0
+  Status: no PDFs — skipped
+
+------------------------------------------------------------------------
+Total output batch files created: 5
