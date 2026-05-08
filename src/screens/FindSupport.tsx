@@ -1,6 +1,4 @@
 import { useCallback, useEffect, useMemo, useState, type CSSProperties } from 'react'
-// @ts-expect-error - SearchBar is a JSX component without type declarations
-import SearchBar from '../components/SearchBar'
 import { supabase, ensureAuthUserId, SupportResource } from '../lib/supabase'
 
 const FILTER_CATEGORIES = [
@@ -10,6 +8,9 @@ const FILTER_CATEGORIES = [
   'Community',
 ] as const
 type SupportFilterCategory = (typeof FILTER_CATEGORIES)[number]
+
+const CATEGORIES = ['All', ...FILTER_CATEGORIES] as const
+type Category = (typeof CATEGORIES)[number]
 
 /** Matches `welcomeScreen` age option labels; school age and younger vs older. */
 const SCHOOL_AGE_OR_BELOW_LABELS = [
@@ -152,6 +153,16 @@ function CategoryChips({ active, onChange }: { active: Category; onChange: (c: C
   )
 }
 
+function normalizeCategoryLabel(raw: string | number | null | undefined): string {
+  return String(raw ?? '').trim()
+}
+
+type UserProfileFields = {
+  diagnosis_age_category?: string | null
+  current_age_category?: string | null
+  condition?: string | null
+}
+
 function normalizeSupportCategoryBucket(raw: string | number | null | undefined): SupportFilterCategory | 'other' {
   const label = normalizeCategoryLabel(raw)
   const key = FILTER_CATEGORIES.find((c) => c.toLowerCase() === label.toLowerCase())
@@ -185,8 +196,8 @@ function safeExternalHref(raw: string | number | null | undefined): string | nul
 
 export default function FindSupport() {
   const [resources, setResources] = useState<SupportResource[]>([])
-  const [query, setQuery] = useState('')
-  const [selectedCategory, setSelectedCategory] = useState<string | null>(null)
+  const [locationQuery, setLocationQuery] = useState('')
+  const [activeCategory, setActiveCategory] = useState<Category>('All')
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [userId, setUserId] = useState<string | null>(null)
@@ -262,33 +273,49 @@ export default function FindSupport() {
   }, [authBootstrapped, userId, load])
 
   const filteredResources = useMemo(() => {
-    const q = query.trim().toLowerCase()
+    const q = locationQuery.trim().toLowerCase()
 
-    return resources.filter((r) => {
-      const cat = normalizeCategoryLabel(r.category)
-      if (selectedCategory) {
-        if (cat.toLowerCase() !== selectedCategory.toLowerCase()) return false
-      }
-
-      if (!q) return true
-
-      const name = String(r.name ?? '').toLowerCase()
-      const desc = String(r.description ?? '').toLowerCase()
-      const city = String(r.city ?? '').toLowerCase()
-      const hasLocation = zip || city
-
-      if (city === query || zip === query) return [{ r, score: 0 }]
-      if (city.startsWith(query)) return [{ r, score: 1 }]
-      if (query.length >= 3 && zip.startsWith(query.slice(0, 3))) return [{ r, score: 2 }]
-      if (city.includes(query) || zip.includes(query)) return [{ r, score: 3 }]
-      if (!hasLocation) return [{ r, score: 4 }]
-      return []
+    const inCategory = resources.filter((r) => {
+      if (activeCategory === 'All') return true
+      const bucket = normalizeSupportCategoryBucket(r.category)
+      return bucket !== 'other' && bucket === activeCategory
     })
-  }, [resources, query, selectedCategory])
 
-    scored.sort((a, b) => a.score - b.score || (a.r.name ?? '').localeCompare(b.r.name ?? ''))
+    if (!q) return inCategory
+
+    const scored = inCategory
+      .map((r) => {
+        const name = String(r.name ?? '').toLowerCase()
+        const desc = String(r.description ?? '').toLowerCase()
+        const city = String(r.city ?? '').toLowerCase()
+        const zip = String(r.zipcode ?? '').toLowerCase()
+
+        const hasTextMatch = name.includes(q) || desc.includes(q)
+        const hasLocation = Boolean(city || zip)
+
+        let score = 5
+        if (city === q || zip === q) score = 0
+        else if (city.startsWith(q) || zip.startsWith(q)) score = 1
+        else if (city.includes(q) || zip.includes(q)) score = 2
+        else if (hasTextMatch) score = 3
+        else if (!hasLocation) score = 4
+
+        return { r, score }
+      })
+      .filter(({ score }) => score < 5)
+
+    scored.sort(
+      (a, b) => a.score - b.score || (a.r.name ?? '').localeCompare(b.r.name ?? '')
+    )
     return scored.map(({ r }) => r)
   }, [resources, activeCategory, locationQuery])
+
+  const sortedResources = filteredResources
+
+  const personalizedResources = useMemo(() => {
+    if (!personalizeByAge && !personalizeByCondition) return []
+    return sortedResources
+  }, [sortedResources, personalizeByAge, personalizeByCondition])
 
   return (
     <div style={{ minHeight: '100vh', background: '#f5f9f9', fontFamily: 'Inter, system-ui, sans-serif' }}>
@@ -347,7 +374,6 @@ export default function FindSupport() {
             }}
           />
         </div>
-      </div>
 
         {/* Category chips */}
         <div style={{ marginBottom: '28px' }}>
@@ -381,6 +407,7 @@ export default function FindSupport() {
           !error &&
           resources.length > 0 &&
           filteredResources.length > 0 &&
+          (personalizeByAge || personalizeByCondition) &&
           personalizedResources.length === 0 && (
             <div
               style={{
@@ -576,13 +603,6 @@ export default function FindSupport() {
           </p>
         )}
       </div>
-
-      <style>{`
-        @keyframes fadeInUp {
-          from { opacity: 0; transform: translateY(20px); }
-          to { opacity: 1; transform: translateY(0); }
-        }
-      `}</style>
     </div>
   )
 }
