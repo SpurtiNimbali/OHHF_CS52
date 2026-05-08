@@ -14,8 +14,6 @@ const FONT       = 'Inter, system-ui, sans-serif'
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
-type MessageRole = 'user' | 'assistant'
-
 interface Citation {
   id: string
   title: string
@@ -24,12 +22,22 @@ interface Citation {
   type: 'hotline' | 'exercise' | 'article'
 }
 
+type MessageRole = 'user' | 'assistant'
+
+interface ApiUiRedirect {
+  kind: string
+  label: string
+  path: string
+  suggested: boolean
+}
+
 interface Message {
   id: string
   role: MessageRole
   content: string
   timestamp: Date
   citations?: Citation[]
+  uiRedirects?: ApiUiRedirect[]
 }
 
 // ── Static data ───────────────────────────────────────────────────────────────
@@ -47,21 +55,6 @@ const FEATURE_CARDS = [
   { Icon: Heart,         title: 'Compassionate', desc: 'Non-judgmental support whenever you need it'            },
   { Icon: Shield,        title: 'Resource-Rich', desc: 'Access to helpful tools and professional resources'     },
 ]
-
-const BREATHING_CITATION: Citation = {
-  id: 'breathing',
-  title: '4-7-8 Breathing Technique',
-  description: 'Inhale 4s, hold 7s, exhale 8s — reduces anxiety in minutes',
-  type: 'exercise',
-}
-
-const CRISIS_CITATION: Citation = {
-  id: 'crisis',
-  title: 'Crisis Text Line',
-  description: 'Text HOME to 741741 — free, confidential support 24/7',
-  url: 'https://crisistextline.org',
-  type: 'hotline',
-}
 
 // ── WelcomeState ──────────────────────────────────────────────────────────────
 
@@ -158,10 +151,11 @@ function WelcomeState({ onChip }: { onChip: (label: string) => void }) {
 
 function CitationCard({ citation }: { citation: Citation }) {
   const isHotline = citation.type === 'hotline'
-  const bg     = isHotline ? '#fff5f5' : '#f0faf4'
-  const border = isHotline ? '#fecaca' : '#bbf7d0'
-  const color  = isHotline ? '#b91c1c' : '#15803d'
-  const Icon   = isHotline ? Phone : ArrowUp
+  const isArticle = citation.type === 'article'
+  const bg = isHotline ? '#fff5f5' : isArticle ? '#f0f7ff' : '#f0faf4'
+  const border = isHotline ? '#fecaca' : isArticle ? '#bfdbfe' : '#bbf7d0'
+  const color = isHotline ? '#b91c1c' : isArticle ? '#1d4ed8' : '#15803d'
+  const Icon = isHotline ? Phone : ArrowUp
 
   const inner = (
     <div style={{ display: 'flex', alignItems: 'flex-start', gap: 10, padding: '10px 12px', borderRadius: 12, border: `1px solid ${border}`, background: bg }}>
@@ -183,9 +177,68 @@ function CitationCard({ citation }: { citation: Citation }) {
   ) : inner
 }
 
+// ── In-app resource hints (API) ───────────────────────────────────────────────
+
+function RedirectHints({ redirects, onNavigate }: { redirects: ApiUiRedirect[]; onNavigate: (path: string) => void }) {
+  if (!redirects.length) return null
+  return (
+    <div
+      style={{
+        marginTop: 10,
+        padding: '12px 14px',
+        borderRadius: 12,
+        background: 'rgba(198, 217, 229, 0.35)',
+        border: `1px solid ${LIGHT_BLUE}`,
+        width: '100%',
+        boxSizing: 'border-box',
+      }}
+    >
+      <p style={{ margin: '0 0 10px', fontSize: '0.72rem', fontWeight: 700, color: NAVY, letterSpacing: '0.04em' }}>
+        ALSO IN THIS APP
+      </p>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+        {redirects.map((r) => (
+          <button
+            key={r.kind}
+            type="button"
+            onClick={() => onNavigate(r.path)}
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              gap: 10,
+              padding: '10px 12px',
+              borderRadius: 10,
+              border: `1.5px solid ${r.suggested ? GREEN : LIGHT_BLUE}`,
+              background: r.suggested ? '#fff' : 'rgba(255,255,255,0.7)',
+              cursor: 'pointer',
+              textAlign: 'left',
+              fontFamily: FONT,
+            }}
+          >
+            <span style={{ fontSize: '0.8rem', fontWeight: 600, color: NAVY }}>{r.label}</span>
+            <span
+              style={{
+                fontSize: '0.65rem',
+                fontWeight: 700,
+                textTransform: 'uppercase',
+                color: r.suggested ? GREEN : MUTED,
+                flexShrink: 0,
+              }}
+            >
+              {r.suggested ? 'Suggested' : 'Open'}
+            </span>
+          </button>
+        ))}
+      </div>
+    </div>
+  )
+}
+
 // ── MessageBubble ─────────────────────────────────────────────────────────────
 
 function MessageBubble({ message }: { message: Message }) {
+  const navigate = useNavigate()
   const isUser = message.role === 'user'
   return (
     <motion.div
@@ -199,7 +252,7 @@ function MessageBubble({ message }: { message: Message }) {
           <Heart style={{ width: 14, height: 14, color: NAVY }} strokeWidth={2} />
         </div>
       )}
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 6, maxWidth: '75%', alignItems: isUser ? 'flex-end' : 'flex-start' }}>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 6, maxWidth: '75%', alignItems: isUser ? 'flex-end' : 'flex-start', width: isUser ? undefined : '100%' }}>
         <div style={{
           padding: '10px 16px',
           borderRadius: isUser ? '16px 16px 4px 16px' : '16px 16px 16px 4px',
@@ -216,6 +269,9 @@ function MessageBubble({ message }: { message: Message }) {
           {message.timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
         </span>
         {message.citations?.map((c) => <CitationCard key={c.id} citation={c} />)}
+        {!isUser && message.uiRedirects && (
+          <RedirectHints redirects={message.uiRedirects} onNavigate={(p) => navigate(p)} />
+        )}
       </div>
     </motion.div>
   )
@@ -256,6 +312,7 @@ export default function ChatScreen() {
   const [messages, setMessages] = useState<Message[]>([])
   const [isLoading, setIsLoading] = useState(false)
   const [value, setValue] = useState('')
+  const [dynamicChips, setDynamicChips] = useState<string[]>([])
   const textareaRef = useRef<HTMLTextAreaElement>(null)
   const bottomRef   = useRef<HTMLDivElement>(null)
 
@@ -264,6 +321,7 @@ export default function ChatScreen() {
   }, [messages, isLoading])
 
   const canSend = value.trim().length > 0 && !isLoading
+  const chipRow = messages.length > 0 && dynamicChips.length > 0 ? dynamicChips : CHIPS
 
   const handleSend = useCallback(async (content: string) => {
     const text = content.trim()
@@ -274,22 +332,62 @@ export default function ChatScreen() {
     if (textareaRef.current) textareaRef.current.style.height = 'auto'
     setIsLoading(true)
 
-    // ── Replace with your real API call ───────────────────────────────────────
-    await new Promise((r) => setTimeout(r, 1400))
-    const isBreathing = /breath|calm|anxi|overwhelm/i.test(text)
-    const isCrisis    = /crisis|hurt|harm|suicid/i.test(text)
-    setMessages((prev) => [...prev, {
-      id: crypto.randomUUID(),
-      role: 'assistant',
-      content: isBreathing
-        ? "Let's try a breathing exercise together. Breathe in slowly for 4 counts, hold for 7, then exhale for 8. Repeat this a few times — you're doing great."
-        : "Thank you for sharing that with me. It takes courage to reach out. I'm here with you. Would you like to try a quick breathing exercise, or would it help to talk more about what you're feeling?",
-      timestamp: new Date(),
-      citations: isBreathing ? [BREATHING_CITATION] : isCrisis ? [CRISIS_CITATION] : undefined,
-    }])
-    // ── End mock block ────────────────────────────────────────────────────────
+    try {
+      const res = await fetch('/api/chat', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ message: text }),
+      })
+      const data = (await res.json()) as {
+        error?: string
+        answer?: string
+        citations?: Array<{ chunkId: string; title: string; sourceUrl: string; excerpt: string }>
+        suggestedQuestions?: string[]
+        uiRedirects?: ApiUiRedirect[]
+      }
 
-    setIsLoading(false)
+      if (!res.ok) {
+        throw new Error(data.error || `Request failed (${res.status})`)
+      }
+
+      const citations: Citation[] | undefined = data.citations?.map((c) => ({
+        id: c.chunkId,
+        title: c.title,
+        description: c.excerpt,
+        url: c.sourceUrl || undefined,
+        type: 'article',
+      }))
+
+      const suggested = Array.isArray(data.suggestedQuestions) ? data.suggestedQuestions : []
+      setDynamicChips(suggested.length >= 5 ? suggested.slice(0, 5) : suggested)
+
+      setMessages((prev) => [
+        ...prev,
+        {
+          id: crypto.randomUUID(),
+          role: 'assistant',
+          content: data.answer ?? '',
+          timestamp: new Date(),
+          citations,
+          uiRedirects: data.uiRedirects,
+        },
+      ])
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : 'Something went wrong'
+      setMessages((prev) => [
+        ...prev,
+        {
+          id: crypto.randomUUID(),
+          role: 'assistant',
+          content:
+            `I couldn’t reach the knowledge chat service (${msg}). Make sure the API server is running (\`npm run server:dev\`), ` +
+            'the knowledge index is built (`npm run rag:build`), and `OPENAI_API_KEY` is set.',
+          timestamp: new Date(),
+        },
+      ])
+    } finally {
+      setIsLoading(false)
+    }
   }, [isLoading])
 
   const handleKeyDown = (e: KeyboardEvent<HTMLTextAreaElement>) => {
@@ -339,9 +437,9 @@ export default function ChatScreen() {
 
       {/* ── Prompt chips ───────────────────────────────────────────────────── */}
       <div style={{ display: 'flex', gap: 8, padding: '10px 16px', overflowX: 'auto', background: OFF_WHITE, borderBottom: `1px solid ${LIGHT_BLUE}`, flexShrink: 0, scrollbarWidth: 'none' }}>
-        {CHIPS.map((chip, i) => (
+        {chipRow.map((chip, i) => (
           <motion.button
-            key={chip}
+            key={`chip-${i}-${chip.slice(0, 24)}`}
             initial={{ opacity: 0, y: 6 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: i * 0.06 }}
