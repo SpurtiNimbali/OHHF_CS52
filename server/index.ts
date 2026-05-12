@@ -1,5 +1,5 @@
 import express from 'express'
-import 'dotenv/config'
+import './env.js'
 import checkInRouter from './routes/checkIn.js'
 import chatRouter from './routes/chat.js'
 

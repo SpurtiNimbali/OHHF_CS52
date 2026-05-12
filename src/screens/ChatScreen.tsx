@@ -1,7 +1,10 @@
 import { useState, useCallback, useEffect, useRef, KeyboardEvent, ChangeEvent } from 'react'
+import type { CSSProperties } from 'react'
 import { motion, AnimatePresence } from 'motion/react'
 import { useNavigate } from 'react-router-dom'
-import { MessageCircle, Heart, Shield, ArrowUp, ExternalLink, Phone, ArrowLeft } from 'lucide-react'
+import ReactMarkdown from 'react-markdown'
+import type { Components } from 'react-markdown'
+import { MessageCircle, Heart, Shield, ArrowUp, ArrowLeft } from 'lucide-react'
 
 // ── Brand tokens ──────────────────────────────────────────────────────────────
 
@@ -29,6 +32,8 @@ interface ApiUiRedirect {
   label: string
   path: string
   suggested: boolean
+  /** When true, show the large in-app suggestion card (user message matched). */
+  prominent?: boolean
 }
 
 interface Message {
@@ -38,6 +43,44 @@ interface Message {
   timestamp: Date
   citations?: Citation[]
   uiRedirects?: ApiUiRedirect[]
+}
+
+const CHAT_SESSION_KEY = 'cardea-chat-session-v1'
+
+type SerializedMessage = Omit<Message, 'timestamp'> & { timestamp: string }
+
+type PersistedChatPayload = {
+  version: 1
+  messages: SerializedMessage[]
+  dynamicChips: string[]
+}
+
+function loadChatSession(): { messages: Message[]; dynamicChips: string[] } {
+  try {
+    const raw = sessionStorage.getItem(CHAT_SESSION_KEY)
+    if (!raw) return { messages: [], dynamicChips: [] }
+    const data = JSON.parse(raw) as Partial<PersistedChatPayload>
+    if (data.version !== 1 || !Array.isArray(data.messages)) return { messages: [], dynamicChips: [] }
+    const messages = (data.messages as SerializedMessage[]).map((m) => ({
+      ...m,
+      timestamp: new Date(m.timestamp),
+    }))
+    const dynamicChips = Array.isArray(data.dynamicChips)
+      ? data.dynamicChips.filter((x): x is string => typeof x === 'string')
+      : []
+    return { messages, dynamicChips }
+  } catch {
+    return { messages: [], dynamicChips: [] }
+  }
+}
+
+function saveChatSession(messages: Message[], dynamicChips: string[]) {
+  const payload: PersistedChatPayload = {
+    version: 1,
+    messages: messages.map((m) => ({ ...m, timestamp: m.timestamp.toISOString() })),
+    dynamicChips,
+  }
+  sessionStorage.setItem(CHAT_SESSION_KEY, JSON.stringify(payload))
 }
 
 // ── Static data ───────────────────────────────────────────────────────────────
@@ -55,6 +98,63 @@ const FEATURE_CARDS = [
   { Icon: Heart,         title: 'Compassionate', desc: 'Non-judgmental support whenever you need it'            },
   { Icon: Shield,        title: 'Resource-Rich', desc: 'Access to helpful tools and professional resources'     },
 ]
+
+function shortLabel(text: string, max: number): string {
+  const t = text.trim()
+  if (t.length <= max) return t
+  return `${t.slice(0, max - 1)}…`
+}
+
+const assistantMarkdownComponents: Components = {
+  p: ({ children }) => <p style={{ margin: '0 0 0.55em', lineHeight: 1.6 }}>{children}</p>,
+  strong: ({ children }) => <strong style={{ fontWeight: 700 }}>{children}</strong>,
+  em: ({ children }) => <em style={{ fontStyle: 'italic' }}>{children}</em>,
+  ul: ({ children }) => <ul style={{ margin: '0.35em 0', paddingLeft: '1.15em' }}>{children}</ul>,
+  ol: ({ children }) => <ol style={{ margin: '0.35em 0', paddingLeft: '1.15em' }}>{children}</ol>,
+  li: ({ children }) => <li style={{ margin: '0.12em 0' }}>{children}</li>,
+  a: ({ href, children }) => (
+    <a
+      href={href}
+      target="_blank"
+      rel="noopener noreferrer"
+      style={{ color: GREEN, fontWeight: 600, textDecoration: 'underline', textUnderlineOffset: 2 }}
+    >
+      {children}
+    </a>
+  ),
+  code: ({ className, children }) =>
+    className ? (
+      <code style={{ fontFamily: 'ui-monospace, monospace', fontSize: '0.78em', display: 'block', whiteSpace: 'pre-wrap' }}>
+        {children}
+      </code>
+    ) : (
+      <code style={{ fontSize: '0.86em', background: OFF_WHITE, padding: '0.12em 0.35em', borderRadius: 4, border: `1px solid ${LIGHT_BLUE}` }}>
+        {children}
+      </code>
+    ),
+  pre: ({ children }) => (
+    <pre
+      style={{
+        margin: '0.45em 0',
+        padding: '10px 12px',
+        background: OFF_WHITE,
+        borderRadius: 8,
+        border: `1px solid ${LIGHT_BLUE}`,
+        overflowX: 'auto',
+      }}
+    >
+      {children}
+    </pre>
+  ),
+  blockquote: ({ children }) => (
+    <blockquote style={{ margin: '0.45em 0', paddingLeft: '0.75em', borderLeft: `3px solid ${LIGHT_BLUE}`, color: MUTED }}>
+      {children}
+    </blockquote>
+  ),
+  h1: ({ children }) => <h1 style={{ margin: '0.4em 0 0.25em', fontSize: '1.05em', fontWeight: 700 }}>{children}</h1>,
+  h2: ({ children }) => <h2 style={{ margin: '0.4em 0 0.25em', fontSize: '1em', fontWeight: 700 }}>{children}</h2>,
+  h3: ({ children }) => <h3 style={{ margin: '0.35em 0 0.2em', fontSize: '0.95em', fontWeight: 700 }}>{children}</h3>,
+}
 
 // ── WelcomeState ──────────────────────────────────────────────────────────────
 
@@ -147,39 +247,9 @@ function WelcomeState({ onChip }: { onChip: (label: string) => void }) {
   )
 }
 
-// ── CitationCard ──────────────────────────────────────────────────────────────
+// ── Prominent in-app suggestions (user message clearly matched) ───────────────
 
-function CitationCard({ citation }: { citation: Citation }) {
-  const isHotline = citation.type === 'hotline'
-  const isArticle = citation.type === 'article'
-  const bg = isHotline ? '#fff5f5' : isArticle ? '#f0f7ff' : '#f0faf4'
-  const border = isHotline ? '#fecaca' : isArticle ? '#bfdbfe' : '#bbf7d0'
-  const color = isHotline ? '#b91c1c' : isArticle ? '#1d4ed8' : '#15803d'
-  const Icon = isHotline ? Phone : ArrowUp
-
-  const inner = (
-    <div style={{ display: 'flex', alignItems: 'flex-start', gap: 10, padding: '10px 12px', borderRadius: 12, border: `1px solid ${border}`, background: bg }}>
-      <div style={{ flexShrink: 0, padding: 6, borderRadius: 8, background: 'rgba(255,255,255,0.6)', color }}>
-        <Icon style={{ width: 12, height: 12 }} />
-      </div>
-      <div style={{ flex: 1 }}>
-        <p style={{ margin: '0 0 2px', fontSize: '0.72rem', fontWeight: 700, color }}>{citation.title}</p>
-        <p style={{ margin: 0, fontSize: '0.72rem', color: '#374151', lineHeight: 1.5 }}>{citation.description}</p>
-      </div>
-      {citation.url && <ExternalLink style={{ width: 11, height: 11, color: MUTED, flexShrink: 0, marginTop: 2 }} />}
-    </div>
-  )
-
-  return citation.url ? (
-    <a href={citation.url} target="_blank" rel="noopener noreferrer" style={{ display: 'block', textDecoration: 'none' }}>
-      {inner}
-    </a>
-  ) : inner
-}
-
-// ── In-app resource hints (API) ───────────────────────────────────────────────
-
-function RedirectHints({ redirects, onNavigate }: { redirects: ApiUiRedirect[]; onNavigate: (path: string) => void }) {
+function ProminentRedirectHints({ redirects, onNavigate }: { redirects: ApiUiRedirect[]; onNavigate: (path: string) => void }) {
   if (!redirects.length) return null
   return (
     <div
@@ -194,7 +264,7 @@ function RedirectHints({ redirects, onNavigate }: { redirects: ApiUiRedirect[]; 
       }}
     >
       <p style={{ margin: '0 0 10px', fontSize: '0.72rem', fontWeight: 700, color: NAVY, letterSpacing: '0.04em' }}>
-        ALSO IN THIS APP
+        Suggested resources
       </p>
       <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
         {redirects.map((r) => (
@@ -209,8 +279,8 @@ function RedirectHints({ redirects, onNavigate }: { redirects: ApiUiRedirect[]; 
               gap: 10,
               padding: '10px 12px',
               borderRadius: 10,
-              border: `1.5px solid ${r.suggested ? GREEN : LIGHT_BLUE}`,
-              background: r.suggested ? '#fff' : 'rgba(255,255,255,0.7)',
+              border: `1.5px solid ${GREEN}`,
+              background: '#fff',
               cursor: 'pointer',
               textAlign: 'left',
               fontFamily: FONT,
@@ -222,11 +292,11 @@ function RedirectHints({ redirects, onNavigate }: { redirects: ApiUiRedirect[]; 
                 fontSize: '0.65rem',
                 fontWeight: 700,
                 textTransform: 'uppercase',
-                color: r.suggested ? GREEN : MUTED,
+                color: GREEN,
                 flexShrink: 0,
               }}
             >
-              {r.suggested ? 'Suggested' : 'Open'}
+              Open
             </span>
           </button>
         ))}
@@ -237,9 +307,36 @@ function RedirectHints({ redirects, onNavigate }: { redirects: ApiUiRedirect[]; 
 
 // ── MessageBubble ─────────────────────────────────────────────────────────────
 
-function MessageBubble({ message }: { message: Message }) {
+function MessageBubble({
+  message,
+  onOpenCitations,
+}: {
+  message: Message
+  onOpenCitations: (citations: Citation[]) => void
+}) {
   const navigate = useNavigate()
   const isUser = message.role === 'user'
+  const hasCitations = !isUser && Boolean(message.citations?.length)
+  const footRedirects = !isUser && message.uiRedirects?.length ? message.uiRedirects : []
+  const prominentRedirects = footRedirects.filter((r) => r.prominent === true)
+  const subtleRedirects = footRedirects.filter((r) => r.prominent !== true)
+  const showFoot = hasCitations || subtleRedirects.length > 0
+  const footMuted = '#8a9a96'
+  const linkBtn: CSSProperties = {
+    margin: 0,
+    padding: 0,
+    border: 'none',
+    background: 'none',
+    cursor: 'pointer',
+    fontFamily: FONT,
+    fontSize: 'inherit',
+    color: GREEN,
+    fontWeight: 600,
+    textDecoration: 'underline',
+    textUnderlineOffset: 2,
+    textAlign: 'left',
+  }
+
   return (
     <motion.div
       initial={{ opacity: 0, y: 10 }}
@@ -263,15 +360,54 @@ function MessageBubble({ message }: { message: Message }) {
             ? { background: NAVY, color: '#fff' }
             : { background: '#fff', color: NAVY, border: `1.5px solid ${LIGHT_BLUE}`, boxShadow: '0 1px 4px rgba(25,43,63,0.06)' }),
         }}>
-          {message.content}
+          {isUser ? (
+            message.content
+          ) : (
+            <ReactMarkdown components={assistantMarkdownComponents}>{message.content}</ReactMarkdown>
+          )}
+          {showFoot && (
+            <div
+              style={{
+                marginTop: 10,
+                paddingTop: 8,
+                borderTop: `1px solid rgba(198, 217, 229, 0.85)`,
+                fontSize: '0.62rem',
+                lineHeight: 1.45,
+                color: footMuted,
+              }}
+            >
+              {hasCitations && (
+                <div style={{ marginBottom: subtleRedirects.length > 0 ? 6 : 0 }}>
+                  <button
+                    type="button"
+                    onClick={() => onOpenCitations(message.citations!)}
+                    style={linkBtn}
+                  >
+                    Citations
+                  </button>
+                </div>
+              )}
+              {subtleRedirects.length > 0 && (
+                <div>
+                  {subtleRedirects.map((r, i) => (
+                    <span key={r.kind} style={{ display: 'inline' }}>
+                      {i > 0 && <span style={{ margin: '0 0.25em', color: LIGHT_BLUE }}>·</span>}
+                      <button type="button" onClick={() => navigate(r.path)} style={linkBtn}>
+                        {shortLabel(r.label, 40)}
+                      </button>
+                    </span>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
         </div>
+        {!isUser && prominentRedirects.length > 0 && (
+          <ProminentRedirectHints redirects={prominentRedirects} onNavigate={(p) => navigate(p)} />
+        )}
         <span style={{ fontSize: '0.68rem', color: MUTED, padding: '0 4px' }}>
           {message.timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
         </span>
-        {message.citations?.map((c) => <CitationCard key={c.id} citation={c} />)}
-        {!isUser && message.uiRedirects && (
-          <RedirectHints redirects={message.uiRedirects} onNavigate={(p) => navigate(p)} />
-        )}
       </div>
     </motion.div>
   )
@@ -309,16 +445,28 @@ function LoadingBubble() {
 
 export default function ChatScreen() {
   const navigate = useNavigate()
-  const [messages, setMessages] = useState<Message[]>([])
+  const [messages, setMessages] = useState<Message[]>(() => loadChatSession().messages)
   const [isLoading, setIsLoading] = useState(false)
   const [value, setValue] = useState('')
-  const [dynamicChips, setDynamicChips] = useState<string[]>([])
+  const [dynamicChips, setDynamicChips] = useState<string[]>(() => loadChatSession().dynamicChips)
   const textareaRef = useRef<HTMLTextAreaElement>(null)
   const bottomRef   = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' })
   }, [messages, isLoading])
+
+  useEffect(() => {
+    saveChatSession(messages, dynamicChips)
+  }, [messages, dynamicChips])
+
+  const openCitations = useCallback(
+    (citations: Citation[]) => {
+      saveChatSession(messages, dynamicChips)
+      navigate('/chat/citations', { state: { citations } })
+    },
+    [messages, dynamicChips, navigate],
+  )
 
   const canSend = value.trim().length > 0 && !isLoading
   const chipRow = messages.length > 0 && dynamicChips.length > 0 ? dynamicChips : CHIPS
@@ -381,7 +529,7 @@ export default function ChatScreen() {
           role: 'assistant',
           content:
             `I couldn’t reach the knowledge chat service (${msg}). Make sure the API server is running (\`npm run server:dev\`), ` +
-            'the knowledge index is built (`npm run rag:build`), and `OPENAI_API_KEY` is set.',
+            'the knowledge index is built (`npm run rag:build`), and `OPENAI_API_KEY` (embeddings) + `ANTHROPIC_API_KEY` (chat) are set.',
           timestamp: new Date(),
         },
       ])
@@ -461,7 +609,9 @@ export default function ChatScreen() {
         ) : (
           <div style={{ display: 'flex', flexDirection: 'column', gap: 16, padding: '24px 16px', maxWidth: 680, margin: '0 auto' }}>
             <AnimatePresence initial={false}>
-              {messages.map((msg) => <MessageBubble key={msg.id} message={msg} />)}
+              {messages.map((msg) => (
+                <MessageBubble key={msg.id} message={msg} onOpenCitations={openCitations} />
+              ))}
               {isLoading && <LoadingBubble key="loading" />}
             </AnimatePresence>
             <div ref={bottomRef} />
