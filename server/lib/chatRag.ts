@@ -1,4 +1,5 @@
 import OpenAI from 'openai'
+import Anthropic from '@anthropic-ai/sdk'
 import {
   KB_SYSTEM_PROMPT_PLACEHOLDER,
   buildFollowupUserPrompt,
@@ -11,14 +12,17 @@ import type { RetrievedChunk } from './knowledge/types.js'
 
 const CHUNK_CHAR_BUDGET = 1400
 const TOP_K = 8
-const MAIN_MODEL = process.env.OPENAI_CHAT_MODEL ?? 'gpt-4o-mini'
-const FOLLOWUP_MODEL = process.env.OPENAI_FOLLOWUP_MODEL ?? MAIN_MODEL
+const MAIN_MODEL = process.env.CLAUDE_MODEL ?? 'claude-sonnet-4-6'
+const FOLLOWUP_MODEL = process.env.CLAUDE_FOLLOWUP_MODEL ?? MAIN_MODEL
 
 export type UiRedirect = {
   kind: 'mental_health_tools' | 'cardiologist_questions' | 'support_groups' | 'glossary'
   label: string
   path: string
+  /** True when the user's message matched (legacy / scripts). */
   suggested: boolean
+  /** True when the match came from the user's words; show a large in-app suggestion. */
+  prominent: boolean
 }
 
 export type ChatCitation = {
@@ -71,13 +75,14 @@ const REDIRECT_RULES: Array<{
   },
 ]
 
-function buildUiRedirects(userMessage: string): UiRedirect[] {
-  return REDIRECT_RULES.map((r) => ({
-    kind: r.kind,
-    label: r.label,
-    path: r.path,
-    suggested: r.patterns.test(userMessage),
-  }))
+function buildUiRedirects(userMessage: string, assistantAnswer: string): UiRedirect[] {
+  const answerSlice = assistantAnswer.slice(0, 4000)
+  const haystack = `${userMessage}\n${answerSlice}`
+  return REDIRECT_RULES.flatMap((r) => {
+    if (!r.patterns.test(haystack)) return []
+    const prominent = r.patterns.test(userMessage)
+    return [{ kind: r.kind, label: r.label, path: r.path, suggested: prominent, prominent }]
+  })
 }
 
 function clip(s: string, n: number): string {
@@ -108,7 +113,7 @@ function parseFollowups(raw: string): string[] {
 }
 
 let openai: OpenAI | null = null
-function getOpenAI(): OpenAI {
+function getOpenAIForEmbeddings(): OpenAI {
   if (!openai) {
     const key = (process.env.OPENAI_API_KEY ?? '').trim()
     if (!key) throw new Error('Missing OPENAI_API_KEY')
@@ -117,14 +122,24 @@ function getOpenAI(): OpenAI {
   return openai
 }
 
-function messageText(content: string | null | (object | null)[] | undefined): string {
-  if (typeof content === 'string') return content
+let anthropic: Anthropic | null = null
+function getAnthropic(): Anthropic {
+  if (!anthropic) {
+    const key = (process.env.ANTHROPIC_API_KEY ?? '').trim()
+    if (!key) throw new Error('Missing ANTHROPIC_API_KEY')
+    anthropic = new Anthropic({ apiKey: key })
+  }
+  return anthropic
+}
+
+function anthropicText(content: unknown): string {
+  // Anthropic responses: content is an array of blocks like { type: 'text', text: '...' }
   if (!Array.isArray(content)) return ''
   return content
-    .map((part) => {
-      if (!part || typeof part !== 'object') return ''
-      if ('type' in part && part.type === 'text' && 'text' in part && typeof (part as { text: string }).text === 'string') {
-        return (part as { text: string }).text
+    .map((b) => {
+      if (!b || typeof b !== 'object') return ''
+      if ('type' in b && (b as { type?: unknown }).type === 'text' && 'text' in b && typeof (b as { text?: unknown }).text === 'string') {
+        return (b as { text: string }).text
       }
       return ''
     })
@@ -133,23 +148,21 @@ function messageText(content: string | null | (object | null)[] | undefined): st
 
 async function embedQuery(text: string): Promise<number[]> {
   const model = process.env.OPENAI_EMBEDDING_MODEL ?? 'text-embedding-3-small'
-  const res = await getOpenAI().embeddings.create({ model, input: text })
+  const res = await getOpenAIForEmbeddings().embeddings.create({ model, input: text })
   const v = res.data[0]?.embedding
   if (!v?.length) throw new Error('Empty embedding response')
   return v
 }
 
-async function openaiChat(system: string, user: string, model: string, maxTokens: number, temperature: number): Promise<string> {
-  const res = await getOpenAI().chat.completions.create({
+async function claudeChat(system: string, user: string, model: string, maxTokens: number, temperature: number): Promise<string> {
+  const res = await getAnthropic().messages.create({
     model,
     max_tokens: maxTokens,
     temperature,
-    messages: [
-      { role: 'system', content: system },
-      { role: 'user', content: user },
-    ],
+    system,
+    messages: [{ role: 'user', content: user }],
   })
-  const text = messageText(res.choices?.[0]?.message?.content)
+  const text = anthropicText(res.content)
   return text.trim()
 }
 
@@ -174,7 +187,7 @@ export async function runKbChat(userMessage: string): Promise<KbChatResult> {
 
   const contextBlock = buildKnowledgeContextBlock(forPrompt)
 
-  const answer = await openaiChat(
+  const answer = await claudeChat(
     KB_SYSTEM_PROMPT_PLACEHOLDER,
     `Knowledge context:\n${contextBlock}\n\n---\nUser message:\n${trimmed}`,
     MAIN_MODEL,
@@ -189,7 +202,7 @@ export async function runKbChat(userMessage: string): Promise<KbChatResult> {
     excerpt: clip(r.text, 220),
   }))
 
-  const followRaw = await openaiChat(
+  const followRaw = await claudeChat(
     FOLLOWUP_SYSTEM,
     buildFollowupUserPrompt(trimmed, answer),
     FOLLOWUP_MODEL,
@@ -198,7 +211,7 @@ export async function runKbChat(userMessage: string): Promise<KbChatResult> {
   )
 
   const suggestedQuestions = parseFollowups(followRaw)
-  const uiRedirects = buildUiRedirects(trimmed)
+  const uiRedirects = buildUiRedirects(trimmed, answer)
 
   return { answer, citations, suggestedQuestions, uiRedirects, retrieved }
 }

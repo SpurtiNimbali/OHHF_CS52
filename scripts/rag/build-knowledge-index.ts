@@ -1,6 +1,6 @@
 /**
  * Build `data/knowledge/index.json` from all JSON chunk files under each configured
- * corpus tree (recursive). Requires OPENAI_API_KEY. Run: npm run rag:build
+ * corpus tree (recursive). Requires OPENAI_API_KEY (embeddings). Run: npm run rag:build
  */
 import 'dotenv/config'
 import fs from 'node:fs/promises'

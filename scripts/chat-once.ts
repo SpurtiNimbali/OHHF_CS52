@@ -21,8 +21,8 @@ async function main() {
   console.log('\n─ Answer ─\n', r.answer)
   console.log('\n─ Suggested next questions ─')
   r.suggestedQuestions.forEach((s, i) => console.log(`  ${i + 1}. ${s}`))
-  console.log('\n─ In-app redirects (suggested flagged in API) ─')
-  r.uiRedirects.forEach((u) => console.log(`  [${u.suggested ? '★' : ' '}] ${u.label} → ${u.path}`))
+  console.log('\n─ In-app redirects (★ = from your question, ○ = from answer context) ─')
+  r.uiRedirects.forEach((u) => console.log(`  [${u.prominent ? '★' : '○'}] ${u.label} → ${u.path}`))
   console.log('\n─ Sources (top excerpts) ─')
   r.citations.slice(0, 3).forEach((c, i) => {
     console.log(`  ${i + 1}. ${c.title}${c.sourceUrl ? ` — ${c.sourceUrl}` : ''}`)

@@ -5,7 +5,8 @@ How to build the knowledge index, run retrieval against it, and use RAG chat loc
 ## Prerequisites
 
 - **Node.js** (project uses `npm` + `tsx`)
-- **OpenAI API key** with access to embeddings and chat models you configure
+- **OpenAI API key** set as `OPENAI_API_KEY` (used for embeddings)
+- **Anthropic API key** set as `ANTHROPIC_API_KEY` (used for chat)
 
 ## One-time setup
 
@@ -21,10 +22,11 @@ How to build the knowledge index, run retrieval against it, and use RAG chat loc
    cp .env.example .env
    ```
 
-   Edit `.env` and set at least `OPENAI_API_KEY`. Optional overrides:
+   Edit `.env` and set at least `OPENAI_API_KEY` + `ANTHROPIC_API_KEY`. Optional overrides:
 
    - `OPENAI_EMBEDDING_MODEL` (default `text-embedding-3-small`)
-   - `OPENAI_CHAT_MODEL` (default `gpt-4o-mini`)
+   - `CLAUDE_MODEL` (default `claude-sonnet-4-6`)
+   - `CLAUDE_FOLLOWUP_MODEL` (default `CLAUDE_MODEL`)
 
    Values in `.env.local` override `.env` if you use that file.
 
@@ -81,7 +83,8 @@ Optional: pass a question as arguments (see `scripts/chat-once.ts`).
 
 | Issue | What to do |
 |--------|------------|
-| `Set OPENAI_API_KEY in the environment` | Ensure `.env` (or `.env.local`) contains a non-empty `OPENAI_API_KEY`. |
+| `Set OPENAI_API_KEY in the environment` | Ensure `.env` (or `.env.local`) contains a non-empty `OPENAI_API_KEY` (needed for embeddings + retrieval). |
+| `Set ANTHROPIC_API_KEY in the environment` | Ensure `.env` (or `.env.local`) contains a non-empty `ANTHROPIC_API_KEY` (needed for chat). |
 | `Knowledge index unavailable` / chat errors about index | Run `npm run rag:build` from repo root. |
 | `[rag:build] skip missing directory: ...` | That corpus folder is absent on disk; add it or ignore if you only use the other tree. |
 | Chat UI works but no API | Start `npm run server:dev` so something listens on port **3001** (or set `PORT` to match your proxy). |
