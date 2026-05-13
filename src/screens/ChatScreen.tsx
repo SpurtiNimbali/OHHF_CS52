@@ -1,7 +1,10 @@
 import { useState, useCallback, useEffect, useRef, KeyboardEvent, ChangeEvent } from 'react'
+import type { CSSProperties } from 'react'
 import { motion, AnimatePresence } from 'motion/react'
 import { useNavigate } from 'react-router-dom'
-import { MessageCircle, Heart, Shield, ArrowUp, ExternalLink, Phone, ArrowLeft } from 'lucide-react'
+import ReactMarkdown from 'react-markdown'
+import type { Components } from 'react-markdown'
+import { MessageCircle, Heart, Shield, ArrowUp, ArrowLeft } from 'lucide-react'
 
 // ── Brand tokens ──────────────────────────────────────────────────────────────
 
@@ -14,8 +17,6 @@ const FONT       = 'Inter, system-ui, sans-serif'
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
-type MessageRole = 'user' | 'assistant'
-
 interface Citation {
   id: string
   title: string
@@ -24,12 +25,62 @@ interface Citation {
   type: 'hotline' | 'exercise' | 'article'
 }
 
+type MessageRole = 'user' | 'assistant'
+
+interface ApiUiRedirect {
+  kind: string
+  label: string
+  path: string
+  suggested: boolean
+  /** When true, show the large in-app suggestion card (user message matched). */
+  prominent?: boolean
+}
+
 interface Message {
   id: string
   role: MessageRole
   content: string
   timestamp: Date
   citations?: Citation[]
+  uiRedirects?: ApiUiRedirect[]
+}
+
+const CHAT_SESSION_KEY = 'cardea-chat-session-v1'
+
+type SerializedMessage = Omit<Message, 'timestamp'> & { timestamp: string }
+
+type PersistedChatPayload = {
+  version: 1
+  messages: SerializedMessage[]
+  dynamicChips: string[]
+}
+
+function loadChatSession(): { messages: Message[]; dynamicChips: string[] } {
+  try {
+    const raw = sessionStorage.getItem(CHAT_SESSION_KEY)
+    if (!raw) return { messages: [], dynamicChips: [] }
+    const data = JSON.parse(raw) as Partial<PersistedChatPayload>
+    if (data.version !== 1 || !Array.isArray(data.messages)) return { messages: [], dynamicChips: [] }
+    const messages = (data.messages as SerializedMessage[]).map((m) => ({
+      ...m,
+      timestamp: new Date(m.timestamp),
+    }))
+    const dynamicChips = Array.isArray(data.dynamicChips)
+      ? data.dynamicChips.filter((x): x is string => typeof x === 'string')
+      : []
+    return { messages, dynamicChips }
+  } catch {
+    return { messages: [], dynamicChips: [] }
+  }
+}
+
+function saveChatSession(messages: Message[], dynamicChips: string[]) {
+  const payload: PersistedChatPayload = {
+    version: 1,
+    messages: messages.map((m) => ({ ...m, timestamp: m.timestamp.toISOString() })),
+    dynamicChips,
+  }
+  sessionStorage.setItem(CHAT_SESSION_KEY, JSON.stringify(payload))
 }
 
 // ── Static data ───────────────────────────────────────────────────────────────
@@ -48,19 +99,61 @@ const FEATURE_CARDS = [
   { Icon: Shield,        title: 'Resource-Rich', desc: 'Access to helpful tools and professional resources'     },
 ]
 
-const BREATHING_CITATION: Citation = {
-  id: 'breathing',
-  title: '4-7-8 Breathing Technique',
-  description: 'Inhale 4s, hold 7s, exhale 8s — reduces anxiety in minutes',
-  type: 'exercise',
+function shortLabel(text: string, max: number): string {
+  const t = text.trim()
+  if (t.length <= max) return t
+  return `${t.slice(0, max - 1)}…`
 }
 
-const CRISIS_CITATION: Citation = {
-  id: 'crisis',
-  title: 'Crisis Text Line',
-  description: 'Text HOME to 741741 — free, confidential support 24/7',
-  url: 'https://crisistextline.org',
-  type: 'hotline',
+const assistantMarkdownComponents: Components = {
+  p: ({ children }) => <p style={{ margin: '0 0 0.55em', lineHeight: 1.6 }}>{children}</p>,
+  strong: ({ children }) => <strong style={{ fontWeight: 700 }}>{children}</strong>,
+  em: ({ children }) => <em style={{ fontStyle: 'italic' }}>{children}</em>,
+  ul: ({ children }) => <ul style={{ margin: '0.35em 0', paddingLeft: '1.15em' }}>{children}</ul>,
+  ol: ({ children }) => <ol style={{ margin: '0.35em 0', paddingLeft: '1.15em' }}>{children}</ol>,
+  li: ({ children }) => <li style={{ margin: '0.12em 0' }}>{children}</li>,
+  a: ({ href, children }) => (
+    <a
+      href={href}
+      target="_blank"
+      rel="noopener noreferrer"
+      style={{ color: GREEN, fontWeight: 600, textDecoration: 'underline', textUnderlineOffset: 2 }}
+    >
+      {children}
+    </a>
+  ),
+  code: ({ className, children }) =>
+    className ? (
+      <code style={{ fontFamily: 'ui-monospace, monospace', fontSize: '0.78em', display: 'block', whiteSpace: 'pre-wrap' }}>
+        {children}
+      </code>
+    ) : (
+      <code style={{ fontSize: '0.86em', background: OFF_WHITE, padding: '0.12em 0.35em', borderRadius: 4, border: `1px solid ${LIGHT_BLUE}` }}>
+        {children}
+      </code>
+    ),
+  pre: ({ children }) => (
+    <pre
+      style={{
+        margin: '0.45em 0',
+        padding: '10px 12px',
+        background: OFF_WHITE,
+        borderRadius: 8,
+        border: `1px solid ${LIGHT_BLUE}`,
+        overflowX: 'auto',
+      }}
+    >
+      {children}
+    </pre>
+  ),
+  blockquote: ({ children }) => (
+    <blockquote style={{ margin: '0.45em 0', paddingLeft: '0.75em', borderLeft: `3px solid ${LIGHT_BLUE}`, color: MUTED }}>
+      {children}
+    </blockquote>
+  ),
+  h1: ({ children }) => <h1 style={{ margin: '0.4em 0 0.25em', fontSize: '1.05em', fontWeight: 700 }}>{children}</h1>,
+  h2: ({ children }) => <h2 style={{ margin: '0.4em 0 0.25em', fontSize: '1em', fontWeight: 700 }}>{children}</h2>,
+  h3: ({ children }) => <h3 style={{ margin: '0.35em 0 0.2em', fontSize: '0.95em', fontWeight: 700 }}>{children}</h3>,
 }
 
 // ── WelcomeState ──────────────────────────────────────────────────────────────
@@ -154,39 +247,96 @@ function WelcomeState({ onChip }: { onChip: (label: string) => void }) {
   )
 }
 
-// ── CitationCard ──────────────────────────────────────────────────────────────
+// ── Prominent in-app suggestions (user message clearly matched) ───────────────
 
-function CitationCard({ citation }: { citation: Citation }) {
-  const isHotline = citation.type === 'hotline'
-  const bg     = isHotline ? '#fff5f5' : '#f0faf4'
-  const border = isHotline ? '#fecaca' : '#bbf7d0'
-  const color  = isHotline ? '#b91c1c' : '#15803d'
-  const Icon   = isHotline ? Phone : ArrowUp
-
-  const inner = (
-    <div style={{ display: 'flex', alignItems: 'flex-start', gap: 10, padding: '10px 12px', borderRadius: 12, border: `1px solid ${border}`, background: bg }}>
-      <div style={{ flexShrink: 0, padding: 6, borderRadius: 8, background: 'rgba(255,255,255,0.6)', color }}>
-        <Icon style={{ width: 12, height: 12 }} />
+function ProminentRedirectHints({ redirects, onNavigate }: { redirects: ApiUiRedirect[]; onNavigate: (path: string) => void }) {
+  if (!redirects.length) return null
+  return (
+    <div
+      style={{
+        marginTop: 10,
+        padding: '12px 14px',
+        borderRadius: 12,
+        background: 'rgba(198, 217, 229, 0.35)',
+        border: `1px solid ${LIGHT_BLUE}`,
+        width: '100%',
+        boxSizing: 'border-box',
+      }}
+    >
+      <p style={{ margin: '0 0 10px', fontSize: '0.72rem', fontWeight: 700, color: NAVY, letterSpacing: '0.04em' }}>
+        Suggested resources
+      </p>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+        {redirects.map((r) => (
+          <button
+            key={r.kind}
+            type="button"
+            onClick={() => onNavigate(r.path)}
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              gap: 10,
+              padding: '10px 12px',
+              borderRadius: 10,
+              border: `1.5px solid ${GREEN}`,
+              background: '#fff',
+              cursor: 'pointer',
+              textAlign: 'left',
+              fontFamily: FONT,
+            }}
+          >
+            <span style={{ fontSize: '0.8rem', fontWeight: 600, color: NAVY }}>{r.label}</span>
+            <span
+              style={{
+                fontSize: '0.65rem',
+                fontWeight: 700,
+                textTransform: 'uppercase',
+                color: GREEN,
+                flexShrink: 0,
+              }}
+            >
+              Open
+            </span>
+          </button>
+        ))}
       </div>
-      <div style={{ flex: 1 }}>
-        <p style={{ margin: '0 0 2px', fontSize: '0.72rem', fontWeight: 700, color }}>{citation.title}</p>
-        <p style={{ margin: 0, fontSize: '0.72rem', color: '#374151', lineHeight: 1.5 }}>{citation.description}</p>
-      </div>
-      {citation.url && <ExternalLink style={{ width: 11, height: 11, color: MUTED, flexShrink: 0, marginTop: 2 }} />}
     </div>
   )
-
-  return citation.url ? (
-    <a href={citation.url} target="_blank" rel="noopener noreferrer" style={{ display: 'block', textDecoration: 'none' }}>
-      {inner}
-    </a>
-  ) : inner
 }
 
 // ── MessageBubble ─────────────────────────────────────────────────────────────
 
-function MessageBubble({ message }: { message: Message }) {
+function MessageBubble({
+  message,
+  onOpenCitations,
+}: {
+  message: Message
+  onOpenCitations: (citations: Citation[]) => void
+}) {
+  const navigate = useNavigate()
   const isUser = message.role === 'user'
+  const hasCitations = !isUser && Boolean(message.citations?.length)
+  const footRedirects = !isUser && message.uiRedirects?.length ? message.uiRedirects : []
+  const prominentRedirects = footRedirects.filter((r) => r.prominent === true)
+  const subtleRedirects = footRedirects.filter((r) => r.prominent !== true)
+  const showFoot = hasCitations || subtleRedirects.length > 0
+  const footMuted = '#8a9a96'
+  const linkBtn: CSSProperties = {
+    margin: 0,
+    padding: 0,
+    border: 'none',
+    background: 'none',
+    cursor: 'pointer',
+    fontFamily: FONT,
+    fontSize: 'inherit',
+    color: GREEN,
+    fontWeight: 600,
+    textDecoration: 'underline',
+    textUnderlineOffset: 2,
+    textAlign: 'left',
+  }
+
   return (
     <motion.div
       initial={{ opacity: 0, y: 10 }}
@@ -199,7 +349,7 @@ function MessageBubble({ message }: { message: Message }) {
           <Heart style={{ width: 14, height: 14, color: NAVY }} strokeWidth={2} />
         </div>
       )}
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 6, maxWidth: '75%', alignItems: isUser ? 'flex-end' : 'flex-start' }}>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 6, maxWidth: '75%', alignItems: isUser ? 'flex-end' : 'flex-start', width: isUser ? undefined : '100%' }}>
         <div style={{
           padding: '10px 16px',
           borderRadius: isUser ? '16px 16px 4px 16px' : '16px 16px 16px 4px',
@@ -210,12 +360,54 @@ function MessageBubble({ message }: { message: Message }) {
             ? { background: NAVY, color: '#fff' }
             : { background: '#fff', color: NAVY, border: `1.5px solid ${LIGHT_BLUE}`, boxShadow: '0 1px 4px rgba(25,43,63,0.06)' }),
         }}>
-          {message.content}
+          {isUser ? (
+            message.content
+          ) : (
+            <ReactMarkdown components={assistantMarkdownComponents}>{message.content}</ReactMarkdown>
+          )}
+          {showFoot && (
+            <div
+              style={{
+                marginTop: 10,
+                paddingTop: 8,
+                borderTop: `1px solid rgba(198, 217, 229, 0.85)`,
+                fontSize: '0.62rem',
+                lineHeight: 1.45,
+                color: footMuted,
+              }}
+            >
+              {hasCitations && (
+                <div style={{ marginBottom: subtleRedirects.length > 0 ? 6 : 0 }}>
+                  <button
+                    type="button"
+                    onClick={() => onOpenCitations(message.citations!)}
+                    style={linkBtn}
+                  >
+                    Citations
+                  </button>
+                </div>
+              )}
+              {subtleRedirects.length > 0 && (
+                <div>
+                  {subtleRedirects.map((r, i) => (
+                    <span key={r.kind} style={{ display: 'inline' }}>
+                      {i > 0 && <span style={{ margin: '0 0.25em', color: LIGHT_BLUE }}>·</span>}
+                      <button type="button" onClick={() => navigate(r.path)} style={linkBtn}>
+                        {shortLabel(r.label, 40)}
+                      </button>
+                    </span>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
         </div>
+        {!isUser && prominentRedirects.length > 0 && (
+          <ProminentRedirectHints redirects={prominentRedirects} onNavigate={(p) => navigate(p)} />
+        )}
         <span style={{ fontSize: '0.68rem', color: MUTED, padding: '0 4px' }}>
           {message.timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
         </span>
-        {message.citations?.map((c) => <CitationCard key={c.id} citation={c} />)}
       </div>
     </motion.div>
   )
@@ -253,9 +445,10 @@ function LoadingBubble() {
 
 export default function ChatScreen() {
   const navigate = useNavigate()
-  const [messages, setMessages] = useState<Message[]>([])
+  const [messages, setMessages] = useState<Message[]>(() => loadChatSession().messages)
   const [isLoading, setIsLoading] = useState(false)
   const [value, setValue] = useState('')
+  const [dynamicChips, setDynamicChips] = useState<string[]>(() => loadChatSession().dynamicChips)
   const textareaRef = useRef<HTMLTextAreaElement>(null)
   const bottomRef   = useRef<HTMLDivElement>(null)
 
@@ -263,7 +456,20 @@ export default function ChatScreen() {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' })
   }, [messages, isLoading])
 
+  useEffect(() => {
+    saveChatSession(messages, dynamicChips)
+  }, [messages, dynamicChips])
+
+  const openCitations = useCallback(
+    (citations: Citation[]) => {
+      saveChatSession(messages, dynamicChips)
+      navigate('/chat/citations', { state: { citations } })
+    },
+    [messages, dynamicChips, navigate],
+  )
+
   const canSend = value.trim().length > 0 && !isLoading
+  const chipRow = messages.length > 0 && dynamicChips.length > 0 ? dynamicChips : CHIPS
 
   const handleSend = useCallback(async (content: string) => {
     const text = content.trim()
@@ -274,22 +480,62 @@ export default function ChatScreen() {
     if (textareaRef.current) textareaRef.current.style.height = 'auto'
     setIsLoading(true)
 
-    // ── Replace with your real API call ───────────────────────────────────────
-    await new Promise((r) => setTimeout(r, 1400))
-    const isBreathing = /breath|calm|anxi|overwhelm/i.test(text)
-    const isCrisis    = /crisis|hurt|harm|suicid/i.test(text)
-    setMessages((prev) => [...prev, {
-      id: crypto.randomUUID(),
-      role: 'assistant',
-      content: isBreathing
-        ? "Let's try a breathing exercise together. Breathe in slowly for 4 counts, hold for 7, then exhale for 8. Repeat this a few times — you're doing great."
-        : "Thank you for sharing that with me. It takes courage to reach out. I'm here with you. Would you like to try a quick breathing exercise, or would it help to talk more about what you're feeling?",
-      timestamp: new Date(),
-      citations: isBreathing ? [BREATHING_CITATION] : isCrisis ? [CRISIS_CITATION] : undefined,
-    }])
-    // ── End mock block ────────────────────────────────────────────────────────
+    try {
+      const res = await fetch('/api/chat', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ message: text }),
+      })
+      const data = (await res.json()) as {
+        error?: string
+        answer?: string
+        citations?: Array<{ chunkId: string; title: string; sourceUrl: string; excerpt: string }>
+        suggestedQuestions?: string[]
+        uiRedirects?: ApiUiRedirect[]
+      }
 
-    setIsLoading(false)
+      if (!res.ok) {
+        throw new Error(data.error || `Request failed (${res.status})`)
+      }
+
+      const citations: Citation[] | undefined = data.citations?.map((c) => ({
+        id: c.chunkId,
+        title: c.title,
+        description: c.excerpt,
+        url: c.sourceUrl || undefined,
+        type: 'article',
+      }))
+
+      const suggested = Array.isArray(data.suggestedQuestions) ? data.suggestedQuestions : []
+      setDynamicChips(suggested.length >= 5 ? suggested.slice(0, 5) : suggested)
+
+      setMessages((prev) => [
+        ...prev,
+        {
+          id: crypto.randomUUID(),
+          role: 'assistant',
+          content: data.answer ?? '',
+          timestamp: new Date(),
+          citations,
+          uiRedirects: data.uiRedirects,
+        },
+      ])
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : 'Something went wrong'
+      setMessages((prev) => [
+        ...prev,
+        {
+          id: crypto.randomUUID(),
+          role: 'assistant',
+          content:
+            `I couldn’t reach the knowledge chat service (${msg}). Make sure the API server is running (\`npm run server:dev\`), ` +
+            'the knowledge index is built (`npm run rag:build`), and `OPENAI_API_KEY` (embeddings) + `ANTHROPIC_API_KEY` (chat) are set.',
+          timestamp: new Date(),
+        },
+      ])
+    } finally {
+      setIsLoading(false)
+    }
   }, [isLoading])
 
   const handleKeyDown = (e: KeyboardEvent<HTMLTextAreaElement>) => {
@@ -339,9 +585,9 @@ export default function ChatScreen() {
 
       {/* ── Prompt chips ───────────────────────────────────────────────────── */}
       <div style={{ display: 'flex', gap: 8, padding: '10px 16px', overflowX: 'auto', background: OFF_WHITE, borderBottom: `1px solid ${LIGHT_BLUE}`, flexShrink: 0, scrollbarWidth: 'none' }}>
-        {CHIPS.map((chip, i) => (
+        {chipRow.map((chip, i) => (
           <motion.button
-            key={chip}
+            key={`chip-${i}-${chip.slice(0, 24)}`}
             initial={{ opacity: 0, y: 6 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: i * 0.06 }}
@@ -363,7 +609,9 @@ export default function ChatScreen() {
         ) : (
           <div style={{ display: 'flex', flexDirection: 'column', gap: 16, padding: '24px 16px', maxWidth: 680, margin: '0 auto' }}>
             <AnimatePresence initial={false}>
-              {messages.map((msg) => <MessageBubble key={msg.id} message={msg} />)}
+              {messages.map((msg) => (
+                <MessageBubble key={msg.id} message={msg} onOpenCitations={openCitations} />
+              ))}
               {isLoading && <LoadingBubble key="loading" />}
             </AnimatePresence>
             <div ref={bottomRef} />

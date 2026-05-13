@@ -1,0 +1,254 @@
+# Scraped Corpus Content
+
+**Output file:** `mended_hearts_org__medical_navigation.md`  
+**Pages scraped:** 6 of 6  
+**Source group:** Heart.org / American Heart Association  
+
+---
+
+## 1. Robot Challenge Screen
+
+**Source:** https://mendedhearts.org/wp-content/uploads/2026/01/Feeding-Issues-WH-CHD-2026.pdf
+
+Title: Robot Challenge Screen
+
+URL Source: https://mendedhearts.org/wp-content/uploads/2026/01/Feeding-Issues-WH-CHD-2026.pdf
+
+Warning: This page maybe requiring CAPTCHA, please make sure you are authorized to access this page.
+
+Markdown Content:
+## mendedhearts.org
+
+Checking the site connection security
+
+![Image 1: CDN icon](https://d1rozh26tys225.cloudfront.net/loader.svg)
+
+---
+
+## 2. Feeding Babies with CHD--Question to Ask
+
+**Source:** https://mendedhearts.org/wp-content/uploads/2026/01/Feeding-Babies-with-CHD-Question-to-Ask-2026.pdf
+
+Title: Feeding Babies with CHD--Question to Ask
+
+URL Source: https://mendedhearts.org/wp-content/uploads/2026/01/Feeding-Babies-with-CHD-Question-to-Ask-2026.pdf
+
+Published Time: Fri, 09 Jan 2026 19:38:06 GMT
+
+Number of Pages: 1
+
+Markdown Content:
+Why does my baby need a feeding tube? 
+
+Wh at is the difference between the types of feeding tubes? 
+
+Can I breastfeed or bottle feed my baby while he or she is on a feeding tube? 
+
+Ca n I give my baby breastmilk through the feeding tube? 
+
+How can my baby learn to feed orally while on a feeding tube? 
+
+What if my baby pulls out the feeding tube? 
+
+What is the best speed for the feeding pump for my baby? 
+
+Are there services available to help with the feeding tube once we are home? 
+
+What  is the plan for getting my baby off the feeding tube? 
+
+FEEDING TUBES 
+
+# Q U E S T I O N S F O R Y O U R B A B Y ' S 
+
+# H E A L T H C A R E T E A M 
+
+Can I breastfeed my baby before surgery? 
+
+Can I pump and store breast milk while my baby is in surgery and recovering? 
+
+How soon after surgery will my baby be able to breastfeed? 
+
+What milestones must my baby meet before I can start or resume breastfeeding 
+
+after surgery? 
+
+What support and services does your hospital have for breastfeeding moms? 
+
+How will I know if my baby is getting enough nutrition? 
+
+BREASTFEEDING 
+
+What type of formula is best for my baby and why? 
+
+Wh at are my options for formulas? 
+
+How can I get the formula my baby needs once we are home? 
+
+Are there discount programs or ways we can get formula at no cost? 
+
+How can I keep track of the amount of formula my baby is getting? 
+
+FORMULA 
+
+Why does my baby need a fortifier? 
+
+Wh at are the types of fortifiers available and what are the ingredients in each type? 
+
+What are the advantages and disadvantages of each type of fortifier? 
+
+How long will my baby be on a fortifier? 
+
+If  I am breastfeeding, how will my baby get fortified breastmilk? 
+
+FORTIFIERS 
+
+Often, parents do not think they have choices when it comes to feeding their baby, but they 
+
+do. The nutrition your baby gets is extremely important, and parents should be part of the 
+
+decision-making when it comes to  what and how their baby is fed. Again, often the focus is 
+
+on the baby’s heart, but feeding affects the heart and the whole body. 
+
+Don’t be afraid to ask questions when it comes to feeding your baby. Here are just some 
+
+questions  you might ask your baby’s healthcare team.
+
+---
+
+## 3. Robot Challenge Screen
+
+**Source:** https://mendedhearts.org/wp-content/uploads/2026/02/Transitioning-from-Hospital-to-Home-WH-CHD.pdf
+
+Title: Robot Challenge Screen
+
+URL Source: https://mendedhearts.org/wp-content/uploads/2026/02/Transitioning-from-Hospital-to-Home-WH-CHD.pdf
+
+Warning: This page maybe requiring CAPTCHA, please make sure you are authorized to access this page.
+
+Markdown Content:
+## mendedhearts.org
+
+Checking the site connection security
+
+![Image 1: CDN icon](https://d1rozh26tys225.cloudfront.net/loader.svg)
+
+---
+
+## 4. Robot Challenge Screen
+
+**Source:** https://mendedhearts.org/wp-content/uploads/2026/02/Preparing-for-a-doctor-appointment-WH-CHD.pdf
+
+Title: Robot Challenge Screen
+
+URL Source: https://mendedhearts.org/wp-content/uploads/2026/02/Preparing-for-a-doctor-appointment-WH-CHD.pdf
+
+Warning: This page maybe requiring CAPTCHA, please make sure you are authorized to access this page.
+
+Markdown Content:
+## mendedhearts.org
+
+Checking the site connection security
+
+![Image 1: CDN icon](https://d1rozh26tys225.cloudfront.net/loader.svg)
+
+---
+
+## 5. Robot Challenge Screen
+
+**Source:** https://mendedhearts.org/wp-content/uploads/2026/02/Neurodevelopmental-Issues-WH-CHD.pdf
+
+Title: Robot Challenge Screen
+
+URL Source: https://mendedhearts.org/wp-content/uploads/2026/02/Neurodevelopmental-Issues-WH-CHD.pdf
+
+Warning: This page maybe requiring CAPTCHA, please make sure you are authorized to access this page.
+
+Markdown Content:
+## mendedhearts.org
+
+Checking the site connection security
+
+![Image 1: CDN icon](https://d1rozh26tys225.cloudfront.net/loader.svg)
+
+---
+
+## 6. Care Team- WH CHD
+
+**Source:** https://mendedhearts.org/wp-content/uploads/2026/02/Care-Team-WH-CHD.pdf
+
+Title: Care Team- WH CHD
+
+URL Source: https://mendedhearts.org/wp-content/uploads/2026/02/Care-Team-WH-CHD.pdf
+
+Published Time: Wed, 25 Feb 2026 18:08:56 GMT
+
+Number of Pages: 1
+
+Markdown Content:
+M E E T T H E C A R E T E A M 
+
+Physical Therapists (PT)  help your child improve their ability to do physical activities, especially those 
+
+involving large muscle groups like sitting, crawling, jumping and eating. They help children with their strength and muscle tone too. 
+
+Occupational Therapists (OT)  help your child with activities of daily living including cognitive skills, 
+
+like remembering colors and shapes, fine motor skills, like holding a bottle or writing, and social skills. 
+
+Educational Specialists:  There are a wide variety of specialists who can help children with learning 
+
+issues have better success with learning and with school. 
+
+O T H E R S P E C I A L I S T S 
+
+Other specialist may also treat your child for a specific condition. An electrophysiologists treats heart rhythm issues,  a hepatologist  treats the liver an  electrophysiologists  treats heart rhythm issues, a 
+
+gastroenterologist  treats the digestive system, a  nephrologist  treats kidneys. 
+
+D E V E L O P M E N T A L S P E C I A L I S T S 
+
+Often children born with severe heart conditions have developmental issues. Different specialists may 
+
+work with your child including: 
+
+C H I L D L I F E S P E C I A L I S T 
+
+Child life specialists can support your child, help them understand their heart condition and help them cope. 
+
+They work to help children feel more comfortable during doctor and hospital visits. 
+
+N U R S E 
+
+Nurses perform many different services for children and families. They are the health care professionals who care for your child in the hospital, at the doctor’s office, and at schools.  Pediatric cardiac nurses  are nurses who specialize in treating children with heart conditions. 
+
+P E D I A T R I C C A R D I O L O G I S T 
+
+A pediatric cardiologist diagnoses and treats heart disease in children. All children diagnosed with 
+
+congenital heart defects should see a pediatric cardiologists regularly. 
+
+P E D I A T R I C H E A R T S U R G E O N 
+
+A pediatric heart surgeon is specially trained to perform heart surgery on babies and children but typically can also perform surgery on adolescents and adults. 
+
+You can find more information and helpful tips at  www.mendedlittlehearts.org. Children born with heart conditions often have many health care providers and specialists who perform 
+
+different but important functions. Sometimes, it can feel hard to keep track of them. Here is some basic information about some (not all) of the specialists who may treat your child. 
+
+Speech Therapists  help children with speech issues learn how to communicate more effectively 
+
+including expressing themselves and language skills. They sometimes also help with feeding issues. 
+
+Developmental Psychologists  help with growth and development over the lifespan, including physical, cognitive, social, intellectual, perceptual, personality and emotional growth. 
+
+## T O P A R E N T S 
+
+## F R O M P A R E N T S 
+
+Feeding Therapists  help children learn how to eat or feed. Sometimes a speech therapist or an 
+
+occupational therapist will work with children on feeding too MENDED HEARTS  , MENDED LITTLE HEARTS  , YOUNG MENDED HEARTS  , HEARTGUIDE  , MYHEARTVISIT  , ACTION NETWORK  , ROCK YOUR SCAR  , SHAREYOURHEART  , EMPOWERHF  , EMPOWERCHD  , EMPOWERCKD  ,
+
+---
+

@@ -1,0 +1,449 @@
+# Scraped Corpus Content
+
+**Output file:** `mended_hearts_org__neurodevelopmental_issues_chd__local_pdfs.md`  
+**Pages scraped:** 1 of 1  
+**Source group:** Local PDF  
+
+---
+
+## 1. Neurodevelopmental Issues CHD
+
+**Source:** local_pdf_resources/mended_hearts_org__neurodevelopmental_issues_chd/Neurodevelopmental-Issues-CHD.pdf
+
+<!-- Page 1 -->
+
+Neurodevelopmental
+Issues for Children
+with CHD
+
+
+<!-- Page 2 -->
+
+1-888-HEART99
+www.mendedlittlehearts.org
+M E D I C A L  A D V I S O R Y  B O A R D
+C O N T R I B U T O R S
+J E A N  A N N E  C O N N O R  P H D ,  R N ,
+C P N P ,  F A A N
+Director Nursing Research Cardiovascular & Critical
+Care Patient Services, Boston Children’s Hospital
+K A T H R Y N  D O D D S ,  M S N ,  C R N
+DSVSP/Fontan Forward Clinical Program Manager,
+Children’s Hospital 
+of Philadelphia
+W I L L I A N  D R E Y E R ,  M D
+Medical Director Heart Failure, Cardiomyopathy
+and Cardiac Transplantation, 
+Texas Children’s Hospital
+A D R I E N N E  G A R O ,  M S N  R N - B C
+Heart and Vascular Center/Adult Congenital 
+Cardiology R.N. Care Coordinator, 
+University of Virginia Health System
+D R .  N A D I N E  K A S P A R I A N
+Director, Center for Heart Disease and Mental Health
+Cincinnati Children’s Hospital
+C H R I S T O P H E R  K N O T T - C R A I G ,  M D
+Chief of Pediatric Cardiac Surgery, 
+Le Bonheur Children’s Hospital
+H E A T H E R  L A N G L O I S ,  L I C S W
+Child Life Specialist, 
+Children’s National Medical Center
+C H R I S  L I N D B L A D E ,  M D
+Medical Director of the Fetal Cardiology
+Program Phoenix Children’s Hospital
+B R A D  M A R I N O ,  M D
+Chair, Department of Pediatric Cardiology, Cleveland
+Clinic Children's Hospital
+A L I S O N  M E A D O W S ,  M D ,  P H D
+Director, Adult Congenital Heart Program, Kaiser
+Permanente Northern California
+E R I C A  S O O D ,  P H D
+Pediatric Psychologist Director, Cardiac
+Learning and Early Development (LEAD)
+Program, Nemours Cardiac Center
+G I L  W E R N O V S K Y ,  M D  F A A P  F A C C
+Senior Consultant in Cardiac Critical Care and
+Pediatric CardiologyChildren’s National Hospital
+Thanks to Dr. Jacqueline Sanz, Children’s National Medical Center, Dr. Bradley Marino, Cleveland Clinic
+Children’s Hospital, Dr. Kathleen Mussatto, Children’s Hospital of Wisconsin, Dr. Erica Sood, Nemours Cardiac
+Center, and parents Candida Schendel, The Mended Hearts, Inc., Jodi Smith, The Mended Hearts, Inc., and
+Richard James for providing content and edits.
+C H A R L E S  B E R U L ,  M D
+Chair of Cardiology, Children’s National Heart
+Institute
+C A L E Y  J O H N S ,  C C L S ,  C I M I
+Heart Center Child Life Specialist, 
+Texas Children’s Hospital
+D R .  G I N N I E  A B A R B A N E L L
+Professor & Chief Division of Pediatric Cardiology,
+UT Health, San Antonio
+M E N D E D  L I T T L E  H E A R T S ®  A N D  T H E  H E A R T -
+S H A P E D  L O G O S  A R E  R E G I S T E R E D
+T R A D E M A R K S  O F  T H E  M E N D E D  H E A R T S ,  I N C .
+©  2 0 2 1 - 2 0 2 5  T H E  M E N D E D  H E A R T S ,  I N C .  A L L
+R I G H T S  R E S E R V E D .
+
+
+<!-- Page 3 -->
+
+In 2014, the American Heart Association published a
+statement indicating that children with more severe
+congenital heart defects (CHDs) are at higher risk for
+neurodevelopmental issues. In simple terms, this
+means that kids with some forms of CHD (usually
+those that require surgery and regular follow-ups)
+may not meet milestones, or goals, for development
+at the same time or be able to do school work at the
+same level as their healthy peers. (You can find
+information about normal developmental milestones
+on the Centers for Disease Control and Prevention
+(CDC) website at www.cdc.gov.) Children born with
+heart conditions may also have behavioral issues
+such as attention deficit hyperactivity disorder
+(ADHD), learning disabilities and autism more often
+than children without congenital heart defects.
+Parents and caregivers of children who have CHD
+should be aware of potential neurodevelopmental
+issues so that their child can get early treatment for
+any problems that may come up. Addressing these
+issues early will help your child feel more confident
+and give him or her a better chance for developing life
+skills and attaining educational success. 
+Not all children with CHD will have
+neurodevelopmental issues. 
+Children who do have them often adjust very well and
+do not seem any different from other kids their age.
+Still, it is important to get early screenings to manage
+any learning problems your child may have.
+Neurodevelopmental
+Issues for Children
+with CHD
+"I just knew something was not
+quite right with my son's
+learning. Finding out that this is
+not uncommon and there were
+things I could do was really
+relieving."
+Part of the Mended Little
+HeartGuide Series
+Page 1
+There is growing evidence showing that there are
+changes in blood flow in babies with some forms of
+CHD before the baby is born that affect the brain and
+therefore brain development. Also, some children
+born with CHD have genetic factors that impact brain
+development. Finally, heart surgeries and other
+medical procedures can affect blood flow and may
+lead to changes in the way the brain develops. These
+changes can be subtle. As a result of these changes,
+children may reach developmental milestones at
+different times or have differences in learning and
+attention as they get older. 
+What are neurodevelopmental issues?
+
+
+<!-- Page 4 -->
+
+Children with complex CHD may have social and
+psychological issues and have a significantly higher
+risk of problems in the following areas:
+Page 2
+Academic achievement
+Language (understanding, expressing self clearly,
+and social use of language)
+Visual-motor skills and visual-spatial skills
+·Attention
+Executive functioning
+Fine and gross motor skills
+Psychosocial problems (anxiety, mood, social
+skills)
+Children with milder forms of CHD, such as atrial
+septal defects (ASDs), do not seem to have a higher
+incidence of developmental disabilities than their
+peers. Children who were on cardiopulmonary bypass
+during surgery or children who were born cyanotic
+(decreased blood oxygen) seem to be at the highest
+risk. Children who were on post-operative ECMO
+support are also at higher risk. Some types of CHD
+that increase the risk of neurodevelopmental issues
+include, but are not limited to:
+Coarctation of the Aorta (Coarc)
+Tetralogy of Fallot (TOF)
+Ventricular septal defect (VSD) with
+comorbidities
+Total 
+anomalous 
+pulmonary 
+venous 
+return
+(TAPVR)
+Single ventricle defects
+Hypoplastic left heart syndrome (HLHS)
+Hypoplastic right heart syndrome (HRHS)
+Tricuspid atresia
+Double outlet right ventricle (DORV)
+Double outlet left ventricle (DOLV)
+Transposition of the great arteries (TGA)
+Truncus arteriosus
+Interrupted aortic arch
+Children with syndromes associated with CHD
+Down Syndrome
+22q 11 Deletion
+Noonan Syndrome
+Williams Syndrome
+Who is at risk?
+
+
+<!-- Page 5 -->
+
+"I wondered about my son when he didn't do the
+same things at the same time as his older brothers,
+but I thought it was just because he had heart
+surgeries. It was helpful to learn about some of the
+developmental issues kids with CHD can face and
+helped me get the support he needed."
+How do I find out if my child has a
+neurodevelopmental issue?
+Most cities, counties and states have resources to
+help 
+children 
+with 
+developmental 
+delays 
+and
+disabilities. Before you even leave the hospital, your
+hospital's social worker may be able to recommend
+resources such as physical therapy, occupational
+therapy and early intervention services, if needed.
+Record these on the Development and Education
+form in this Guide. If you are connected with a local
+support group, other parents and caregivers in that
+group can also guide you to resources and programs
+in your area.
+Many school systems have a process to help detect
+delays and disabilities in school-aged children. If you
+have 
+concerns 
+about 
+your 
+child's 
+academic
+performance, ask for a meeting to discuss any
+problems you are seeing. Your state's Department of
+Education website will help you find educational
+resources and provide you with information that can
+help guide you through the process of handling any
+special educational needs your child may have. There
+are also probably educational consultants in your
+areas who can work with your child and help you
+coordinate the services that he or she needs. Finally,
+there are helpful resources for parents with disabilities 
+If you notice problems with your child's development
+at any point, contact their primary care doctor or
+cardiologist right away. Early detection and treatment
+of issues is important. All children in the high-risk
+category should be screened for developmental
+disabilities at 6 to 9 months, 18 to 24 months, 33 to 39
+months, 4 to 5 years and again at elementary school
+age and in adolescence. Your child's primary care
+doctor or pediatrician may be able to conduct this
+screening 
+during 
+a 
+normal 
+wellness 
+visit.
+Neurodevelopmental pediatricians are also able to
+perform these screenings, and some children's
+hospitals have specialized clinics for screening and
+treating neurodevelopmental issues in children with
+CHD. 
+The Development and Education form in this Guide
+can help you keep track of your child's progress and
+screenings.
+Page 3
+What resources can help me get the best
+care for my child?
+
+
+<!-- Page 6 -->
+
+Page 4
+Don't be discouraged
+at the Center for Parent Information and Resources
+website and on the Understood website.
+Once my son had his open-heart surgery, I thought
+things would be easier--until we found out he had
+neurological deficits as well. People kept telling me
+that I should stop worrying and to be happy that
+he's healthy at the moment. I'm glad I followed my
+gut and had an evaluation completed. Now we have
+the adaptations outlined to help him succeed not
+only physically but also emotionally and
+academically in life.
+Parents and caregivers often find it hard to come to
+terms with the fact that their child may have
+neurodevelopmental issues, but please don't feel
+discouraged. Most children with CHD—even those
+with the most severe forms—appear no different than
+other kids their age. They are usually happy, well­-
+adjusted children. Being aware of the risk of
+neurodevelopmental issues will help your child get the
+services he or she needs to have the highest chance
+of success.
+Get support
+It can be frustrating for parents who are trying to
+manage their child's health issues to also have to find
+ways of managing neurodevelopmental issues,
+especially as their child gets older and may get
+frustrated himself or herself. There are many places
+for parents to get support. You can learn about
+support options and get support from your child's
+healthcare team, join support groups of other parents
+dealing with similar issues, find resources in your
+local area to help your child, and get support from
+your child's preschool or school. The important thing
+is not to try to go it alone. Getting support, at the very
+least, helps you feel less alone and isolated as you
+deal with what can be some very difficult issues. And
+your child will benefit when you take care of yourself
+and get the support you need.
+
+
+<!-- Page 7 -->
+
+Q U E S T I O N S  F O R  Y O U R  C H I L D ' S
+H E A L T H C A R E  T E A M
+What can I do to help care for my baby while in the hospital?
+What resources and services are available in the hospital for my baby that can help
+with development and growth?
+What are normal developmental milestones for babies and young children?
+What can I expect in terms of development for my baby?
+How will I know if my baby has delays in development or leaning issues?
+What is physical therapy and how can it help?
+At what ages should we screen for developmental and learning problems?
+Where can I get my child screened for development and learning issues?
+What kinds of things are looked at during screening and what kinds of tests are done?
+What information and resources are available to help us as we transition from hospital
+to home?
+EARLY DEVELOPMENT
+Will my child grow and do things like sit, crawl and walk at the same time as other kids?
+Why do children with CHD sometimes have delays in their development?
+Will my child have problems learning?  
+What can I do to help my child as he or she grows?
+Where can I learn more about delays with development and learning issues that kids
+with CHD might have?
+What are some resources or services that help with development and learning to help
+children with CHD?
+ABOUT ISSUES WITH DEVELOPMENT AND LEARNING
+In what ways might my child have difficulties with learning?
+What social issues might my child have and what should I do about them?
+When and where should school-age children be screened for problems with learning?
+Who is the best person to screen my child for learning issues?
+What resources are available to help school-aged children?
+What can I do to help my child with school or other educational program?
+What are my rights as a parent when it comes to education?
+If my child does have issues with attention or learning, what medications or
+treatment options are safe and effective for my child?
+Will screening be covered by insurance or other health coverage?
+LEARNING
+Most parents and caregivers feel confused and worried when their child seems to be having
+delays in development, learning issues and/or behavioral issues. It is hard to know what to
+do to help your child meet milestones and be successful in their educational program. Don’t
+be afraid to ask questions when it comes to any concerns you may have.   Here are some
+questions you might ask your child’s healthcare team.
+
+
+<!-- Page 8 -->
+
+E D U C A T E  Y O U R S E L F
+Knowledge is power. The more you can learn about your baby’s CHD and any
+developmental issues that might come with it, the better prepared you will be
+and the more confident you will feel working with your child to reduce developmental
+and learning issues and making decisions as your child grows.
+F O L L O W  Y O U R  I N S T I N C T
+If you feel like your child isn't developing correctly, having problems learning, or having
+behavioral issues that seem different than other children your child's age, talk to your
+child's doctor or healthcare provider. Many parents believe these issues may be just part
+of their heart condition or what happens after surgery, and this may or may not be true.
+Don't feel like you are a problem if you ask questions and check out your concerns. Most
+healthcare providers want you to ask questions and share concerns.
+S E E K  S U P P O R T
+Dealing with developmental, learning and behavioral issues can be very difficult and
+emotional for parents.  It can help to put a support system in place.  Your child's
+healthcare team can be helpful in providing support and recommending support
+resources.  You may have resources in your local area or state. Also, there are support
+groups for parents who have been through similar experiences and can provide
+support from someone who has been there.
+T I P S
+F R O M
+P A R E N T S
+G E T  S C R E E N I N G  A N D  T R E A T M E N T
+If you have a child who is at risk for of neurodevelopment (learning and developmental)
+issues, you will want to make sure your child is screened at recommended times. (See
+the Development and Education form in this Guide.) If you are near a children's hospital
+that treats children with severe congenital heart disease, check to see if they have a
+neurodevelopmental program. If not, you may be able to find a developmental
+pediatrician or other specialist who can screen your child and suggest treatment. Be
+sure to, follow up on recommended treatment as soon as possible. 
+M A N A G I N G  N E U R O D E V E L O P M E N T A L  I S S U E S
+B E  H A P P Y  W I T H  P R O G R E S S !
+Don’t measure success by comparing your child with other babies or children your
+child’s age. It’s easy to get caught up in a tangle of what your child “should be able to
+do.” Every child is different, so don't use other children, even your own other children, to
+figure out what is right for your child. Instead, focus on even small accomplishments
+and the things your child is able to do. This is what is most important.
+Finally, if you feel frustrated, overwhelmed or are unable to manage, call your child’s doctor so he or she
+can help you find support. Don't be afraid to get help if you need it. Also, sometimes, children will need
+additional help or care, and getting that help as early as possible is important.
+Page 6
+
+
+<!-- Page 9 -->
+
+Resources
+What Is Special Education? | Understood - For learning and thinking differences
+Center for Parent Information and Resources | Your Central Hub for Parent
+Centers Serving Families of Children With Disabilities (parentcenterhub.org)
+CDC’s Developmental Milestones | CDC
+Neurodevelopmental Outcomes in Congenital Heart Disease | Circulation
+(ahajournals.org)
+Neurodevelopmental Outcomes in Children with Congenital Heart Disease –
+What can we impact? (nih.gov)
+Supporting development in children with congenital heart disease. Cardiology
+Patient Page - PubMed (nih.gov)
+More information for parents and families on neurodevelopmental issues can be found in
+the digital Mended Little HeartGuide
+Mended Hearts Mended Little Heart Guide (mydigitalpublication.com)
+Other resources used in this Guide that you may find helpful are:
+Page 7
+
+
+<!-- Page 10 -->
+
+Little hearts hold big hopes.
+The Mended Hearts, Inc. (MHI) is the largest
+cardiovascular peer-to-peer support organization
+in the United States and has been providing hope
+and support to patients and families for more than
+72 years! MHI’s programs—Mended Little Hearts®,
+Young Mended Hearts®, and Mended Hearts®—
+make MHI the only organization in the nation that
+supports patients with all forms of cardiovascular
+disease throughout the entire lifespan of the
+patient. MHI volunteers inspire, educate, and
+ empower more than 380,000 patients and family
+members each year through a robust network of
+more than 96,000 members who provide services
+and outreach in hospitals, cardiology offices,
+clinics, cardiac rehab centers and local
+communities. MHI members don’t simply tell
+patients and families about the heart disease
+journey, they show them and walk with them on
+that journey.  When you need us, we are there--you
+are not alone!
+www.mendedlittlehearts.org
+
+
+---
+

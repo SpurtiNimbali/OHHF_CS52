@@ -27,31 +27,23 @@ const VISIT_CONTEXT_FILTERS = [
 
 type VisitFilter = (typeof VISIT_CONTEXT_FILTERS)[number]
 
-type SavedQuestionMeta = {
-  source: 'generated' | 'custom' | 'bank'
-  contextTags: string[]
-  notes: string
+/** Matches `welcomeScreen` age option labels; school age and younger vs older. */
+const SCHOOL_AGE_OR_BELOW_LABELS = [
+  'Prenatal',
+  'Infant (1 and under)',
+  'Preschooler (2-5)',
+  'School Age (6-12)',
+] as const
+
+type UserProfileFields = {
+  diagnosis_age_category: string | null
+  current_age_category: string | null
+  condition: string | null
 }
 
-function metaStorageKey(userId: string | null): string {
-  return userId ? `${META_STORAGE_PREFIX}:${userId}` : `${META_STORAGE_PREFIX}:anon`
-}
-
-function normalizeStoredMeta(raw: unknown): Record<string, SavedQuestionMeta> {
-  if (!raw || typeof raw !== 'object') return {}
-  const out: Record<string, SavedQuestionMeta> = {}
-  for (const [id, entry] of Object.entries(raw as Record<string, unknown>)) {
-    if (!entry || typeof entry !== 'object') continue
-    const e = entry as Record<string, unknown>
-    const source = e.source
-    if (source !== 'generated' && source !== 'custom' && source !== 'bank') continue
-    const notes = typeof e.notes === 'string' ? e.notes : ''
-    const contextTags = Array.isArray(e.contextTags)
-      ? e.contextTags.filter((t): t is string => typeof t === 'string')
-      : []
-    out[id] = { source: source as SavedQuestionMeta['source'], contextTags, notes }
-  }
-  return out
+function isSchoolAgeOrBelow(currentAgeCategory: string | null | undefined): boolean {
+  if (!currentAgeCategory?.trim()) return false
+  return (SCHOOL_AGE_OR_BELOW_LABELS as readonly string[]).includes(currentAgeCategory.trim())
 }
 
 function loadAllMeta(userId: string | null): Record<string, SavedQuestionMeta> {
@@ -257,17 +249,14 @@ function getSavedLabel(row: SavedQuestion, bank: CardiologistQuestion[]): string
 export default function QuestionsForCardiologist() {
   const [questions, setQuestions] = useState<CardiologistQuestion[]>([])
   const [saved, setSaved] = useState<SavedQuestion[]>([])
+  const [savedIds, setSavedIds] = useState<Set<string>>(new Set())
   const [userId, setUserId] = useState<string | null>(null)
   const [authBootstrapped, setAuthBootstrapped] = useState(false)
+  const [query, setQuery] = useState('')
+  const [selectedTag, setSelectedTag] = useState<FilterCategory | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
-
-  const [visitContext, setVisitContext] = useState('')
-  const [selectedFilters, setSelectedFilters] = useState<Set<VisitFilter>>(new Set())
-  const [generated, setGenerated] = useState<GeneratedItem[]>([])
-  const [generating, setGenerating] = useState(false)
-
-  const [customLine, setCustomLine] = useState('')
+  const [customText, setCustomText] = useState('')
   const [adding, setAdding] = useState(false)
   const [showCustomForm, setShowCustomForm] = useState(false)
   const [customQuestionTags, setCustomQuestionTags] = useState<Set<string>>(new Set())
@@ -288,13 +277,10 @@ export default function QuestionsForCardiologist() {
   useEffect(() => {
     let cancelled = false
     ;(async () => {
-      try {
-        const uid = await ensureAuthUserId()
-        if (!cancelled) setUserId(uid)
-      } catch {
-        if (!cancelled) setUserId(null)
-      } finally {
-        if (!cancelled) setAuthBootstrapped(true)
+      const uid = await ensureAuthUserId()
+      if (!cancelled) {
+        setUserId(uid)
+        setAuthBootstrapped(true)
       }
     })()
     return () => {
@@ -309,77 +295,78 @@ export default function QuestionsForCardiologist() {
 
   useEffect(() => {
     if (!authBootstrapped) return
-    const {
-      data: { subscription },
-    } = supabase.auth.onAuthStateChange((_event, session) => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
       setUserId(session?.user?.id ?? null)
     })
     return () => subscription.unsubscribe()
   }, [authBootstrapped])
 
-  useEffect(() => {
-    if (showCustomForm) {
-      window.requestAnimationFrame(() => customInputRef.current?.focus())
-    }
-  }, [showCustomForm])
-
-  const patchMeta = useCallback(
-    (savedId: string, patch: Partial<SavedQuestionMeta>) => {
-      setSavedMeta((prev) => {
-        const base = prev[savedId] ?? { source: 'custom', contextTags: [], notes: '' }
-        const next = { ...prev, [savedId]: { ...base, ...patch } }
-        persistAllMeta(userId, next)
-        return next
-      })
-    },
-    [userId],
-  )
-
   const load = useCallback(async (uid: string | null) => {
     setLoading(true)
     setError(null)
-    try {
-      const questionsQuery = supabase
-        .from('cardiologist_questions')
-        .select('id, category, question_text')
-        .order('category', { ascending: true })
 
-      const savedQuery = uid
-        ? supabase.from('saved_questions').select('*').eq('user_id', uid)
-        : Promise.resolve({ data: [] as SavedQuestion[], error: null })
+    const questionsQuery = supabase
+      .from('cardiologist_questions')
+      .select('id, category, question_text')
+      .order('category', { ascending: true })
 
-      const [{ data: rows, error: qError }, { data: savedRows, error: sError }] = await Promise.all([
-        questionsQuery,
-        savedQuery,
-      ])
+    const savedQuery = uid
+      ? supabase.from('saved_questions').select('*').eq('user_id', uid)
+      : Promise.resolve({ data: [] as SavedQuestion[], error: null })
 
-      if (qError) {
-        setQuestions([])
-        setError(qError.message)
-      } else {
-        setQuestions((rows as CardiologistQuestion[]) ?? [])
-      }
+    const profileQuery = uid
+      ? supabase
+          .from('users')
+          .select('diagnosis_age_category, current_age_category, condition')
+          .eq('id', uid)
+          .maybeSingle()
+      : Promise.resolve({ data: null as UserProfileFields | null, error: null })
 
-      if (!qError && sError) {
-        setError((prev) => prev ?? sError.message)
-      }
+    const [
+      { data: rows, error: qError },
+      { data: savedRows, error: sError },
+      { data: profileRow, error: profileError },
+    ] = await Promise.all([questionsQuery, savedQuery, profileQuery])
 
-      if (savedRows) {
-        setSaved(savedRows as SavedQuestion[])
-      } else if (!uid) {
-        setSaved([])
-      }
+    if (!profileError && profileRow) {
+      setUserProfile(profileRow as UserProfileFields)
+    } else {
+      setUserProfile(null)
+    }
 
       if (!uid && !qError) {
         setError((prev) => prev ?? 'Sign in to save questions for your account.')
       }
     } catch (e) {
       setQuestions([])
-      setSaved([])
-      setError(e instanceof Error ? e.message : 'Could not load questions.')
-    } finally {
-      setLoading(false)
+      setError(qError.message)
+    } else {
+      setQuestions((rows as CardiologistQuestion[]) ?? [])
     }
+
+    if (!qError && sError) {
+      setError((prev) => prev ?? sError.message)
+    }
+
+    if (savedRows) {
+      setSaved(savedRows as SavedQuestion[])
+      setSavedIds(
+        new Set(
+          (savedRows as SavedQuestion[])
+            .filter((r) => r.question_id != null)
+            .map((r) => String(r.question_id)),
+        ),
+      )
+    } else if (!uid) {
+      setSaved([])
+      setSavedIds(new Set())
+    }
+
+    if (!uid && !qError) {
+      setError((prev) => prev ?? 'Sign in to save questions for your account.')
+    }
+
+    setLoading(false)
   }, [])
 
   useEffect(() => {
@@ -394,93 +381,65 @@ export default function QuestionsForCardiologist() {
       else next.add(f)
       return next
     })
-  }
+  }, [questions, query, selectedTag])
 
-  const toggleCustomQuestionTag = (tag: string) => {
-    setCustomQuestionTags((prev) => {
-      const next = new Set(prev)
-      if (next.has(tag)) next.delete(tag)
-      else next.add(tag)
-      return next
+  const personalizedQuestions = useMemo(() => {
+    return filteredQuestions.filter((row) => {
+      const bucket = normalizeCategory(row.category)
+      return passesPersonalizationFilters(
+        personalizeByAge,
+        personalizeByCondition,
+        userProfile,
+        bucket,
+      )
     })
-  }
+  }, [filteredQuestions, personalizeByAge, personalizeByCondition, userProfile])
 
-  const runGenerate = () => {
-    setGenerating(true)
-    window.setTimeout(() => {
-      const list = generateSuggestions(visitContext, selectedFilters, questions)
-      setGenerated(list)
-      setGenerating(false)
-      if (list.length > 0) {
-        window.setTimeout(() => {
-          document.getElementById('suggested-questions')?.scrollIntoView({ behavior: 'smooth', block: 'start' })
-        }, 50)
-      }
-    }, 380)
-  }
-
-  async function saveGeneratedLine(text: string, filter: VisitFilter | 'General') {
+  async function toggleQuestion(question: CardiologistQuestion) {
     if (!userId) {
       setError('Sign in to save questions for your account.')
       return
     }
-    const row = { user_id: userId, question_id: null, custom_text: text.trim() }
-    const { data, error: insErr } = await supabase.from('saved_questions').insert(row).select().single()
-    if (insErr) {
-      setError(insErr.message)
-      return
-    }
-    if (data) {
-      const s = data as SavedQuestion
-      setSaved((prev) => [...prev, s])
-      setSavedMeta((prev) => {
-        const next = {
-          ...prev,
-          [s.id]: {
-            source: 'generated' as const,
-            contextTags: [filter],
-            notes: '',
-          },
-        }
-        persistAllMeta(userId, next)
+    const idStr = String(question.id)
+    if (savedIds.has(idStr)) {
+      const { error: delErr } = await supabase
+        .from('saved_questions')
+        .delete()
+        .eq('user_id', userId)
+        .eq('question_id', question.id)
+      if (delErr) return
+
+      setSavedIds((prev) => {
+        const next = new Set(prev)
+        next.delete(idStr)
         return next
       })
+      setSaved((prev) => prev.filter((r) => String(r.question_id) !== idStr))
+    } else {
+      const row = { user_id: userId, question_id: question.id, custom_text: null }
+      const { data, error: upErr } = await supabase
+        .from('saved_questions')
+        .upsert(row)
+        .select()
+        .single()
+      if (upErr) return
+
+      setSavedIds((prev) => new Set([...prev, idStr]))
+      if (data) setSaved((prev) => [...prev, data as SavedQuestion])
     }
   }
 
-  async function saveCustomQuestion() {
+  async function addCustomQuestion() {
     if (!userId) {
       setError('Sign in to save questions for your account.')
       return
     }
-    if (!customLine.trim()) return
+    if (!customText.trim()) return
     setAdding(true)
-    const row = { user_id: userId, question_id: null, custom_text: customLine.trim() }
+    const row = { user_id: userId, question_id: null, custom_text: customText.trim() }
     const { data, error: insErr } = await supabase.from('saved_questions').insert(row).select().single()
-    if (insErr) {
-      setError(insErr.message)
-      setAdding(false)
-      return
-    }
-    if (data) {
-      const s = data as SavedQuestion
-      setSaved((prev) => [...prev, s])
-      setSavedMeta((prev) => {
-        const next = {
-          ...prev,
-          [s.id]: {
-            source: 'custom' as const,
-            contextTags: [...customQuestionTags],
-            notes: '',
-          },
-        }
-        persistAllMeta(userId, next)
-        return next
-      })
-    }
-    setCustomLine('')
-    setCustomQuestionTags(new Set())
-    setShowCustomForm(false)
+    if (!insErr && data) setSaved((prev) => [...prev, data as SavedQuestion])
+    setCustomText('')
     setAdding(false)
   }
 
@@ -542,26 +501,72 @@ export default function QuestionsForCardiologist() {
     <div className="-mx-2 w-full sm:mx-0" style={{ fontFamily: 'Inter, system-ui, sans-serif', color: NAVY }}>
       {/* Header */}
       <div
-        className="mb-0 rounded-t-xl border-b bg-white px-3 py-6 sm:rounded-none sm:px-4 sm:py-8"
-        style={{ borderColor: 'rgba(25, 43, 63, 0.1)' }}
+        style={{
+          background: 'linear-gradient(135deg, #f43f5e 0%, #a855f7 50%, #6366f1 100%)',
+          padding: '40px 24px',
+          textAlign: 'center',
+          position: 'relative',
+          overflow: 'hidden',
+        }}
       >
+        <div
+          style={{
+            position: 'absolute',
+            top: '-50px',
+            left: '-50px',
+            width: '200px',
+            height: '200px',
+            background: 'rgba(255,255,255,0.1)',
+            borderRadius: '50%',
+          }}
+        />
+        <div
+          style={{
+            position: 'absolute',
+            bottom: '-30px',
+            right: '10%',
+            width: '150px',
+            height: '150px',
+            background: 'rgba(255,255,255,0.1)',
+            borderRadius: '50%',
+          }}
+        />
+        <div
+          style={{
+            position: 'absolute',
+            top: '20px',
+            right: '20%',
+            width: '80px',
+            height: '80px',
+            background: 'rgba(255,255,255,0.08)',
+            borderRadius: '50%',
+          }}
+        />
+
         <h1
-          className="mb-2 text-3xl tracking-wide text-[#192b3f] sm:text-4xl md:text-5xl"
-          style={{ fontFamily: "'Bebas Neue', sans-serif", letterSpacing: '0.08em' }}
+          style={{
+            fontSize: '2.5rem',
+            fontWeight: 800,
+            color: '#ffffff',
+            margin: 0,
+            textShadow: '0 2px 10px rgba(0,0,0,0.2)',
+            position: 'relative',
+          }}
         >
-          QUESTIONS FOR YOUR CARDIOLOGIST
+          💬 Questions for Your Cardiologist
         </h1>
         <p className="max-w-2xl text-sm leading-relaxed sm:text-base" style={{ color: MUTED_GREEN }}>
           Describe your upcoming visit and we&apos;ll suggest questions to ask — or add your own.
         </p>
       </div>
 
-      {/* Visit context */}
       <div
-        className="border-b px-3 py-6 sm:px-4"
         style={{
-          borderColor: 'rgba(25, 43, 63, 0.08)',
-          background: 'linear-gradient(90deg, rgba(198,217,229,0.35) 0%, rgba(245,249,249,0.95) 100%)',
+          maxWidth: '800px',
+          margin: '-30px auto 30px',
+          padding: '0 20px',
+          position: 'relative',
+          zIndex: 10,
         }}
       >
         <div className="mx-auto max-w-3xl space-y-4">
@@ -661,16 +666,291 @@ export default function QuestionsForCardiologist() {
                     className="rounded-lg px-5 py-2.5 text-sm font-semibold text-white disabled:opacity-50"
                     style={{ background: DARK_GREEN }}
                   >
-                    Save question
+                    {cat}
                   </button>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setShowCustomForm(false)
-                      setCustomLine('')
-                      setCustomQuestionTags(new Set())
+                )
+              })}
+            </div>
+          </div>
+
+          <div
+            style={{
+              marginTop: '20px',
+              paddingTop: '16px',
+              borderTop: '1px solid #f3f4f6',
+            }}
+          >
+            <p
+              style={{
+                fontSize: '0.85rem',
+                color: '#888',
+                marginBottom: '12px',
+                fontWeight: 600,
+              }}
+            >
+              Personalize from your profile (PLACEHOLDER RULES CURRENTLY):
+            </p>
+            <label
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '10px',
+                cursor: 'pointer',
+                marginBottom: '10px',
+                fontSize: '0.9rem',
+                color: '#444',
+              }}
+            >
+              <input
+                type="checkbox"
+                checked={personalizeByAge}
+                onChange={(e) => setPersonalizeByAge(e.target.checked)}
+                style={{ width: '18px', height: '18px', accentColor: '#f43f5e' }}
+              />
+              Related to age
+            </label>
+            <label
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '10px',
+                cursor: 'pointer',
+                fontSize: '0.9rem',
+                color: '#444',
+              }}
+            >
+              <input
+                type="checkbox"
+                checked={personalizeByCondition}
+                onChange={(e) => setPersonalizeByCondition(e.target.checked)}
+                style={{ width: '18px', height: '18px', accentColor: '#f43f5e' }}
+              />
+              Related to condition
+            </label>
+          </div>
+
+          <div
+            style={{
+              marginTop: '20px',
+              paddingTop: '20px',
+              borderTop: '1px solid #fce7f3',
+            }}
+          >
+            <p
+              style={{
+                fontSize: '0.85rem',
+                color: '#888',
+                marginBottom: '10px',
+                fontWeight: 600,
+              }}
+            >
+              Add your own question
+            </p>
+            <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
+              <input
+                type="text"
+                value={customText}
+                onChange={(e) => setCustomText(e.target.value)}
+                onKeyDown={(e) => e.key === 'Enter' && addCustomQuestion()}
+                placeholder="Type your question..."
+                style={{
+                  flex: '1 1 200px',
+                  border: '1px solid #fbcfe8',
+                  borderRadius: '12px',
+                  padding: '10px 14px',
+                  fontSize: '0.95rem',
+                  outline: 'none',
+                }}
+              />
+              <button
+                type="button"
+                onClick={addCustomQuestion}
+                disabled={adding || !customText.trim()}
+                style={{
+                  padding: '10px 20px',
+                  borderRadius: '12px',
+                  border: 'none',
+                  background: adding || !customText.trim() ? '#fda4af' : '#f43f5e',
+                  color: '#fff',
+                  fontWeight: 600,
+                  cursor: adding || !customText.trim() ? 'not-allowed' : 'pointer',
+                  fontSize: '0.9rem',
+                }}
+              >
+                + Add
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div style={{ maxWidth: '1000px', margin: '0 auto', padding: '0 20px 40px' }}>
+        {loading && (
+          <div style={{ textAlign: 'center', padding: '60px 20px' }}>
+            <div style={{ fontSize: '3rem' }}>⏳</div>
+            <p style={{ color: '#f43f5e', fontSize: '1.2rem', fontWeight: 600 }}>Loading questions...</p>
+          </div>
+        )}
+
+        {!loading && error && (
+          <div
+            style={{
+              background: '#ffebee',
+              border: '2px solid #ffcdd2',
+              borderRadius: '16px',
+              padding: '24px',
+              textAlign: 'center',
+            }}
+          >
+            <span style={{ fontSize: '2rem' }}>⚠️</span>
+            <p style={{ color: '#c62828', fontWeight: 600, marginTop: '8px' }}>{error}</p>
+          </div>
+        )}
+
+        {!loading && !error && questions.length === 0 && (
+          <div
+            style={{
+              background: '#fff8e1',
+              border: '2px solid #ffe082',
+              borderRadius: '16px',
+              padding: '40px 24px',
+              textAlign: 'center',
+            }}
+          >
+            <span style={{ fontSize: '3rem' }}>📋</span>
+            <p style={{ color: '#f57f17', fontSize: '1.2rem', fontWeight: 600, marginTop: '12px' }}>
+              No questions in the database yet
+            </p>
+          </div>
+        )}
+
+        {!loading && !error && questions.length > 0 && filteredQuestions.length === 0 && (
+          <div
+            style={{
+              background: '#fff8e1',
+              border: '2px solid #ffe082',
+              borderRadius: '16px',
+              padding: '40px 24px',
+              textAlign: 'center',
+            }}
+          >
+            <span style={{ fontSize: '3rem' }}>🔍</span>
+            <p style={{ color: '#f57f17', fontSize: '1.2rem', fontWeight: 600, marginTop: '12px' }}>
+              {selectedTag ? `No ${selectedTag} questions match` : 'No questions match your search'}
+            </p>
+          </div>
+        )}
+
+        {!loading &&
+          !error &&
+          questions.length > 0 &&
+          filteredQuestions.length > 0 &&
+          personalizedQuestions.length === 0 && (
+            <div
+              style={{
+                background: '#fff8e1',
+                border: '2px solid #ffe082',
+                borderRadius: '16px',
+                padding: '40px 24px',
+                textAlign: 'center',
+              }}
+            >
+              <span style={{ fontSize: '3rem' }}>✨</span>
+              <p style={{ color: '#f57f17', fontSize: '1.2rem', fontWeight: 600, marginTop: '12px' }}>
+                No questions match your personalization settings
+              </p>
+              <p style={{ color: '#b45309', fontSize: '0.95rem', marginTop: '8px', lineHeight: 1.5 }}>
+                Try turning off the age or condition options above, or adjust your topic filter.
+              </p>
+            </div>
+          )}
+
+        {!loading && !error && personalizedQuestions.length > 0 && (
+          <div
+            style={{
+              display: 'grid',
+              gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))',
+              gap: '20px',
+            }}
+          >
+            {personalizedQuestions.map((question, index) => {
+              const bucket = normalizeCategory(question.category)
+              const displayCat = bucket === 'other' ? question.category?.trim() || 'General' : bucket
+              const colors = categoryStyle(bucket)
+
+              return (
+                <div
+                  key={question.id}
+                  style={{
+                    background: '#ffffff',
+                    borderRadius: '20px',
+                    padding: '24px',
+                    boxShadow: '0 4px 20px rgba(0,0,0,0.08)',
+                    border: '2px solid transparent',
+                    transition: 'all 0.3s ease',
+                    animation: `fadeInUp 0.5s ease ${index * 0.04}s both`,
+                  }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.transform = 'translateY(-5px)'
+                    e.currentTarget.style.boxShadow = '0 12px 40px rgba(244, 63, 94, 0.18)'
+                    e.currentTarget.style.borderColor = colors.border
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.transform = 'translateY(0)'
+                    e.currentTarget.style.boxShadow = '0 4px 20px rgba(0,0,0,0.08)'
+                    e.currentTarget.style.borderColor = 'transparent'
+                  }}
+                >
+                  <div
+                    style={{
+                      display: 'flex',
+                      alignItems: 'flex-start',
+                      justifyContent: 'space-between',
+                      gap: '12px',
+                      marginBottom: '12px',
                     }}
-                    className="rounded-lg bg-[#e8ecec] px-4 py-2.5 text-sm font-medium text-[#192b3f] hover:bg-[#dce2e2]"
+                  >
+                    <div
+                      style={{
+                        display: 'inline-block',
+                        background: colors.bg,
+                        color: colors.text,
+                        padding: '4px 12px',
+                        borderRadius: '20px',
+                        fontSize: '0.75rem',
+                        fontWeight: 700,
+                        letterSpacing: '0.5px',
+                        border: `1px solid ${colors.border}`,
+                      }}
+                    >
+                      {displayCat}
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => toggleQuestion(question)}
+                      aria-label={savedIds.has(String(question.id)) ? 'Remove from saved' : 'Save question'}
+                      style={{
+                        border: 'none',
+                        background: savedIds.has(String(question.id)) ? '#fce7f3' : '#f3f4f6',
+                        borderRadius: '12px',
+                        padding: '8px 12px',
+                        cursor: 'pointer',
+                        fontSize: '1.1rem',
+                        lineHeight: 1,
+                      }}
+                    >
+                      {savedIds.has(String(question.id)) ? '❤️' : '🤍'}
+                    </button>
+                  </div>
+
+                  <p
+                    style={{
+                      color: '#2c3e50',
+                      fontSize: '1.05rem',
+                      lineHeight: 1.55,
+                      margin: 0,
+                      fontWeight: 500,
+                    }}
                   >
                     Cancel
                   </button>
@@ -704,8 +984,7 @@ export default function QuestionsForCardiologist() {
               })}
             </div>
           </div>
-        </div>
-      </div>
+        )}
 
       {error && (
         <div
