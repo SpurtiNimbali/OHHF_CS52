@@ -1,6 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import {
-  ResourcesPageEmpty,
   ResourcesPageError,
   ResourcesPageLoading,
 } from '../components/ResourcesPageStates'
@@ -25,14 +24,7 @@ const FILTER_CATEGORIES = [
 
 const CATEGORIES = ['All', ...FILTER_CATEGORIES] as const
 type Category = (typeof CATEGORIES)[number]
-
-/** Matches `welcomeScreen` age option labels; school age and younger vs older. */
-const SCHOOL_AGE_OR_BELOW_LABELS = [
-  'Prenatal',
-  'Infant (1 and under)',
-  'Preschooler (2-5)',
-  'School Age (6-12)',
-] as const
+type SupportFilterCategory = (typeof FILTER_CATEGORIES)[number]
 
 // ── ResourceCard ─────────────────────────────────────────────────────────────
 
@@ -126,17 +118,6 @@ function ResourceCard({ resource }: { resource: SupportResource }) {
   )
 }
 
-const categoryColors: Record<
-  (typeof FILTER_CATEGORIES)[number] | 'other',
-  { bg: string; text: string; border: string }
-> = {
-  'Mental Health': { bg: '#f3e8ff', text: '#7c3aed', border: '#d8b4fe' },
-  'Family Support': { bg: '#dbeafe', text: '#1d4ed8', border: '#93c5fd' },
-  'Financial Aid': { bg: '#d1fae5', text: '#047857', border: '#6ee7b7' },
-  Community: { bg: '#ffedd5', text: '#c2410c', border: '#fdba74' },
-  other: { bg: '#f3f4f6', text: '#4b5563', border: '#d1d5db' },
-}
-
 function CategoryChips({ active, onChange }: { active: Category; onChange: (c: Category) => void }) {
   return (
     <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
@@ -167,45 +148,10 @@ function CategoryChips({ active, onChange }: { active: Category; onChange: (c: C
   )
 }
 
-function normalizeCategoryLabel(raw: string | number | null | undefined): string {
-  return String(raw ?? '').trim()
-}
-
-type UserProfileFields = {
-  diagnosis_age_category?: string | null
-  current_age_category?: string | null
-  condition?: string | null
-}
-
 function normalizeSupportCategoryBucket(raw: string | number | null | undefined): SupportFilterCategory | 'other' {
   const label = normalizeCategoryLabel(raw)
   const key = FILTER_CATEGORIES.find((c) => c.toLowerCase() === label.toLowerCase())
   return key ?? 'other'
-}
-
-function categoryStyle(label: string) {
-  const key = FILTER_CATEGORIES.find((c) => c.toLowerCase() === label.toLowerCase())
-  return key ? categoryColors[key] : categoryColors.other
-}
-
-function normalizeExternalUrl(raw: string): string {
-  const t = raw.trim()
-  if (!t) return ''
-  if (/^https?:\/\//i.test(t)) return t
-  return `https://${t}`
-}
-
-/** Only allow http(s) URLs for clickable cards. */
-function safeExternalHref(raw: string | number | null | undefined): string | null {
-  const s = String(raw ?? '').trim()
-  if (!s) return null
-  try {
-    const u = new URL(normalizeExternalUrl(s))
-    if (u.protocol === 'http:' || u.protocol === 'https:') return u.href
-  } catch {
-    /* ignore */
-  }
-  return null
 }
 
 export default function FindSupport() {
@@ -215,63 +161,15 @@ export default function FindSupport() {
   const [activeCategory, setActiveCategory] = useState<Category>('All')
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
-  const [userId, setUserId] = useState<string | null>(null)
-  const [authBootstrapped, setAuthBootstrapped] = useState(false)
-  const [userProfile, setUserProfile] = useState<UserProfileFields | null>(null)
-  const [personalizeByAge] = useState(false)
-  const [personalizeByCondition] = useState(false)
 
-  useEffect(() => {
-    let cancelled = false
-    ;(async () => {
-      const uid = await ensureAuthUserId()
-      if (!cancelled) {
-        setUserId(uid)
-        setAuthBootstrapped(true)
-      }
-    })()
-    return () => {
-      cancelled = true
-    }
-  }, [])
-
-  useEffect(() => {
-    if (!authBootstrapped) return
-    const {
-      data: { subscription },
-    } = supabase.auth.onAuthStateChange((_event, session) => {
-      setUserId(session?.user?.id ?? null)
-    })
-    return () => subscription.unsubscribe()
-  }, [authBootstrapped])
-
-  const load = useCallback(async (uid: string | null) => {
+  const load = useCallback(async () => {
     setLoading(true)
     setError(null)
 
-    const resourcesQuery = supabase
+    const { data, error: dbError } = await supabase
       .from('support_resources')
       .select('id, name, description, link, city, zipcode, category')
       .order('name', { ascending: true })
-
-    const profileQuery = uid
-      ? supabase
-          .from('users')
-          .select('diagnosis_age_category, current_age_category, condition')
-          .eq('id', uid)
-          .maybeSingle()
-      : Promise.resolve({ data: null as UserProfileFields | null, error: null })
-
-    const [{ data, error: dbError }, { data: profileRow, error: profileError }] = await Promise.all([
-      resourcesQuery,
-      profileQuery,
-    ])
-
-    if (!profileError && profileRow) {
-      setUserProfile(profileRow as UserProfileFields)
-    } else {
-      setUserProfile(null)
-    }
 
     if (dbError) {
       setResources([])
@@ -283,9 +181,15 @@ export default function FindSupport() {
   }, [])
 
   useEffect(() => {
-    if (!authBootstrapped) return
-    load(userId)
-  }, [authBootstrapped, userId, load])
+    let cancelled = false
+    ;(async () => {
+      await ensureAuthUserId()
+      if (!cancelled) load()
+    })()
+    return () => {
+      cancelled = true
+    }
+  }, [load])
 
   const filteredResources = useMemo(() => {
     const q = locationQuery.trim().toLowerCase()
@@ -327,11 +231,6 @@ export default function FindSupport() {
 
   const sortedResources = filteredResources
 
-  const personalizedResources = useMemo(() => {
-    if (!personalizeByAge && !personalizeByCondition) return []
-    return sortedResources
-  }, [sortedResources, personalizeByAge, personalizeByCondition])
-
   return (
     <div style={{ minHeight: '100%', background: CARDEA_ALMOST_WHITE, fontFamily: 'Inter, system-ui, sans-serif' }}>
       <div style={{ maxWidth: '880px', margin: '0 auto', padding: '24px 24px 72px' }}>
@@ -367,7 +266,9 @@ export default function FindSupport() {
               fontFamily: 'Inter, system-ui, sans-serif',
               maxWidth: '560px',
             }}
-          />
+          >
+            Local and national resources for mental health, family support, financial help, and community.
+          </p>
         </div>
 
         {/* Category chips */}
@@ -378,7 +279,7 @@ export default function FindSupport() {
         {loading ? (
           <ResourcesPageLoading label="Loading resources…" />
         ) : error ? (
-          <ResourcesPageError message={error} onRetry={() => load(userId)} />
+          <ResourcesPageError message={error} onRetry={() => load()} />
         ) : (
           <ul style={{ listStyle: 'none', margin: 0, padding: 0, display: 'flex', flexDirection: 'column', gap: '16px' }}>
             {sortedResources.map((r) => (
