@@ -9,6 +9,7 @@ import { SignUpScreen } from './screens/signUpScreen'
 import { WelcomeScreen } from './screens/welcomeScreen'
 import ResourcesLanding from './screens/ResourcesLanding'
 import ChatScreen from './screens/ChatScreen'
+import WellnessTools from './screens/WellnessTools'
 import { ResourcesRightNav } from './components/ResourcesRightNav'
 import { MoodProvider } from './mood'
 
@@ -23,6 +24,7 @@ function App() {
           <Route path="/onboarding" element={<WelcomeScreen />} />
           <Route path="/home" element={<HomeScreen />} />
           <Route path="/resources" element={<ResourcesLanding />} />
+          <Route path="/wellness" element={<WellnessTools />} />
           <Route path="/chat" element={
             <div style={{ display: 'flex', height: '100vh', overflow: 'hidden' }}>
               <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
