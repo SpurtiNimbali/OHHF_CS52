@@ -3,7 +3,10 @@ import {
   ResourcesPageError,
   ResourcesPageLoading,
 } from '../components/ResourcesPageStates'
-import { normalizeCategoryLabel } from '../lib/supportResourceHref'
+import { PersonalizedSupportGridCard } from '../components/support/supportResourceGridCard'
+import { SupportResourceListCard } from '../components/support/supportResourceListCard'
+import { PersonalizationMismatchBanner } from '../components/ui/personalizationMismatchBanner'
+import { normalizeCategoryLabel, safeExternalHref } from '../lib/supportResourceHref'
 import { supabase, ensureAuthUserId, SupportResource } from '../lib/supabase'
 import {
   CARDEA_ALMOST_WHITE,
@@ -284,6 +287,62 @@ export default function FindSupport() {
             ))}
           </ul>
         )}
+
+        {!loading &&
+          !error &&
+          resources.length > 0 &&
+          filteredResources.length > 0 &&
+          (personalizeByAge || personalizeByCondition) &&
+          personalizedResources.length === 0 && (
+            <PersonalizationMismatchBanner
+              title="No resources match your personalization settings"
+              description="Try turning off the age or condition options above, or adjust your search or category filter."
+            />
+          )}
+
+        {!loading &&
+          !error &&
+          (personalizeByAge || personalizeByCondition) &&
+          personalizedResources.length > 0 && (
+            <>
+              <div
+                style={{
+                  display: 'grid',
+                  gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))',
+                  gap: '20px',
+                }}
+              >
+                {personalizedResources.map((r, index) => {
+                  const catLabel = normalizeCategoryLabel(r.category) || 'Resource'
+                  const href = safeExternalHref(r.link)
+                  const locationLine = [r.city, r.zipcode]
+                    .filter((v) => v != null && String(v).trim() !== '')
+                    .map((v) => String(v))
+                    .join(', ')
+                  return (
+                    <PersonalizedSupportGridCard
+                      key={r.id}
+                      resource={r}
+                      categoryLabel={catLabel}
+                      locationLine={locationLine}
+                      href={href}
+                      index={index}
+                    />
+                  )
+                })}
+              </div>
+              <p
+                style={{
+                  textAlign: 'center',
+                  color: '#888',
+                  marginTop: '30px',
+                  fontSize: '0.9rem',
+                }}
+              >
+                Showing {personalizedResources.length} resource{personalizedResources.length !== 1 ? 's' : ''}
+              </p>
+            </>
+          )}
       </div>
     </div>
   )

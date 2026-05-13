@@ -1,20 +1,22 @@
-import { useMemo } from 'react'
+import { useMemo, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { motion } from 'motion/react'
-import { BookOpen, Heart, MessageCircle, Sparkles } from 'lucide-react'
+import { BookOpen, Heart, MessageCircle, Sparkles, Wind } from 'lucide-react'
 import { HomeResourceLinkCard } from '../components/home/HomeResourceLinkCard'
 import { HomeMoodChipButton } from '../components/home/HomeMoodChipButton'
 import { ResourcesRightNav } from '../components/ResourcesRightNav'
 import {
   MOOD_VARIANTS,
+  type MoodId,
   getChatPromptHint,
   getMoodMessage,
   moodShellBackgroundClasses,
   MoodHeartFill,
   useMood,
-  type MoodId,
 } from '../mood'
 import { CARDEA_FONT_PRIMARY, CARDEA_MUTED, CARDEA_NAVY } from '../ui/cardeaTokens'
+
+const WELLNESS_MOOD_LOG_KEY = 'cardea-wellness-mood-log'
 
 type ResourceCard = {
   id: string
@@ -24,6 +26,39 @@ type ResourceCard = {
   iconWrapClass: string
   iconClass: string
   to: string
+}
+
+type HomeMoodLogEntry = {
+  id: string
+  date: string
+  emotion: MoodId
+  note?: string
+}
+
+function makeMoodLogId() {
+  if (typeof crypto !== 'undefined' && 'randomUUID' in crypto) {
+    return `home-mood-${crypto.randomUUID()}`
+  }
+  return `home-mood-${Date.now()}-${Math.random().toString(36).slice(2)}`
+}
+
+function appendMoodCheckIn(emotion: MoodId, note: string) {
+  try {
+    const raw = localStorage.getItem(WELLNESS_MOOD_LOG_KEY)
+    const previous = raw ? (JSON.parse(raw) as HomeMoodLogEntry[]) : []
+    const next: HomeMoodLogEntry[] = [
+      {
+        id: makeMoodLogId(),
+        date: new Date().toISOString(),
+        emotion,
+        note: note.trim() || undefined,
+      },
+      ...previous,
+    ].slice(0, 80)
+    localStorage.setItem(WELLNESS_MOOD_LOG_KEY, JSON.stringify(next))
+  } catch {
+    /* ignore local storage failures */
+  }
 }
 
 const BASE_CARDS: ResourceCard[] = [
@@ -54,7 +89,26 @@ const BASE_CARDS: ResourceCard[] = [
     iconClass: 'text-[#2d4f6f]',
     to: '/resources?view=support',
   },
+  {
+    id: 'wellness',
+    icon: Wind,
+    title: 'Wellness tools',
+    description: 'Grounding, breathing, journaling, and gentle reset tools.',
+    iconWrapClass: 'bg-[#D5AAFF]',
+    iconClass: 'text-[#5B3A70]',
+    to: '/wellness',
+  },
 ]
+
+/** Prioritize Chat prompts when moods tend to benefit from immediate connection copy */
+const SUPPORT_FIRST_MOODS: ReadonlySet<MoodId> = new Set([
+  'overwhelmed',
+  'exhausted',
+  'angry',
+  'scared',
+  'sad',
+  'numb',
+])
 
 function orderCardsForMood(moodId: MoodId | null): ResourceCard[] {
   const supportHint = getChatPromptHint(moodId)
@@ -62,7 +116,7 @@ function orderCardsForMood(moodId: MoodId | null): ResourceCard[] {
     c.id === 'support' ? { ...c, description: supportHint } : c,
   )
   if (!moodId) return withHints
-  if (moodId === 'uncertain' || moodId === 'tired') {
+  if (SUPPORT_FIRST_MOODS.has(moodId)) {
     const support = withHints.find((c) => c.id === 'support')!
     const rest = withHints.filter((c) => c.id !== 'support')
     return [support, ...rest]
@@ -78,8 +132,20 @@ function orderCardsForMood(moodId: MoodId | null): ResourceCard[] {
 export function HomeScreen() {
   const navigate = useNavigate()
   const { moodId, setMoodId, theme, variant } = useMood()
+  const [moodNote, setMoodNote] = useState('')
+  const [checkInSaved, setCheckInSaved] = useState(false)
+  const [showMoodCheckIn, setShowMoodCheckIn] = useState(false)
 
   const personalizedCards = useMemo(() => orderCardsForMood(moodId), [moodId])
+
+  function saveMoodCheckIn() {
+    if (!moodId) return
+    appendMoodCheckIn(moodId, moodNote)
+    setMoodNote('')
+    setCheckInSaved(true)
+    window.setTimeout(() => setShowMoodCheckIn(false), 650)
+    window.setTimeout(() => setCheckInSaved(false), 1800)
+  }
 
   return (
     <div
@@ -135,21 +201,34 @@ export function HomeScreen() {
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.12 }}
           >
-            <h2 className="text-sm font-medium mb-3 text-[#3A525A]" style={{ fontFamily: CARDEA_FONT_PRIMARY }}>
-              How are you feeling today?
-            </h2>
-            <div className="flex flex-wrap gap-2">
-              {MOOD_VARIANTS.map((m, index) => (
-                <HomeMoodChipButton
-                  key={m.id}
-                  label={m.label}
-                  selected={moodId === m.id}
-                  onClick={() => setMoodId(moodId === m.id ? null : m.id)}
-                  activeClassNames={`${m.chipBg} ${m.chipText}`}
-                  index={index}
-                />
-              ))}
-            </div>
+            <button
+              type="button"
+              onClick={() => {
+                setCheckInSaved(false)
+                setShowMoodCheckIn(true)
+              }}
+              className="flex w-full items-center gap-4 rounded-2xl border bg-white p-4 text-left shadow-sm transition hover:shadow-md"
+              style={{ borderColor: 'rgba(25,43,63,0.08)', fontFamily: CARDEA_FONT_PRIMARY }}
+            >
+              <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-[#D5AAFF]/70">
+                <Heart className="h-5 w-5 text-[#5B3A70]" strokeWidth={2} />
+              </span>
+              <div>
+                <p
+                  className="mb-1 text-xs font-bold uppercase tracking-[0.18em]"
+                  style={{ color: CARDEA_MUTED }}
+                >
+                  mood check-in
+                </p>
+                <h2 className="text-sm font-semibold text-[#062A4A]">Go to mood check-in</h2>
+                <p className="mt-1 text-xs leading-relaxed text-[#3A525A]">
+                  two quick questions. one minute.
+                </p>
+              </div>
+              <span className="ml-auto text-2xl font-light text-[#A8C5E6]" aria-hidden>
+                →
+              </span>
+            </button>
           </motion.section>
 
           <motion.section
@@ -227,6 +306,90 @@ export function HomeScreen() {
       </div>
 
       <ResourcesRightNav />
+      {showMoodCheckIn && (
+        <div className="fixed inset-0 z-30 flex items-center justify-center bg-[rgba(25,43,63,0.32)] px-4 py-6 backdrop-blur-sm">
+          <motion.div
+            initial={{ opacity: 0, y: 18 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="w-full max-w-lg rounded-3xl bg-white p-5 shadow-2xl sm:p-6"
+            style={{ fontFamily: CARDEA_FONT_PRIMARY }}
+          >
+            <div className="mb-4 flex items-start justify-between gap-3">
+              <div>
+                <p className="mb-1 text-xs font-bold uppercase tracking-[0.18em]" style={{ color: CARDEA_MUTED }}>
+                  mood check-in
+                </p>
+                <h2
+                  className="text-2xl text-[#062A4A]"
+                  style={{ fontFamily: "'Bebas Neue', sans-serif", letterSpacing: '0.07em' }}
+                >
+                  how are you?
+                </h2>
+              </div>
+              <button
+                type="button"
+                onClick={() => setShowMoodCheckIn(false)}
+                className="rounded-full px-3 py-1.5 text-sm font-semibold"
+                style={{ color: CARDEA_MUTED }}
+              >
+                close
+              </button>
+            </div>
+
+            <div className="flex flex-wrap gap-2">
+              {MOOD_VARIANTS.map((m, index) => (
+                <HomeMoodChipButton
+                  key={m.id}
+                  label={m.label}
+                  selected={moodId === m.id}
+                  onClick={() => {
+                    setMoodId(m.id)
+                    setCheckInSaved(false)
+                  }}
+                  activeClassNames={`${m.chipBg} ${m.chipText}`}
+                  index={index}
+                />
+              ))}
+            </div>
+
+            <div className="mt-4 rounded-2xl border bg-[#f5f9f9] p-4" style={{ borderColor: 'rgba(25,43,63,0.08)' }}>
+              <label className="mb-2 block text-sm font-semibold text-[#192b3f]" htmlFor="home-mood-underneath">
+                What&apos;s underneath it?
+              </label>
+              <input
+                id="home-mood-underneath"
+                type="text"
+                value={moodNote}
+                onChange={(e) => setMoodNote(e.target.value)}
+                placeholder="a worry, a need, a body feeling..."
+                className="w-full rounded-xl border bg-white px-4 py-3 text-sm text-[#192b3f] outline-none placeholder:text-[#acb7a8]"
+                style={{ borderColor: 'rgba(25,43,63,0.1)', fontFamily: CARDEA_FONT_PRIMARY }}
+              />
+              <div className="mt-3 flex items-center justify-between gap-3">
+                <p className="text-xs leading-relaxed" style={{ color: CARDEA_MUTED }}>
+                  one minute. no perfect answer needed.
+                </p>
+                <div className="flex items-center gap-2">
+                  {checkInSaved && (
+                    <span className="text-xs font-semibold" style={{ color: '#577568' }}>
+                      saved
+                    </span>
+                  )}
+                  <button
+                    type="button"
+                    disabled={!moodId}
+                    onClick={saveMoodCheckIn}
+                    className="rounded-full px-4 py-2 text-xs font-semibold text-white disabled:opacity-40"
+                    style={{ background: '#577568' }}
+                  >
+                    Save check-in
+                  </button>
+                </div>
+              </div>
+            </div>
+          </motion.div>
+        </div>
+      )}
     </div>
   )
 }
