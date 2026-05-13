@@ -7,12 +7,10 @@ import {
 import { PersonalizedSupportGridCard } from '../components/support/supportResourceGridCard'
 import { SupportResourceListCard } from '../components/support/supportResourceListCard'
 import { PersonalizationMismatchBanner } from '../components/ui/personalizationMismatchBanner'
-import { SupportCategoryChips } from '../components/ui/supportCategoryChips'
 import { normalizeCategoryLabel, safeExternalHref } from '../lib/supportResourceHref'
 import { supabase, ensureAuthUserId, SupportResource } from '../lib/supabase'
 import {
   CARDEA_ALMOST_WHITE,
-  CARDEA_LIGHT_BLUE,
   CARDEA_MUTED,
   CARDEA_NAVY,
 } from '../ui/cardeaTokens'
@@ -395,90 +393,17 @@ export default function FindSupport() {
           filteredResources.length > 0 &&
           (personalizeByAge || personalizeByCondition) &&
           personalizedResources.length === 0 && (
-            <div
-              style={{
-                background: 'rgba(198, 217, 229, 0.42)',
-                borderRadius: 16,
-                padding: '18px 20px',
-                marginBottom: '22px',
-                border: '1px solid rgba(25, 43, 63, 0.06)',
-              }}
-            >
-              <div style={{ position: 'relative' }}>
-                <span
-                  style={{
-                    position: 'absolute',
-                    left: '16px',
-                    top: '50%',
-                    transform: 'translateY(-50%)',
-                    color: CARDEA_MUTED,
-                    fontSize: '1rem',
-                  }}
-                >
-                  📍
-                </span>
-                <input
-                  type="text"
-                  value={locationQuery}
-                  onChange={(e) => setLocationQuery(e.target.value)}
-                  placeholder="Search by city or zip code..."
-                  style={{
-                    width: '100%',
-                    padding: '14px 18px 14px 44px',
-                    borderRadius: 9999,
-                    border: '1px solid rgba(25, 43, 63, 0.12)',
-                    background: '#fff',
-                    fontSize: '0.9rem',
-                    color: CARDEA_NAVY,
-                    fontFamily: 'Inter, system-ui, sans-serif',
-                    outline: 'none',
-                    boxSizing: 'border-box',
-                    transition: 'border-color 0.2s ease',
-                  }}
-                />
-              </div>
-            </div>
+            <PersonalizationMismatchBanner
+              title="No resources match your personalization settings"
+              description="Try turning off the age or condition options above, or adjust your search or category filter."
+            />
+          )}
 
-            <div style={{ marginBottom: '28px' }}>
-              <SupportCategoryChips options={CATEGORIES} active={activeCategory} onChange={setActiveCategory} />
-            </div>
-
-            <div style={{ height: '1px', background: CARDEA_LIGHT_BLUE, marginBottom: '28px' }} />
-
-            {sortedResources.length === 0 ? (
-              <ResourcesPageEmpty
-                icon={<span aria-hidden>💛</span>}
-                title="No resources match your filters"
-                description="Try a different city or zip, pick another category, or clear your search."
-              />
-            ) : (
-              <ul
-                style={{
-                  listStyle: 'none',
-                  margin: 0,
-                  padding: 0,
-                  display: 'flex',
-                  flexDirection: 'column',
-                  gap: '16px',
-                }}
-              >
-                {sortedResources.map((r) => (
-                  <SupportResourceListCard key={r.id} resource={r} />
-                ))}
-              </ul>
-            )}
-
-            {personalizeActive &&
-              resources.length > 0 &&
-              filteredResources.length > 0 &&
-              personalizedResources.length === 0 && (
-                <PersonalizationMismatchBanner
-                  title="No resources match your personalization settings"
-                  description="Try turning off the age or condition options above, or adjust your search or category filter."
-                />
-              )}
-
-            {personalizedResources.length > 0 && (
+        {!loading &&
+          !error &&
+          (personalizeByAge || personalizeByCondition) &&
+          personalizedResources.length > 0 && (
+            <>
               <div
                 style={{
                   display: 'grid',
@@ -505,9 +430,6 @@ export default function FindSupport() {
                   )
                 })}
               </div>
-            )}
-
-            {personalizedResources.length > 0 && (
               <p
                 style={{
                   textAlign: 'center',
@@ -518,9 +440,8 @@ export default function FindSupport() {
               >
                 Showing {personalizedResources.length} resource{personalizedResources.length !== 1 ? 's' : ''}
               </p>
-            )}
-          </>
-        )}
+            </>
+          )}
       </div>
     </div>
   )

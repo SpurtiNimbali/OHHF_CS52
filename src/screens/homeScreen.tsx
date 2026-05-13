@@ -7,12 +7,12 @@ import { HomeMoodChipButton } from '../components/home/HomeMoodChipButton'
 import { ResourcesRightNav } from '../components/ResourcesRightNav'
 import {
   MOOD_VARIANTS,
+  type MoodId,
   getChatPromptHint,
   getMoodMessage,
   moodShellBackgroundClasses,
   MoodHeartFill,
   useMood,
-  type MoodId,
 } from '../mood'
 import { CARDEA_FONT_PRIMARY, CARDEA_MUTED, CARDEA_NAVY } from '../ui/cardeaTokens'
 
@@ -56,13 +56,23 @@ const BASE_CARDS: ResourceCard[] = [
   },
 ]
 
+/** Prioritize Chat prompts when moods tend to benefit from immediate connection copy */
+const SUPPORT_FIRST_MOODS: ReadonlySet<MoodId> = new Set([
+  'overwhelmed',
+  'exhausted',
+  'angry',
+  'scared',
+  'sad',
+  'numb',
+])
+
 function orderCardsForMood(moodId: MoodId | null): ResourceCard[] {
   const supportHint = getChatPromptHint(moodId)
   const withHints = BASE_CARDS.map((c) =>
     c.id === 'support' ? { ...c, description: supportHint } : c,
   )
   if (!moodId) return withHints
-  if (moodId === 'uncertain' || moodId === 'tired') {
+  if (SUPPORT_FIRST_MOODS.has(moodId)) {
     const support = withHints.find((c) => c.id === 'support')!
     const rest = withHints.filter((c) => c.id !== 'support')
     return [support, ...rest]

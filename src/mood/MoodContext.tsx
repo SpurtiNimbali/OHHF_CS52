@@ -7,11 +7,17 @@ import {
   type ReactNode,
 } from 'react'
 import type { MoodId } from './moodVariants'
-import { moodVariantById, resolvedMoodTheme, type MoodTheme, type MoodUiVariant } from './moodVariants'
+import {
+  moodVariantById,
+  resolvedMoodTheme,
+  MOOD_IDS,
+  type MoodTheme,
+  type MoodUiVariant,
+} from './moodVariants'
 
 const STORAGE_KEY = 'cardea-mood-id'
 
-const VALID: ReadonlySet<string> = new Set(['calm', 'hopeful', 'uncertain', 'tired', 'energized'])
+const VALID: ReadonlySet<string> = new Set(MOOD_IDS)
 
 function readStoredMood(): MoodId | null {
   try {

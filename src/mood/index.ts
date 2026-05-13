@@ -1,6 +1,7 @@
 export type { MoodId, MoodTheme, MoodUiVariant } from './moodVariants'
 export {
   MOOD_VARIANTS,
+  MOOD_IDS,
   DEFAULT_MOOD_THEME,
   DEFAULT_HEADER_BORDER_GRADIENT,
   moodVariantById,
