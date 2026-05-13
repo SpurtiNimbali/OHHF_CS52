@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useState, type ReactNode } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import {
   Activity,
@@ -10,6 +10,7 @@ import {
   Heart,
   Moon,
   RefreshCw,
+  Smile,
   Snowflake,
   Sparkles,
   Tag,
@@ -156,14 +157,6 @@ const TOOL_META: Record<ToolId, {
   'crisis-reset': { title: 'I need help right now', short: 'a guided reset and resources', category: 'Crisis', icon: AlertCircle },
 }
 
-const SECTION_ORDER: Array<Exclude<typeof TOOL_META[ToolId]['category'], 'Crisis'>> = [
-  'Regulate body',
-  'Understand',
-  'Shift mindset',
-  'Connect',
-  'Wind down',
-]
-
 const nudges = [
   'tell your child one thing you love about them today.',
   'sit close. no phone. just two minutes.',
@@ -197,6 +190,10 @@ const presetReframes: Array<[string, string]> = [
 ]
 
 const emotionFamilies: Record<string, string[]> = {
+  joy: ['happy', 'grateful', 'proud', 'playful', 'relieved'],
+  calm: ['peaceful', 'settled', 'steady', 'safe', 'grounded'],
+  hope: ['hopeful', 'encouraged', 'curious', 'open', 'trusting'],
+  neutral: ['okay', 'unsure', 'blank', 'quiet', 'in between'],
   fear: ['scared', 'panicked', 'dreading', 'helpless'],
   exhaustion: ['drained', 'foggy', 'depleted', 'numb'],
   sadness: ['grief', 'lonely', 'heavy', 'hopeless'],
@@ -217,6 +214,18 @@ function formatCheckInDateTime(iso: string): string {
   return new Intl.DateTimeFormat(undefined, {
     month: 'short',
     day: 'numeric',
+    hour: 'numeric',
+    minute: '2-digit',
+  }).format(date)
+}
+
+function formatEntryDateTime(iso: string): string {
+  const date = new Date(iso)
+  if (Number.isNaN(date.getTime())) return 'recently'
+  return new Intl.DateTimeFormat(undefined, {
+    month: 'short',
+    day: 'numeric',
+    year: 'numeric',
     hour: 'numeric',
     minute: '2-digit',
   }).format(date)
@@ -250,8 +259,21 @@ function moodVariantFor(id: MoodId) {
   return MOOD_VARIANTS.find((m) => m.id === id) ?? MOOD_VARIANTS[0]
 }
 
+function isSameLocalDay(a: Date, b: Date): boolean {
+  return (
+    a.getFullYear() === b.getFullYear() &&
+    a.getMonth() === b.getMonth() &&
+    a.getDate() === b.getDate()
+  )
+}
+
 function toolUseCount(toolLog: ToolUseEntry[], toolId: ToolId, emotion: WellnessEmotion | null) {
-  return toolLog.filter((entry) => entry.toolId === toolId && (!emotion || entry.emotion === emotion)).length
+  const today = new Date()
+  return toolLog.filter((entry) => {
+    const usedAt = new Date(entry.date)
+    if (Number.isNaN(usedAt.getTime()) || !isSameLocalDay(usedAt, today)) return false
+    return entry.toolId === toolId && (!emotion || entry.emotion === emotion)
+  }).length
 }
 
 function WellnessChip({
@@ -318,6 +340,159 @@ function ToolTile({
       ) : null}
       <ChevronRight className="h-5 w-5 text-[#acb7a8]" aria-hidden />
     </button>
+  )
+}
+
+type RegulateTone = 'forest' | 'sky' | 'outline' | 'sage'
+
+const SUGGESTED_CARD_TONES: Record<
+  RegulateTone,
+  { bg: string; text: string; muted: string; border: string; icon: string }
+> = {
+  forest: {
+    bg: CARDEA_DARK_GREEN,
+    text: '#ffffff',
+    muted: 'rgba(255,255,255,0.72)',
+    border: 'transparent',
+    icon: '#ffffff',
+  },
+  sky: {
+    bg: CARDEA_LIGHT_BLUE,
+    text: CARDEA_NAVY,
+    muted: 'rgba(25,43,63,0.62)',
+    border: 'transparent',
+    icon: CARDEA_NAVY,
+  },
+  outline: {
+    bg: '#ffffff',
+    text: CARDEA_NAVY,
+    muted: 'rgba(25,43,63,0.62)',
+    border: CARDEA_NAVY,
+    icon: CARDEA_NAVY,
+  },
+  sage: {
+    bg: CARDEA_MUTED,
+    text: CARDEA_NAVY,
+    muted: 'rgba(25,43,63,0.62)',
+    border: 'transparent',
+    icon: CARDEA_NAVY,
+  },
+}
+
+const SUGGESTED_TONES: RegulateTone[] = ['forest', 'sky', 'outline', 'sage']
+
+/**
+ * AI-ready card resolver. Keep the return shape stable so this can later be
+ * replaced with model/server recommendations without changing the UI.
+ */
+function resolveSuggestedExercises(emotion: WellnessEmotion | null, moodId: MoodId | null): ToolId[] {
+  const key = emotion ?? moodId
+  if (key === 'overwhelmed') return ['breathing', 'grounding', 'reframes', 'night-reset']
+  if (key === 'exhausted') return ['cold-reset', 'body-scan', 'night-reset', 'safe-place']
+  if (key === 'angry') return ['cold-reset', 'move-it-out', 'stop-skill', 'breathing']
+  if (key === 'scared') return ['breathing', 'grounding', 'safe-place', 'reframes']
+  if (key === 'sad') return ['body-scan', 'breathing', 'safe-place', 'night-reset']
+  if (key === 'disconnected' || key === 'numb') return ['body-scan', 'grounding', 'safe-place', 'night-reset']
+  if (key === 'happy' || key === 'hopeful') return ['move-it-out', 'reframes', 'breathing', 'night-reset']
+  if (key === 'calm') return ['breathing', 'body-scan', 'safe-place', 'night-reset']
+  return ['breathing', 'grounding', 'reframes', 'night-reset']
+}
+
+function SuggestedExerciseCard({
+  toolId,
+  tone,
+  onOpen,
+}: {
+  toolId: ToolId
+  tone: RegulateTone
+  onOpen: (toolId: ToolId) => void
+}) {
+  const meta = TOOL_META[toolId]
+  const Icon = meta.icon
+  const colors = SUGGESTED_CARD_TONES[tone]
+
+  return (
+    <button
+      type="button"
+      onClick={() => onOpen(toolId)}
+      className="group min-h-[146px] rounded-2xl p-6 text-left shadow-sm transition hover:-translate-y-0.5 hover:shadow-md"
+      style={{
+        background: colors.bg,
+        border: `2px solid ${colors.border}`,
+        color: colors.text,
+      }}
+    >
+      <Icon className="mb-5 h-6 w-6 transition-transform group-hover:scale-105" style={{ color: colors.icon }} aria-hidden />
+      <div className="text-lg font-semibold leading-snug">{meta.title}</div>
+      <div className="mt-2 text-sm leading-relaxed" style={{ color: colors.muted }}>
+        {meta.short}
+      </div>
+    </button>
+  )
+}
+
+function Section({
+  id,
+  label,
+  children,
+}: {
+  id?: string
+  label: string
+  children: ReactNode
+}) {
+  return (
+    <section id={id} className="mt-12 scroll-mt-8">
+      <div className="mb-5 flex items-center gap-3">
+        <h2
+          className="text-sm font-bold uppercase tracking-[0.22em]"
+          style={{ color: CARDEA_NAVY }}
+        >
+          {label}
+        </h2>
+        <div className="h-px flex-1 bg-gradient-to-r from-[#c6d9e5] to-transparent" />
+      </div>
+      {children}
+    </section>
+  )
+}
+
+function QuickAccess({
+  onOpenTool,
+}: {
+  onOpenTool: (toolId: ToolId) => void
+}) {
+  const items: Array<{
+    label: string
+    desc: string
+    icon: typeof Wind
+    action: () => void
+  }> = [
+    { label: 'Breathe', desc: 'slow it down', icon: Wind, action: () => onOpenTool('breathing') },
+    { label: 'Check in', desc: 'notice it', icon: Smile, action: () => document.getElementById('understand')?.scrollIntoView({ behavior: 'smooth', block: 'start' }) },
+    { label: 'Reframe', desc: 'shift it', icon: RefreshCw, action: () => onOpenTool('reframes') },
+    { label: 'Connect', desc: 'be with them', icon: Heart, action: () => document.getElementById('parent')?.scrollIntoView({ behavior: 'smooth', block: 'start' }) },
+  ]
+
+  return (
+    <div className="mt-5 grid grid-cols-2 gap-3 sm:grid-cols-4">
+      {items.map(({ label, desc, icon: Icon, action }) => (
+        <button
+          key={label}
+          type="button"
+          onClick={action}
+          className="group rounded-2xl border bg-white p-4 text-left shadow-sm transition hover:-translate-y-0.5 hover:shadow-md"
+          style={{ borderColor: 'rgba(198,217,229,0.7)' }}
+        >
+          <div className="mb-3 flex h-10 w-10 items-center justify-center rounded-full bg-[#c6d9e5]/65 transition group-hover:bg-[#577568]/20">
+            <Icon className="h-4 w-4 text-[#192b3f]" aria-hidden />
+          </div>
+          <div className="text-sm font-semibold text-[#192b3f]">{label}</div>
+          <div className="mt-1 text-xs leading-snug" style={{ color: CARDEA_MUTED }}>
+            {desc}
+          </div>
+        </button>
+      ))}
+    </div>
   )
 }
 
@@ -825,6 +1000,106 @@ function StopSkillTool() {
   )
 }
 
+function PastEntriesSection({ moodLog }: { moodLog: MoodLogEntry[] }) {
+  const [journalEntries] = useLocalState<JournalEntry[]>(STORAGE.journals, [])
+  const [reflections] = useLocalState<Reflection[]>(STORAGE.reflections, [])
+  const [reframes] = useLocalState<Reframe[]>(STORAGE.reframes, [])
+  const [safePlace] = useLocalState<SafePlace | null>(STORAGE.safePlace, null)
+
+  const entries = useMemo(() => {
+    const moodEntries = moodLog
+      .filter((entry) => entry.note?.trim())
+      .map((entry) => {
+        const mood = moodVariantFor(entry.emotion)
+        const emotion = WELLNESS_EMOTIONS.find((item) => item.moodId === entry.emotion)
+        return {
+          id: entry.id,
+          date: entry.date,
+          type: 'Mood check-in',
+          title: emotion?.label ?? mood.label,
+          text: entry.note?.trim() ?? '',
+        }
+      })
+
+    const journals = journalEntries.map((entry) => ({
+      id: entry.id,
+      date: entry.date,
+      type: entry.source === 'night-reset' ? 'Night reset' : 'Micro-journal',
+      title: entry.prompt,
+      text: entry.text,
+    }))
+
+    const parentReflections = reflections.map((entry) => ({
+      id: entry.id,
+      date: entry.date,
+      type: 'Parent reflection',
+      title: entry.prompt,
+      text: entry.text,
+    }))
+
+    const savedReframes = reframes.map((entry) => ({
+      id: entry.id,
+      date: entry.date,
+      type: 'Reframe',
+      title: entry.from,
+      text: entry.to,
+    }))
+
+    const safePlaceEntry =
+      safePlace?.text.trim()
+        ? [{
+            id: 'safe-place',
+            date: safePlace.date,
+            type: 'Safe place',
+            title: 'Saved safe place',
+            text: safePlace.text,
+          }]
+        : []
+
+    return [
+      ...moodEntries,
+      ...journals,
+      ...parentReflections,
+      ...savedReframes,
+      ...safePlaceEntry,
+    ].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
+  }, [journalEntries, moodLog, reframes, reflections, safePlace])
+
+  return (
+    <div className="rounded-3xl bg-white/85 p-5 shadow-sm">
+      {entries.length === 0 ? (
+        <p className="text-sm leading-relaxed" style={{ color: CARDEA_MUTED }}>
+          No saved entries yet. Your check-in notes, journal entries, reframes, and reflections will show here.
+        </p>
+      ) : (
+        <div className="space-y-3">
+          {entries.map((entry) => (
+            <article
+              key={`${entry.type}-${entry.id}`}
+              className="rounded-2xl border bg-[#f5f9f9] p-4"
+              style={{ borderColor: 'rgba(25,43,63,0.08)' }}
+            >
+              <div className="mb-2 flex flex-wrap items-center gap-2">
+                <span
+                  className="rounded-full bg-white px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.14em]"
+                  style={{ color: CARDEA_DARK_GREEN }}
+                >
+                  {entry.type}
+                </span>
+                <span className="text-xs" style={{ color: CARDEA_MUTED }}>
+                  {formatEntryDateTime(entry.date)}
+                </span>
+              </div>
+              <p className="text-sm font-semibold text-[#192b3f]">{entry.title}</p>
+              <p className="mt-2 whitespace-pre-wrap text-sm leading-relaxed text-[#3A525A]">{entry.text}</p>
+            </article>
+          ))}
+        </div>
+      )}
+    </div>
+  )
+}
+
 function TodayNudgeTool({ onJournal }: { onJournal: (prompt: string) => void }) {
   const [idx, setIdx] = useState(() => new Date().getDate() % nudges.length)
   const [reflections, setReflections] = useLocalState<Reflection[]>(STORAGE.reflections, [])
@@ -1033,6 +1308,10 @@ export default function WellnessTools() {
   }, [activeTool])
 
   const selectedMeta = selectedEmotion ? WELLNESS_EMOTIONS.find((e) => e.id === selectedEmotion) ?? null : null
+  const suggestedExercises = useMemo(
+    () => resolveSuggestedExercises(selectedEmotion, moodId),
+    [moodId, selectedEmotion],
+  )
   const recentMoods = useMemo(() => moodLog.slice(0, 10).reverse(), [moodLog])
   const recentMoodSummaries = useMemo(
     () =>
@@ -1116,169 +1395,286 @@ export default function WellnessTools() {
         </div>
       </header>
 
-      <main className="mx-auto max-w-5xl px-5 py-8 pb-24 sm:px-8">
-        <section className="mb-6 rounded-3xl bg-white/80 p-6 shadow-sm backdrop-blur">
-          <div className="mb-5 flex items-center gap-4">
-            <MoodHeartFill
-              theme={theme}
-              size={48}
-              viewBox="0 0 100 100"
-              pathD="M50 85C50 85 20 65 20 40C20 25 30 15 40 15C45 15 50 20 50 20C50 20 55 15 60 15C70 15 80 25 80 40C80 65 50 85 50 85Z"
-              stroke={theme.heartStroke}
-              strokeWidth={2}
-            />
-            <div>
-              <p className="text-xs font-bold uppercase tracking-[0.2em]" style={{ color: CARDEA_MUTED }}>tools</p>
-              <h1 className="text-3xl text-[#062A4A] sm:text-4xl" style={{ fontFamily: "'Bebas Neue', sans-serif", letterSpacing: '0.07em' }}>
-                how are you feeling right now?
-              </h1>
+      <main className="mx-auto max-w-[960px] px-5 py-8 pb-24 sm:px-8 lg:px-10">
+        <section
+          id="top"
+          className="relative overflow-hidden rounded-3xl p-8 text-white shadow-[0_18px_50px_-28px_rgba(25,43,63,0.55)] sm:p-10"
+          style={{
+            background: `linear-gradient(135deg, ${CARDEA_NAVY} 0%, #2c4566 62%, ${CARDEA_DARK_GREEN} 100%)`,
+          }}
+        >
+          <div className="pointer-events-none absolute -left-20 -top-20 h-72 w-72 rounded-full bg-[#c6d9e5]/15 blur-3xl" />
+          <div className="pointer-events-none absolute -bottom-24 -right-10 h-72 w-72 rounded-full bg-[#577568]/30 blur-3xl" />
+          <div className="relative">
+            <div className="mb-5 inline-flex items-center gap-2 rounded-full bg-white/10 px-3 py-1 backdrop-blur-sm">
+              <span className="h-1.5 w-1.5 rounded-full bg-[#acb7a8]" />
+              <span className="text-[10px] font-semibold uppercase tracking-[0.24em] text-[#c6d9e5]">
+                tools · you&apos;re safe here
+              </span>
             </div>
+            <h1
+              className="mb-3 text-[2.75rem] leading-none text-white sm:text-[3.5rem]"
+              style={{ fontFamily: "'Bebas Neue', sans-serif", letterSpacing: '0.08em' }}
+            >
+              hello, <span className="text-[#c6d9e5]">how are you today?</span>
+            </h1>
+            <p className="max-w-xl text-base leading-relaxed text-[#c6d9e5]/90 sm:text-lg">
+              Whatever you&apos;re carrying right now, you don&apos;t have to put it down all at once.
+            </p>
+          </div>
+        </section>
+
+        <QuickAccess onOpenTool={openTool} />
+
+        <Section id="understand" label="Understand what you're feeling">
+          <div className="rounded-3xl bg-white/85 p-6 shadow-sm backdrop-blur">
+            <div className="mb-5 flex items-center gap-4">
+              <MoodHeartFill
+                theme={theme}
+                size={48}
+                viewBox="0 0 100 100"
+                pathD="M50 85C50 85 20 65 20 40C20 25 30 15 40 15C45 15 50 20 50 20C50 20 55 15 60 15C70 15 80 25 80 40C80 65 50 85 50 85Z"
+                stroke={theme.heartStroke}
+                strokeWidth={2}
+              />
+              <div>
+                <p className="text-xs font-bold uppercase tracking-[0.2em]" style={{ color: CARDEA_MUTED }}>
+                  daily mood check-in
+                </p>
+                <h3 className="text-3xl text-[#062A4A]" style={{ fontFamily: "'Bebas Neue', sans-serif", letterSpacing: '0.07em' }}>
+                  how are you?
+                </h3>
+              </div>
+            </div>
+
+            <div className="flex flex-wrap gap-2">
+              {WELLNESS_EMOTIONS.map((emotion) => (
+                <WellnessChip
+                  key={emotion.id}
+                  emotion={emotion}
+                  selected={selectedEmotion === emotion.id}
+                  onClick={() => chooseEmotion(emotion)}
+                />
+              ))}
+            </div>
+
+            <div className="mt-4 rounded-2xl border bg-white/85 p-4 shadow-sm" style={{ borderColor: 'rgba(25,43,63,0.08)' }}>
+              <label className="mb-2 block text-sm font-semibold text-[#192b3f]" htmlFor="wellness-underneath">
+                What&apos;s underneath it?
+              </label>
+              <input
+                id="wellness-underneath"
+                type="text"
+                value={checkInNote}
+                onChange={(e) => setCheckInNote(e.target.value)}
+                placeholder="a worry, a need, a body feeling..."
+                className="w-full rounded-xl border bg-[#f5f9f9] px-4 py-3 text-sm text-[#192b3f] outline-none placeholder:text-[#acb7a8]"
+                style={{ borderColor: CARDEA_LIGHT_BLUE }}
+              />
+              <div className="mt-3 flex flex-wrap items-center justify-between gap-3">
+                <p className="text-xs leading-relaxed" style={{ color: CARDEA_MUTED }}>
+                  two questions. one minute.
+                </p>
+                <div className="flex items-center gap-2">
+                  {checkInSaved && (
+                    <span className="text-xs font-semibold" style={{ color: CARDEA_DARK_GREEN }}>
+                      saved
+                    </span>
+                  )}
+                  <button
+                    type="button"
+                    disabled={!selectedMeta}
+                    onClick={saveMoodCheckIn}
+                    className="rounded-full px-4 py-2 text-xs font-semibold text-white disabled:opacity-40"
+                    style={{ background: CARDEA_DARK_GREEN }}
+                  >
+                    Save check-in
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            {selectedMeta ? (
+              <div className="mt-5 grid gap-3 sm:grid-cols-2">
+                <ToolTile toolId={selectedMeta.primary} onOpen={openTool} count={toolUseCount(toolLog, selectedMeta.primary, selectedEmotion)} />
+                <ToolTile toolId={selectedMeta.secondary} onOpen={openTool} count={toolUseCount(toolLog, selectedMeta.secondary, selectedEmotion)} accent="rgba(172, 183, 168, 0.45)" />
+              </div>
+            ) : null}
           </div>
 
-          <div className="flex flex-wrap gap-2">
-            {WELLNESS_EMOTIONS.map((emotion) => (
-              <WellnessChip
-                key={emotion.id}
-                emotion={emotion}
-                selected={selectedEmotion === emotion.id}
-                onClick={() => chooseEmotion(emotion)}
+          {selectedEmotion === 'disconnected' ? (
+            <div className="mt-4 rounded-3xl border bg-white p-5 shadow-sm" style={{ borderColor: 'rgba(87, 117, 104, 0.28)' }}>
+              <p className="mb-3 text-sm font-semibold text-[#192b3f]">
+                it sounds like you want to feel closer. try this.
+              </p>
+              <ToolTile toolId="today-nudge" onOpen={openTool} accent="rgba(168, 230, 207, 0.65)" />
+            </div>
+          ) : null}
+
+          {recentMoods.length > 2 ? (
+            <div className="mt-4 rounded-3xl bg-white/80 p-5 shadow-sm">
+              <p className="mb-3 text-xs font-bold uppercase tracking-[0.18em]" style={{ color: CARDEA_MUTED }}>recent check-ins</p>
+              <div
+                className="relative flex h-3 rounded-full bg-[#f5f9f9] shadow-inner"
+                style={{ background: recentMoodGradient }}
+                title={recentMoodSummaries
+                  .map((entry) => `${entry.dateTime}: ${entry.label}`)
+                  .join(' → ')}
+              >
+                <div className="h-full w-full rounded-full bg-gradient-to-r from-white/20 via-transparent to-white/20" />
+                <div className="absolute inset-0 flex rounded-full">
+                  {recentMoodSummaries.map((entry) => (
+                    <div
+                      key={entry.id}
+                      className="group relative flex-1"
+                      title={entry.note ? `${entry.dateTime}: ${entry.note}` : `${entry.dateTime}: ${entry.label}`}
+                    >
+                      <span className="sr-only">
+                        {entry.dateTime}: {entry.label}
+                      </span>
+                      <div className="pointer-events-none absolute left-1/2 top-5 z-10 w-max max-w-[220px] -translate-x-1/2 rounded-xl bg-white px-3 py-2 text-xs opacity-0 shadow-lg ring-1 ring-[rgba(25,43,63,0.08)] transition-opacity group-hover:opacity-100 group-focus-within:opacity-100">
+                        <div className="flex items-center gap-2">
+                          <span
+                            className="h-2.5 w-2.5 shrink-0 rounded-full"
+                            style={{ background: entry.color }}
+                            aria-hidden
+                          />
+                          <span className="font-semibold text-[#192b3f]">{entry.label}</span>
+                        </div>
+                        <div className="mt-1 whitespace-nowrap" style={{ color: CARDEA_MUTED }}>
+                          {entry.dateTime}
+                        </div>
+                        {entry.note && (
+                          <div className="mt-1 max-w-[190px] whitespace-normal leading-snug text-[#3A525A]">
+                            {entry.note}
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+              <div className="mt-2 flex justify-between gap-3 text-[11px]" style={{ color: CARDEA_MUTED }}>
+                <span>{recentMoodSummaries[0]?.dateTime}</span>
+                <span>{recentMoodSummaries[recentMoodSummaries.length - 1]?.dateTime}</span>
+              </div>
+              <p className="mt-2 text-xs" style={{ color: CARDEA_MUTED }}>no judgment. just a gentle picture.</p>
+            </div>
+          ) : null}
+
+          <div className="mt-4 grid gap-3 md:grid-cols-2">
+            {(['name-it', 'feelings-wheel', 'micro-journal'] as ToolId[]).map((toolId) => (
+              <ToolTile
+                key={toolId}
+                toolId={toolId}
+                onOpen={openTool}
+                count={toolUseCount(toolLog, toolId, selectedEmotion)}
               />
             ))}
           </div>
+        </Section>
 
-          <div className="mt-4 rounded-2xl border bg-white/85 p-4 shadow-sm" style={{ borderColor: 'rgba(25,43,63,0.08)' }}>
-            <label className="mb-2 block text-sm font-semibold text-[#192b3f]" htmlFor="wellness-underneath">
-              What&apos;s underneath it?
-            </label>
-            <input
-              id="wellness-underneath"
-              type="text"
-              value={checkInNote}
-              onChange={(e) => setCheckInNote(e.target.value)}
-              placeholder="a worry, a need, a body feeling..."
-              className="w-full rounded-xl border bg-[#f5f9f9] px-4 py-3 text-sm text-[#192b3f] outline-none placeholder:text-[#acb7a8]"
-              style={{ borderColor: CARDEA_LIGHT_BLUE }}
-            />
-            <div className="mt-3 flex flex-wrap items-center justify-between gap-3">
-              <p className="text-xs leading-relaxed" style={{ color: CARDEA_MUTED }}>
-                two questions. one minute.
-              </p>
-              <div className="flex items-center gap-2">
-                {checkInSaved && (
-                  <span className="text-xs font-semibold" style={{ color: CARDEA_DARK_GREEN }}>
-                    saved
-                  </span>
-                )}
-                <button
-                  type="button"
-                  disabled={!selectedMeta}
-                  onClick={saveMoodCheckIn}
-                  className="rounded-full px-4 py-2 text-xs font-semibold text-white disabled:opacity-40"
-                  style={{ background: CARDEA_DARK_GREEN }}
+        <Section id="crisis" label="Crisis support">
+          <button
+            type="button"
+            onClick={() => openTool('crisis-reset')}
+            className="group flex w-full items-center justify-between gap-6 rounded-2xl border-l-4 bg-white p-6 text-left shadow-sm transition hover:shadow-md"
+            style={{ borderLeftColor: '#9B1C31' }}
+          >
+            <div className="flex items-start gap-4">
+              <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-[#9B1C31]/10">
+                <AlertCircle className="h-5 w-5 text-[#9B1C31]" />
+              </div>
+              <div>
+                <h3
+                  className="text-2xl text-[#192b3f]"
+                  style={{ fontFamily: "'Bebas Neue', sans-serif", letterSpacing: '0.07em' }}
                 >
-                  Save check-in
-                </button>
+                  I need help right now
+                </h3>
+                <p className="mt-1 text-sm leading-relaxed" style={{ color: CARDEA_MUTED }}>
+                  A guided 4-step reset. Takes about 60 seconds.
+                </p>
               </div>
             </div>
+            <span className="hidden rounded-xl bg-[#9B1C31] px-4 py-2 text-sm font-semibold text-white sm:inline-flex">
+              Start now →
+            </span>
+          </button>
+        </Section>
+
+        <Section id="suggested" label="Suggested Exercises">
+          <div className="grid gap-4 md:grid-cols-2">
+            {suggestedExercises.map((toolId, index) => (
+              <SuggestedExerciseCard
+                key={toolId}
+                toolId={toolId}
+                onOpen={openTool}
+                tone={SUGGESTED_TONES[index % SUGGESTED_TONES.length]}
+              />
+            ))}
           </div>
+          <p className="mt-3 text-xs leading-relaxed" style={{ color: CARDEA_MUTED }}>
+            These cards shift with your check-in. Later, this can use AI recommendations.
+          </p>
+        </Section>
 
-          {selectedMeta ? (
-            <div className="mt-5 grid gap-3 sm:grid-cols-2">
-              <ToolTile toolId={selectedMeta.primary} onOpen={openTool} count={toolUseCount(toolLog, selectedMeta.primary, selectedEmotion)} />
-              <ToolTile toolId={selectedMeta.secondary} onOpen={openTool} count={toolUseCount(toolLog, selectedMeta.secondary, selectedEmotion)} accent="rgba(172, 183, 168, 0.45)" />
-            </div>
-          ) : null}
-        </section>
+        <Section id="regulate" label="Regulate your body">
+          <div className="grid gap-3 md:grid-cols-2">
+            {(['breathing', 'grounding', 'cold-reset', 'move-it-out', 'body-scan'] as ToolId[]).map((toolId) => (
+              <ToolTile
+                key={toolId}
+                toolId={toolId}
+                onOpen={openTool}
+                count={toolUseCount(toolLog, toolId, selectedEmotion)}
+              />
+            ))}
+          </div>
+        </Section>
 
-        {selectedEmotion === 'disconnected' ? (
-          <section className="mb-6 rounded-3xl border bg-white p-5 shadow-sm" style={{ borderColor: 'rgba(87, 117, 104, 0.28)' }}>
-            <p className="mb-3 text-sm font-semibold text-[#192b3f]">
-              it sounds like you want to feel closer. try this.
-            </p>
-            <ToolTile toolId="today-nudge" onOpen={openTool} accent="rgba(168, 230, 207, 0.65)" />
-          </section>
-        ) : null}
+        <Section id="mindset" label="Shift your mindset">
+          <div className="grid gap-3 md:grid-cols-2">
+            {(['reframes', 'safe-place', 'stop-skill'] as ToolId[]).map((toolId) => (
+              <ToolTile
+                key={toolId}
+                toolId={toolId}
+                onOpen={openTool}
+                count={toolUseCount(toolLog, toolId, selectedEmotion)}
+              />
+            ))}
+          </div>
+        </Section>
 
-        {recentMoods.length > 2 ? (
-          <section className="mb-6 rounded-3xl bg-white/80 p-5 shadow-sm">
-            <p className="mb-3 text-xs font-bold uppercase tracking-[0.18em]" style={{ color: CARDEA_MUTED }}>recent check-ins</p>
-            <div
-              className="relative flex h-3 rounded-full bg-[#f5f9f9] shadow-inner"
-              style={{ background: recentMoodGradient }}
-              title={recentMoodSummaries
-                .map((entry) => `${entry.dateTime}: ${entry.label}`)
-                .join(' → ')}
-            >
-              <div className="h-full w-full rounded-full bg-gradient-to-r from-white/20 via-transparent to-white/20" />
-              <div className="absolute inset-0 flex rounded-full">
-                {recentMoodSummaries.map((entry) => (
-                  <div
-                    key={entry.id}
-                    className="group relative flex-1"
-                    title={entry.note ? `${entry.dateTime}: ${entry.note}` : `${entry.dateTime}: ${entry.label}`}
-                  >
-                    <span className="sr-only">
-                      {entry.dateTime}: {entry.label}
-                    </span>
-                    <div className="pointer-events-none absolute left-1/2 top-5 z-10 w-max max-w-[220px] -translate-x-1/2 rounded-xl bg-white px-3 py-2 text-xs opacity-0 shadow-lg ring-1 ring-[rgba(25,43,63,0.08)] transition-opacity group-hover:opacity-100 group-focus-within:opacity-100">
-                      <div className="flex items-center gap-2">
-                        <span
-                          className="h-2.5 w-2.5 shrink-0 rounded-full"
-                          style={{ background: entry.color }}
-                          aria-hidden
-                        />
-                        <span className="font-semibold text-[#192b3f]">{entry.label}</span>
-                      </div>
-                      <div className="mt-1 whitespace-nowrap" style={{ color: CARDEA_MUTED }}>
-                        {entry.dateTime}
-                      </div>
-                      {entry.note && (
-                        <div className="mt-1 max-w-[190px] whitespace-normal leading-snug text-[#3A525A]">
-                          {entry.note}
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-            <div className="mt-2 flex justify-between gap-3 text-[11px]" style={{ color: CARDEA_MUTED }}>
-              <span>{recentMoodSummaries[0]?.dateTime}</span>
-              <span>{recentMoodSummaries[recentMoodSummaries.length - 1]?.dateTime}</span>
-            </div>
-            <p className="mt-2 text-xs" style={{ color: CARDEA_MUTED }}>no judgment. just a gentle picture.</p>
-          </section>
-        ) : null}
-
-        <section className="mb-6">
+        <Section id="parent" label="Be the parent">
           <TodayNudgeTool onJournal={(prompt) => {
             setJournalPrompt(prompt)
             openTool('micro-journal')
           }} />
-        </section>
+        </Section>
 
-        <section className="space-y-3">
-          {SECTION_ORDER.map((section) => (
-            <details key={section} className="rounded-2xl border bg-white/80 p-4 shadow-sm" style={{ borderColor: 'rgba(25,43,63,0.08)' }}>
-              <summary className="cursor-pointer text-sm font-bold uppercase tracking-[0.12em] text-[#192b3f]">
-                {section}
-              </summary>
-              <div className="mt-4 grid gap-3 md:grid-cols-2">
-                {(Object.keys(TOOL_META) as ToolId[])
-                  .filter((toolId) => TOOL_META[toolId].category === section)
-                  .filter((toolId) => toolId !== 'mood-check-in')
-                  .map((toolId) => (
-                    <ToolTile
-                      key={toolId}
-                      toolId={toolId}
-                      onOpen={openTool}
-                      count={toolUseCount(toolLog, toolId, selectedEmotion)}
-                    />
-                  ))}
-              </div>
-            </details>
-          ))}
-        </section>
+        <Section id="winddown" label="Wind down">
+          <div className="grid gap-3 md:grid-cols-2">
+            {(['night-reset', 'body-scan'] as ToolId[]).map((toolId) => (
+              <ToolTile
+                key={toolId}
+                toolId={toolId}
+                onOpen={openTool}
+                count={toolUseCount(toolLog, toolId, selectedEmotion)}
+              />
+            ))}
+          </div>
+        </Section>
+
+        <Section id="journal" label="Past entries">
+          <PastEntriesSection moodLog={moodLog} />
+        </Section>
+
+        <footer className="mb-6 mt-16 flex flex-col items-center gap-2 text-center">
+          <Sparkles className="h-4 w-4" style={{ color: CARDEA_DARK_GREEN }} />
+          <p className="text-xs leading-relaxed" style={{ color: CARDEA_MUTED }}>
+            Cardea · you don&apos;t have to do this alone.
+          </p>
+        </footer>
       </main>
 
       {activeTool && activeMeta ? (
