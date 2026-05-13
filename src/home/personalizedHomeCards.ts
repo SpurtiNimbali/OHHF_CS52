@@ -101,7 +101,7 @@ export const HOME_CARD_CATALOG: HomeCardDefinition[] = [
     palette: 'sky',
     moodDescriptions: {
       hopeful: 'Celebrate what’s going well — then note what you want to ask next.',
-      energized: 'Use your energy to lock in one goal to bring up with your team.',
+      happy: 'Use your energy to lock in one goal to bring up with your team.',
     },
   },
   {
@@ -112,8 +112,9 @@ export const HOME_CARD_CATALOG: HomeCardDefinition[] = [
     to: '/home#mood-check',
     palette: 'mint',
     moodDescriptions: {
-      uncertain: 'Naming how you feel is enough for today — adjust your mood whenever.',
-      tired: 'It’s okay to switch to a low-energy day — your home screen will match.',
+      overwhelmed: 'Naming how you feel is enough for today — adjust your mood whenever.',
+      exhausted: 'It’s okay to switch to a low-energy day — your home screen will match.',
+      numb: 'It’s alright not to pin a label on it — tweak your mood when you’re ready.',
     },
   },
 ]
@@ -135,6 +136,16 @@ const MOOD_CARD_ORDER: Record<'default' | MoodId, string[]> = {
     'explore-hub',
     'appointment-prep',
   ],
+  happy: [
+    'appointment-prep',
+    'visit-questions',
+    'explore-hub',
+    'chat-support',
+    'learning-hub',
+    'glossary-quick',
+    'support-network',
+    'mood-check-in',
+  ],
   calm: [
     'learning-hub',
     'glossary-quick',
@@ -155,7 +166,7 @@ const MOOD_CARD_ORDER: Record<'default' | MoodId, string[]> = {
     'explore-hub',
     'support-network',
   ],
-  uncertain: [
+  overwhelmed: [
     'chat-support',
     'support-network',
     'glossary-quick',
@@ -165,7 +176,7 @@ const MOOD_CARD_ORDER: Record<'default' | MoodId, string[]> = {
     'explore-hub',
     'appointment-prep',
   ],
-  tired: [
+  exhausted: [
     'chat-support',
     'mood-check-in',
     'glossary-quick',
@@ -175,15 +186,55 @@ const MOOD_CARD_ORDER: Record<'default' | MoodId, string[]> = {
     'explore-hub',
     'appointment-prep',
   ],
-  energized: [
-    'appointment-prep',
+  angry: [
+    'chat-support',
+    'support-network',
     'visit-questions',
+    'learning-hub',
+    'glossary-quick',
+    'mood-check-in',
     'explore-hub',
+    'appointment-prep',
+  ],
+  scared: [
+    'chat-support',
+    'support-network',
+    'glossary-quick',
+    'visit-questions',
+    'learning-hub',
+    'mood-check-in',
+    'explore-hub',
+    'appointment-prep',
+  ],
+  sad: [
+    'chat-support',
+    'mood-check-in',
+    'glossary-quick',
+    'support-network',
+    'visit-questions',
+    'learning-hub',
+    'explore-hub',
+    'appointment-prep',
+  ],
+  disconnected: [
+    'learning-hub',
+    'visit-questions',
+    'chat-support',
+    'glossary-quick',
+    'mood-check-in',
+    'support-network',
+    'explore-hub',
+    'appointment-prep',
+  ],
+  numb: [
     'chat-support',
     'learning-hub',
     'glossary-quick',
-    'support-network',
+    'visit-questions',
     'mood-check-in',
+    'support-network',
+    'explore-hub',
+    'appointment-prep',
   ],
 }
 

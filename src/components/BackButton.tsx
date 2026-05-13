@@ -3,10 +3,8 @@ import type { CSSProperties } from 'react'
 
 interface BackButtonProps {
   onClick: () => void
-  /** Label only; a leading arrow is always shown. */
   text?: string
   style?: CSSProperties
-  /** Use the navy / pill treatment for light backgrounds (resource hub). */
   variant?: 'default' | 'onLight'
 }
 

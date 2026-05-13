@@ -1,9 +1,19 @@
 /**
- * Cardea mood UI — limited variants (3–5) sharing one visual language.
- * Colors match the pastel reference palette (#A8E6CF, #FFD8A8, #D5AAFF, etc.).
+ * Cardea mood UI — emotion chips share one pastel visual language.
+ * Neutral moods (`disconnected`, `numb`) reuse the app default (mint / periwinkle / lavender).
  */
 
-export type MoodId = 'calm' | 'hopeful' | 'uncertain' | 'tired' | 'energized'
+export type MoodId =
+  | 'happy'
+  | 'calm'
+  | 'hopeful'
+  | 'overwhelmed'
+  | 'exhausted'
+  | 'angry'
+  | 'scared'
+  | 'sad'
+  | 'disconnected'
+  | 'numb'
 
 export type MoodTheme = {
   /** Tailwind gradient stops — use with `bg-gradient-to-br` + `moodShellBackgroundClasses` */
@@ -41,7 +51,31 @@ export const DEFAULT_MOOD_THEME: MoodTheme = {
   reminderBg: 'bg-gradient-to-br from-[#A8E6CF]/20 via-[#FFD8A8]/20 to-[#D5AAFF]/20 border-2 border-white',
 }
 
+/** Shared by “Disconnected” and “Unsure” — same as default shell */
+const NEUTRAL_MOOD_THEME: MoodTheme = {
+  pageBg: DEFAULT_MOOD_THEME.pageBg,
+  heartFill: DEFAULT_MOOD_THEME.heartFill,
+  heartStroke: DEFAULT_MOOD_THEME.heartStroke,
+  borderGradient: DEFAULT_MOOD_THEME.borderGradient,
+  reminderBg: DEFAULT_MOOD_THEME.reminderBg,
+}
+
 export const MOOD_VARIANTS: MoodUiVariant[] = [
+  {
+    id: 'happy',
+    label: 'Happy',
+    chipBg: 'bg-[#FFCBA4]',
+    chipText: 'text-[#8B5E3C]',
+    theme: {
+      pageBg: 'from-orange-50/30 via-amber-50/30 to-yellow-50/30',
+      heartFill: '#FFCBA4',
+      heartStroke: '#8B5E3C',
+      borderGradient:
+        'linear-gradient(to right, #FFD8B8, #FFE4B8, #FFF0C8, #FFF8E4) 1',
+      reminderBg:
+        'bg-[linear-gradient(130deg,rgba(255,212,188,0.2)_0%,rgba(255,224,200,0.18)_24%,rgba(255,236,216,0.19)_48%,rgba(255,220,196,0.17)_72%,rgba(255,244,228,0.2)_100%)] border-2 border-white',
+    },
+  },
   {
     id: 'calm',
     label: 'Calm',
@@ -72,23 +106,23 @@ export const MOOD_VARIANTS: MoodUiVariant[] = [
     },
   },
   {
-    id: 'uncertain',
-    label: 'Uncertain',
-    chipBg: 'bg-[#D5AAFF]',
-    chipText: 'text-[#5B3A70]',
+    id: 'overwhelmed',
+    label: 'Overwhelmed',
+    chipBg: 'bg-[#F0C4D4]',
+    chipText: 'text-[#6B3A4A]',
     theme: {
-      pageBg: 'from-purple-50/30 via-violet-50/30 to-fuchsia-50/30',
-      heartFill: '#D5AAFF',
-      heartStroke: '#5B3A70',
+      pageBg: 'from-rose-50/30 via-pink-50/30 to-fuchsia-50/30',
+      heartFill: '#F0C4D4',
+      heartStroke: '#6B3A4A',
       borderGradient:
-        'linear-gradient(to right, #E0C8F8, #D8D0FF, #D0DCFA, #D4E8FC) 1',
+        'linear-gradient(to right, #F4D0DC, #ECC8E4, #E8D4F0, #E0DCF8) 1',
       reminderBg:
-        'bg-[linear-gradient(130deg,rgba(224,200,248,0.2)_0%,rgba(220,210,255,0.18)_25%,rgba(228,220,252,0.19)_50%,rgba(212,224,252,0.17)_75%,rgba(220,232,255,0.2)_100%)] border-2 border-white',
+        'bg-[linear-gradient(130deg,rgba(244,208,220,0.22)_0%,rgba(236,212,232,0.18)_25%,rgba(232,220,248,0.19)_50%,rgba(224,228,252,0.17)_75%,rgba(236,232,248,0.2)_100%)] border-2 border-white',
     },
   },
   {
-    id: 'tired',
-    label: 'Tired',
+    id: 'exhausted',
+    label: 'Exhausted',
     chipBg: 'bg-[#A8C5E6]',
     chipText: 'text-[#2d4f6f]',
     theme: {
@@ -102,26 +136,73 @@ export const MOOD_VARIANTS: MoodUiVariant[] = [
     },
   },
   {
-    id: 'energized',
-    label: 'Energized',
-    chipBg: 'bg-[#FFCBA4]',
-    chipText: 'text-[#8B5E3C]',
+    id: 'angry',
+    label: 'Angry',
+    chipBg: 'bg-[#FFAAA5]',
+    chipText: 'text-[#8B3A36]',
     theme: {
-      pageBg: 'from-orange-50/30 via-amber-50/30 to-yellow-50/30',
-      heartFill: '#FFCBA4',
-      heartStroke: '#8B5E3C',
+      pageBg: 'from-red-50/30 via-orange-50/30 to-amber-50/30',
+      heartFill: '#FFAAA5',
+      heartStroke: '#8B3A36',
       borderGradient:
-        'linear-gradient(to right, #FFD8B8, #FFE4B8, #FFF0C8, #FFF8E4) 1',
+        'linear-gradient(to right, #FFB8B4, #FFC4B8, #FFD0C4, #FFE0D4) 1',
       reminderBg:
-        'bg-[linear-gradient(130deg,rgba(255,212,188,0.2)_0%,rgba(255,224,200,0.18)_24%,rgba(255,236,216,0.19)_48%,rgba(255,220,196,0.17)_72%,rgba(255,244,228,0.2)_100%)] border-2 border-white',
+        'bg-[linear-gradient(130deg,rgba(255,186,180,0.22)_0%,rgba(255,208,196,0.18)_26%,rgba(255,228,216,0.19)_52%,rgba(255,218,206,0.17)_78%,rgba(255,238,226,0.2)_100%)] border-2 border-white',
     },
+  },
+  {
+    id: 'scared',
+    label: 'Scared',
+    chipBg: 'bg-[#D5AAFF]',
+    chipText: 'text-[#5B3A70]',
+    theme: {
+      pageBg: 'from-purple-50/30 via-violet-50/30 to-fuchsia-50/30',
+      heartFill: '#D5AAFF',
+      heartStroke: '#5B3A70',
+      borderGradient:
+        'linear-gradient(to right, #E0C8F8, #D8D0FF, #D0DCFA, #D4E8FC) 1',
+      reminderBg:
+        'bg-[linear-gradient(130deg,rgba(224,200,248,0.2)_0%,rgba(220,210,255,0.18)_25%,rgba(228,220,252,0.19)_50%,rgba(212,224,252,0.17)_75%,rgba(220,232,255,0.2)_100%)] border-2 border-white',
+    },
+  },
+  {
+    id: 'sad',
+    label: 'Sad',
+    chipBg: 'bg-[#B8C9E8]',
+    chipText: 'text-[#3d4f6f]',
+    theme: {
+      pageBg: 'from-slate-50/30 via-blue-50/30 to-indigo-50/30',
+      heartFill: '#B8C9E8',
+      heartStroke: '#3d4f6f',
+      borderGradient:
+        'linear-gradient(to right, #C4D0EC, #C8D4F0, #CCD8F4, #D4E4F8) 1',
+      reminderBg:
+        'bg-[linear-gradient(130deg,rgba(196,208,236,0.2)_0%,rgba(200,216,242,0.18)_26%,rgba(208,224,248,0.19)_52%,rgba(196,218,238,0.17)_78%,rgba(220,232,252,0.2)_100%)] border-2 border-white',
+    },
+  },
+  {
+    id: 'disconnected',
+    label: 'Disconnected',
+    chipBg: 'bg-[#C8DDD4]',
+    chipText: 'text-[#2d5f4f]',
+    theme: NEUTRAL_MOOD_THEME,
+  },
+  {
+    id: 'numb',
+    label: 'Unsure',
+    chipBg: 'bg-[#D4DCE8]',
+    chipText: 'text-[#3d4a5c]',
+    theme: NEUTRAL_MOOD_THEME,
   },
 ]
 
 const VARIANT_BY_ID = Object.fromEntries(MOOD_VARIANTS.map((v) => [v.id, v])) as Record<MoodId, MoodUiVariant>
 
+/** All ids — use for persisted mood validation */
+export const MOOD_IDS = MOOD_VARIANTS.map((v) => v.id) as readonly MoodId[]
+
 export function moodVariantById(id: MoodId): MoodUiVariant {
-  return VARIANT_BY_ID[id] ?? MOOD_VARIANTS[0]
+  return VARIANT_BY_ID[id] ?? VARIANT_BY_ID.calm
 }
 
 export function resolvedMoodTheme(moodId: MoodId | null): MoodTheme {

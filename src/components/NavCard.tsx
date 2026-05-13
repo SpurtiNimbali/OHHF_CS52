@@ -1,19 +1,15 @@
 import { useState, type FC, type ReactNode } from 'react'
 
+import { CARDEA_FONT_PRIMARY, CARDEA_LIGHT_BLUE, CARDEA_MUTED, CARDEA_NAVY } from '../ui/cardeaTokens'
+
 interface NavCardProps {
   title: string
-  /** Small icon shown in the top-left tile (e.g. SVG or emoji). */
   icon: ReactNode
   iconBackground: string
   onClick: () => void
   description?: string
-  /** Accent for arrow and focus ring (light blue in brand). */
   arrowColor?: string
 }
-
-const BODY_COLOR = '#acb7a8'
-const HEADING_COLOR = '#192b3f'
-const FONT = 'Inter, -apple-system, BlinkMacSystemFont, "SF Pro Text", sans-serif'
 
 const NavCard: FC<NavCardProps> = ({
   title,
@@ -21,7 +17,7 @@ const NavCard: FC<NavCardProps> = ({
   iconBackground,
   onClick,
   description,
-  arrowColor = '#c6d9e5',
+  arrowColor = CARDEA_LIGHT_BLUE,
 }) => {
   const [isHovered, setIsHovered] = useState(false)
 
@@ -32,7 +28,7 @@ const NavCard: FC<NavCardProps> = ({
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
       style={{
-        fontFamily: FONT,
+        fontFamily: CARDEA_FONT_PRIMARY,
         textAlign: 'left',
         backgroundColor: '#ffffff',
         borderRadius: 16,
@@ -75,7 +71,7 @@ const NavCard: FC<NavCardProps> = ({
           margin: 0,
           fontSize: '0.95rem',
           fontWeight: 700,
-          color: HEADING_COLOR,
+          color: CARDEA_NAVY,
           letterSpacing: '0.06em',
           lineHeight: 1.35,
           textTransform: 'uppercase',
@@ -89,7 +85,7 @@ const NavCard: FC<NavCardProps> = ({
           style={{
             margin: 0,
             fontSize: '0.95rem',
-            color: BODY_COLOR,
+            color: CARDEA_MUTED,
             lineHeight: 1.55,
             flex: 1,
           }}

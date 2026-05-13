@@ -1,22 +1,22 @@
-import { useMemo } from 'react'
+import { useMemo, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { motion } from 'motion/react'
-import { BookOpen, ChevronRight, Heart, MessageCircle, Sparkles } from 'lucide-react'
+import { BookOpen, Heart, MessageCircle, Sparkles, Wind } from 'lucide-react'
+import { HomeResourceLinkCard } from '../components/home/HomeResourceLinkCard'
+import { HomeMoodChipButton } from '../components/home/HomeMoodChipButton'
 import { ResourcesRightNav } from '../components/ResourcesRightNav'
 import {
   MOOD_VARIANTS,
+  type MoodId,
   getChatPromptHint,
   getMoodMessage,
   moodShellBackgroundClasses,
   MoodHeartFill,
   useMood,
-  type MoodId,
 } from '../mood'
+import { CARDEA_FONT_PRIMARY, CARDEA_MUTED, CARDEA_NAVY } from '../ui/cardeaTokens'
 
-const NAVY = '#192b3f'
-const BODY = '#3a525a'
-const MUTED = '#acb7a8'
-const FONT = 'Inter, -apple-system, BlinkMacSystemFont, "SF Pro Text", sans-serif'
+const WELLNESS_MOOD_LOG_KEY = 'cardea-wellness-mood-log'
 
 type ResourceCard = {
   id: string
@@ -28,7 +28,39 @@ type ResourceCard = {
   to: string
 }
 
-/** Pastel tiles aligned with HomePage / right nav: mint, coral, periwinkle */
+type HomeMoodLogEntry = {
+  id: string
+  date: string
+  emotion: MoodId
+  note?: string
+}
+
+function makeMoodLogId() {
+  if (typeof crypto !== 'undefined' && 'randomUUID' in crypto) {
+    return `home-mood-${crypto.randomUUID()}`
+  }
+  return `home-mood-${Date.now()}-${Math.random().toString(36).slice(2)}`
+}
+
+function appendMoodCheckIn(emotion: MoodId, note: string) {
+  try {
+    const raw = localStorage.getItem(WELLNESS_MOOD_LOG_KEY)
+    const previous = raw ? (JSON.parse(raw) as HomeMoodLogEntry[]) : []
+    const next: HomeMoodLogEntry[] = [
+      {
+        id: makeMoodLogId(),
+        date: new Date().toISOString(),
+        emotion,
+        note: note.trim() || undefined,
+      },
+      ...previous,
+    ].slice(0, 80)
+    localStorage.setItem(WELLNESS_MOOD_LOG_KEY, JSON.stringify(next))
+  } catch {
+    /* ignore local storage failures */
+  }
+}
+
 const BASE_CARDS: ResourceCard[] = [
   {
     id: 'learn',
@@ -57,7 +89,26 @@ const BASE_CARDS: ResourceCard[] = [
     iconClass: 'text-[#2d4f6f]',
     to: '/resources?view=support',
   },
+  {
+    id: 'wellness',
+    icon: Wind,
+    title: 'Wellness tools',
+    description: 'Grounding, breathing, journaling, and gentle reset tools.',
+    iconWrapClass: 'bg-[#D5AAFF]',
+    iconClass: 'text-[#5B3A70]',
+    to: '/wellness',
+  },
 ]
+
+/** Prioritize Chat prompts when moods tend to benefit from immediate connection copy */
+const SUPPORT_FIRST_MOODS: ReadonlySet<MoodId> = new Set([
+  'overwhelmed',
+  'exhausted',
+  'angry',
+  'scared',
+  'sad',
+  'numb',
+])
 
 function orderCardsForMood(moodId: MoodId | null): ResourceCard[] {
   const supportHint = getChatPromptHint(moodId)
@@ -65,7 +116,7 @@ function orderCardsForMood(moodId: MoodId | null): ResourceCard[] {
     c.id === 'support' ? { ...c, description: supportHint } : c,
   )
   if (!moodId) return withHints
-  if (moodId === 'uncertain' || moodId === 'tired') {
+  if (SUPPORT_FIRST_MOODS.has(moodId)) {
     const support = withHints.find((c) => c.id === 'support')!
     const rest = withHints.filter((c) => c.id !== 'support')
     return [support, ...rest]
@@ -81,13 +132,25 @@ function orderCardsForMood(moodId: MoodId | null): ResourceCard[] {
 export function HomeScreen() {
   const navigate = useNavigate()
   const { moodId, setMoodId, theme, variant } = useMood()
+  const [moodNote, setMoodNote] = useState('')
+  const [checkInSaved, setCheckInSaved] = useState(false)
+  const [showMoodCheckIn, setShowMoodCheckIn] = useState(false)
 
   const personalizedCards = useMemo(() => orderCardsForMood(moodId), [moodId])
+
+  function saveMoodCheckIn() {
+    if (!moodId) return
+    appendMoodCheckIn(moodId, moodNote)
+    setMoodNote('')
+    setCheckInSaved(true)
+    window.setTimeout(() => setShowMoodCheckIn(false), 650)
+    window.setTimeout(() => setCheckInSaved(false), 1800)
+  }
 
   return (
     <div
       className={`min-h-screen flex transition-all duration-700 ${moodShellBackgroundClasses(moodId, theme.pageBg)}`}
-      style={{ fontFamily: FONT, color: NAVY }}
+      style={{ fontFamily: CARDEA_FONT_PRIMARY, color: CARDEA_NAVY }}
     >
       <div className="flex-1 min-w-0 pb-10">
         <motion.header
@@ -98,7 +161,7 @@ export function HomeScreen() {
         >
           <p
             className="text-center text-xs font-bold uppercase tracking-[0.2em] mb-3"
-            style={{ color: MUTED }}
+            style={{ color: CARDEA_MUTED }}
           >
             Cardea
           </p>
@@ -125,7 +188,7 @@ export function HomeScreen() {
           </h1>
           <p
             className="text-center text-sm sm:text-base max-w-md mx-auto leading-relaxed text-[#3A525A]"
-            style={{ fontFamily: FONT }}
+            style={{ fontFamily: CARDEA_FONT_PRIMARY }}
           >
             Taking care of your heart health can feel hard — Cardea is here with you.
           </p>
@@ -138,31 +201,34 @@ export function HomeScreen() {
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.12 }}
           >
-            <h2 className="text-sm font-medium mb-3 text-[#3A525A]" style={{ fontFamily: FONT }}>
-              How are you feeling today?
-            </h2>
-            <div className="flex flex-wrap gap-2">
-              {MOOD_VARIANTS.map((m, index) => (
-                <motion.button
-                  key={m.id}
-                  type="button"
-                  initial={{ opacity: 0, scale: 0.9 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                  transition={{ delay: 0.15 + index * 0.05 }}
-                  whileHover={{ scale: 1.05 }}
-                  whileTap={{ scale: 0.95 }}
-                  onClick={() => setMoodId(moodId === m.id ? null : m.id)}
-                  className={`px-4 py-2 rounded-full text-sm transition-all border ${
-                    moodId === m.id
-                      ? `${m.chipBg} ${m.chipText} shadow-md border-transparent`
-                      : 'bg-white text-[#3A525A] border-gray-200'
-                  }`}
-                  style={{ fontFamily: FONT }}
+            <button
+              type="button"
+              onClick={() => {
+                setCheckInSaved(false)
+                setShowMoodCheckIn(true)
+              }}
+              className="flex w-full items-center gap-4 rounded-2xl border bg-white p-4 text-left shadow-sm transition hover:shadow-md"
+              style={{ borderColor: 'rgba(25,43,63,0.08)', fontFamily: CARDEA_FONT_PRIMARY }}
+            >
+              <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-[#D5AAFF]/70">
+                <Heart className="h-5 w-5 text-[#5B3A70]" strokeWidth={2} />
+              </span>
+              <div>
+                <p
+                  className="mb-1 text-xs font-bold uppercase tracking-[0.18em]"
+                  style={{ color: CARDEA_MUTED }}
                 >
-                  {m.label}
-                </motion.button>
-              ))}
-            </div>
+                  mood check-in
+                </p>
+                <h2 className="text-sm font-semibold text-[#062A4A]">Go to mood check-in</h2>
+                <p className="mt-1 text-xs leading-relaxed text-[#3A525A]">
+                  two quick questions. one minute.
+                </p>
+              </div>
+              <span className="ml-auto text-2xl font-light text-[#A8C5E6]" aria-hidden>
+                →
+              </span>
+            </button>
           </motion.section>
 
           <motion.section
@@ -170,10 +236,10 @@ export function HomeScreen() {
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.22 }}
           >
-            <h2 className="text-sm font-medium mb-1 text-[#3A525A]" style={{ fontFamily: FONT }}>
+            <h2 className="text-sm font-medium mb-1 text-[#3A525A]" style={{ fontFamily: CARDEA_FONT_PRIMARY }}>
               Right for you now
             </h2>
-            <p className="text-xs mb-4 leading-relaxed text-[#acb7a8]" style={{ fontFamily: FONT }}>
+            <p className="text-xs mb-4 leading-relaxed text-[#acb7a8]" style={{ fontFamily: CARDEA_FONT_PRIMARY }}>
               {moodId
                 ? 'These pick up touches of your mood — tap a card to continue.'
                 : 'Choose a mood to tint these cards, or jump in anytime.'}
@@ -189,26 +255,14 @@ export function HomeScreen() {
                   whileHover={{ x: 4 }}
                   className="will-change-transform"
                 >
-                  <Link
+                  <HomeResourceLinkCard
                     to={resource.to}
-                    className="flex items-center gap-4 p-4 rounded-2xl bg-white border border-gray-100 shadow-sm hover:shadow-md transition-shadow min-h-[4.5rem]"
-                  >
-                    <div className={`${resource.iconWrapClass} p-3 rounded-xl shrink-0`}>
-                      <resource.icon className={`w-6 h-6 ${resource.iconClass}`} strokeWidth={2} />
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <h3
-                        className="text-[#062A4A] mb-0.5 font-semibold text-[15px] leading-snug"
-                        style={{ fontFamily: FONT }}
-                      >
-                        {resource.title}
-                      </h3>
-                      <p className="text-xs sm:text-sm mt-1 leading-relaxed text-[#3A525A]" style={{ fontFamily: FONT }}>
-                        {resource.description}
-                      </p>
-                    </div>
-                    <ChevronRight className="w-5 h-5 shrink-0 text-[#8BD7D2]" aria-hidden />
-                  </Link>
+                    Icon={resource.icon}
+                    title={resource.title}
+                    description={resource.description}
+                    iconWrapClass={resource.iconWrapClass}
+                    iconClass={resource.iconClass}
+                  />
                 </motion.div>
               ))}
             </div>
@@ -223,19 +277,19 @@ export function HomeScreen() {
             <div className="flex items-start gap-3 relative z-10">
               <Sparkles className="w-6 h-6 shrink-0" style={{ color: theme.heartStroke }} strokeWidth={2} />
               <div>
-                <h3 className="font-semibold text-[#062A4A] text-sm mb-1" style={{ fontFamily: FONT }}>
+                <h3 className="font-semibold text-[#062A4A] text-sm mb-1" style={{ fontFamily: CARDEA_FONT_PRIMARY }}>
                   {variant ? `Feeling ${variant.label}` : 'Today’s gentle reminder'}
                 </h3>
-                <p className="text-sm leading-relaxed text-[#3A525A]" style={{ fontFamily: FONT }}>
+                <p className="text-sm leading-relaxed text-[#3A525A]" style={{ fontFamily: CARDEA_FONT_PRIMARY }}>
                   {moodId
                     ? getMoodMessage(moodId)
-                    : 'It’s okay to take things one step at a time. Small progress is still progress on your heart health journey.'}
+                    : "It's okay to take things one step at a time. Small progress is still progress on your heart health journey."}
                 </p>
               </div>
             </div>
           </motion.section>
 
-          <p className="text-center text-xs" style={{ color: MUTED }}>
+          <p className="text-center text-xs" style={{ color: CARDEA_MUTED }}>
             <Link to="/" className="underline underline-offset-2 hover:text-[#192b3f] transition-colors">
               Sign out flow
             </Link>
@@ -252,6 +306,90 @@ export function HomeScreen() {
       </div>
 
       <ResourcesRightNav />
+      {showMoodCheckIn && (
+        <div className="fixed inset-0 z-30 flex items-center justify-center bg-[rgba(25,43,63,0.32)] px-4 py-6 backdrop-blur-sm">
+          <motion.div
+            initial={{ opacity: 0, y: 18 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="w-full max-w-lg rounded-3xl bg-white p-5 shadow-2xl sm:p-6"
+            style={{ fontFamily: CARDEA_FONT_PRIMARY }}
+          >
+            <div className="mb-4 flex items-start justify-between gap-3">
+              <div>
+                <p className="mb-1 text-xs font-bold uppercase tracking-[0.18em]" style={{ color: CARDEA_MUTED }}>
+                  mood check-in
+                </p>
+                <h2
+                  className="text-2xl text-[#062A4A]"
+                  style={{ fontFamily: "'Bebas Neue', sans-serif", letterSpacing: '0.07em' }}
+                >
+                  how are you?
+                </h2>
+              </div>
+              <button
+                type="button"
+                onClick={() => setShowMoodCheckIn(false)}
+                className="rounded-full px-3 py-1.5 text-sm font-semibold"
+                style={{ color: CARDEA_MUTED }}
+              >
+                close
+              </button>
+            </div>
+
+            <div className="flex flex-wrap gap-2">
+              {MOOD_VARIANTS.map((m, index) => (
+                <HomeMoodChipButton
+                  key={m.id}
+                  label={m.label}
+                  selected={moodId === m.id}
+                  onClick={() => {
+                    setMoodId(m.id)
+                    setCheckInSaved(false)
+                  }}
+                  activeClassNames={`${m.chipBg} ${m.chipText}`}
+                  index={index}
+                />
+              ))}
+            </div>
+
+            <div className="mt-4 rounded-2xl border bg-[#f5f9f9] p-4" style={{ borderColor: 'rgba(25,43,63,0.08)' }}>
+              <label className="mb-2 block text-sm font-semibold text-[#192b3f]" htmlFor="home-mood-underneath">
+                What&apos;s underneath it?
+              </label>
+              <input
+                id="home-mood-underneath"
+                type="text"
+                value={moodNote}
+                onChange={(e) => setMoodNote(e.target.value)}
+                placeholder="a worry, a need, a body feeling..."
+                className="w-full rounded-xl border bg-white px-4 py-3 text-sm text-[#192b3f] outline-none placeholder:text-[#acb7a8]"
+                style={{ borderColor: 'rgba(25,43,63,0.1)', fontFamily: CARDEA_FONT_PRIMARY }}
+              />
+              <div className="mt-3 flex items-center justify-between gap-3">
+                <p className="text-xs leading-relaxed" style={{ color: CARDEA_MUTED }}>
+                  one minute. no perfect answer needed.
+                </p>
+                <div className="flex items-center gap-2">
+                  {checkInSaved && (
+                    <span className="text-xs font-semibold" style={{ color: '#577568' }}>
+                      saved
+                    </span>
+                  )}
+                  <button
+                    type="button"
+                    disabled={!moodId}
+                    onClick={saveMoodCheckIn}
+                    className="rounded-full px-4 py-2 text-xs font-semibold text-white disabled:opacity-40"
+                    style={{ background: '#577568' }}
+                  >
+                    Save check-in
+                  </button>
+                </div>
+              </div>
+            </div>
+          </motion.div>
+        </div>
+      )}
     </div>
   )
 }

@@ -1,14 +1,27 @@
 import './index.css'
+import './global.css'
+import type { ReactNode } from 'react'
 import { createRoot } from 'react-dom/client'
 import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom'
-import './global.css'
 import { AuthLandingScreen } from './screens/authLandingScreen'
 import { HomeScreen } from './screens/homeScreen'
 import { SignInScreen } from './screens/signInScreen'
 import { SignUpScreen } from './screens/signUpScreen'
 import { WelcomeScreen } from './screens/welcomeScreen'
 import ResourcesLanding from './screens/ResourcesLanding'
+import ChatScreen from './screens/ChatScreen'
+import WellnessTools from './screens/WellnessTools'
+import { ResourcesRightNav } from './components/ResourcesRightNav'
 import { MoodProvider } from './mood'
+
+function ChatShell({ children }: { children: ReactNode }) {
+  return (
+    <div style={{ display: 'flex', height: '100vh', overflow: 'hidden' }}>
+      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>{children}</div>
+      <ResourcesRightNav />
+    </div>
+  )
+}
 
 function App() {
   return (
@@ -21,6 +34,15 @@ function App() {
           <Route path="/onboarding" element={<WelcomeScreen />} />
           <Route path="/home" element={<HomeScreen />} />
           <Route path="/resources" element={<ResourcesLanding />} />
+          <Route path="/wellness" element={<WellnessTools />} />
+          <Route path="/chat" element={
+            <div style={{ display: 'flex', height: '100vh', overflow: 'hidden' }}>
+              <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+                <ChatScreen />
+              </div>
+              <ResourcesRightNav />
+            </div>
+          } />
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </MoodProvider>
@@ -29,4 +51,3 @@ function App() {
 }
 
 createRoot(document.getElementById('root')!).render(<App />)
-

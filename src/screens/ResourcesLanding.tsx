@@ -8,11 +8,7 @@ import { useMood, moodShellBackgroundClasses, MoodHeartFill } from '../mood'
 import MedicalGlossary from './MedicalGlossary'
 import FindSupport from './FindSupport'
 import QuestionsForCardiologist from './QuestionsForCardiologist'
-
-const NAVY = '#192b3f'
-const LIGHT_BLUE = '#c6d9e5'
-const MUTED_BODY = '#acb7a8'
-const FONT = 'Inter, -apple-system, BlinkMacSystemFont, "SF Pro Text", sans-serif'
+import { CARDEA_FONT_PRIMARY, CARDEA_LIGHT_BLUE, CARDEA_MUTED, CARDEA_NAVY } from '../ui/cardeaTokens'
 
 type Screen = 'landing' | 'glossary' | 'support' | 'questions'
 
@@ -29,7 +25,7 @@ function ResourcesShell({ children }: { children: ReactNode }) {
   return (
     <div
       className={`min-h-screen flex transition-all duration-700 ${moodShellBackgroundClasses(moodId, theme.pageBg)}`}
-      style={{ fontFamily: FONT, color: NAVY }}
+      style={{ fontFamily: CARDEA_FONT_PRIMARY, color: CARDEA_NAVY }}
     >
       <div className="flex-1 min-w-0 flex flex-col">{children}</div>
       <ResourcesRightNav />
@@ -140,7 +136,7 @@ const ResourcesLanding: FC = () => {
         <section
           className="relative pt-8 pb-28 sm:pb-36 px-4 sm:px-8 text-center shrink-0 border-b-4 border-transparent transition-all duration-700"
           style={{
-            backgroundColor: NAVY,
+            backgroundColor: CARDEA_NAVY,
             borderImage: theme.borderGradient,
           }}
         >
@@ -155,9 +151,9 @@ const ResourcesLanding: FC = () => {
               whileTap={{ scale: 0.97 }}
               onClick={() => navigate('/home')}
               className="inline-flex items-center gap-2 rounded-full px-5 py-2.5 text-sm font-semibold text-white border border-white/25 bg-white/10 backdrop-blur-md hover:bg-white/18 transition-colors cursor-pointer"
-              style={{ fontFamily: FONT }}
+              style={{ fontFamily: CARDEA_FONT_PRIMARY }}
             >
-              <span style={{ color: LIGHT_BLUE }} aria-hidden>
+              <span style={{ color: CARDEA_LIGHT_BLUE }} aria-hidden>
                 ←
               </span>
               Back to Home
@@ -195,7 +191,7 @@ const ResourcesLanding: FC = () => {
             </h1>
             <p
               className="text-base sm:text-lg leading-relaxed text-white/88 max-w-xl mx-auto font-normal"
-              style={{ fontFamily: FONT }}
+              style={{ fontFamily: CARDEA_FONT_PRIMARY }}
             >
               Access support, information, and tools to help you on your heart health journey.
             </p>
@@ -222,7 +218,7 @@ const ResourcesLanding: FC = () => {
                   whileTap={{ scale: 0.99 }}
                   onClick={() => handleNavigation(item.view)}
                   className="text-left rounded-2xl p-7 sm:p-8 bg-white border border-[rgba(25,43,63,0.1)] shadow-[0_4px_24px_rgba(25,43,63,0.06)] hover:shadow-[0_12px_40px_rgba(25,43,63,0.1)] hover:border-[rgba(198,217,229,0.95)] transition-[box-shadow,border-color] duration-300 cursor-pointer group"
-                  style={{ fontFamily: FONT }}
+                  style={{ fontFamily: CARDEA_FONT_PRIMARY }}
                 >
                   <motion.div
                     whileHover={{ scale: 1.06 }}
@@ -234,17 +230,17 @@ const ResourcesLanding: FC = () => {
 
                   <h2
                     className="text-[0.95rem] sm:text-base font-bold uppercase tracking-[0.06em] mb-3 leading-snug"
-                    style={{ color: NAVY }}
+                    style={{ color: CARDEA_NAVY }}
                   >
                     {item.title}
                   </h2>
-                  <p className="text-[0.95rem] leading-[1.55] mb-5" style={{ color: MUTED_BODY }}>
+                  <p className="text-[0.95rem] leading-[1.55] mb-5" style={{ color: CARDEA_MUTED }}>
                     {item.description}
                   </p>
 
                   <motion.span
                     className="inline-block text-2xl font-light"
-                    style={{ color: LIGHT_BLUE }}
+                    style={{ color: CARDEA_LIGHT_BLUE }}
                     initial={{ x: 0 }}
                     whileHover={{ x: 8 }}
                     transition={{ type: 'spring', stiffness: 300, damping: 22 }}
