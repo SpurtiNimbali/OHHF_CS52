@@ -1,5 +1,9 @@
 """
-Upload merged glossary JSON to Supabase `glossary_terms` (upsert on `slug`).
+Upload glossary JSON to Supabase `glossary_terms` (upsert on `slug`).
+
+Uses `output/canonicalized_glossary_terms.json` when present (run
+canonicalize_glossary_terms.py after merge); otherwise falls back to
+`output/merged_glossary_terms.json`.
 
 Requires either:
   SUPABASE_URL + SUPABASE_SERVICE_ROLE_KEY
@@ -25,6 +29,8 @@ load_dotenv()
 
 
 BASE_DIR = Path(__file__).resolve().parent
+# Pipeline stage: run canonicalize_glossary_terms.py after merge to produce this file.
+CANONICALIZED_JSON = BASE_DIR / "output" / "canonicalized_glossary_terms.json"
 MERGED_JSON = BASE_DIR / "output" / "merged_glossary_terms.json"
 TABLE = "glossary_terms"
 
@@ -145,14 +151,18 @@ def upsert_batch(
 def main() -> None:
     supabase_url, service_key, cred_source = resolve_credentials()
 
-    if not MERGED_JSON.is_file():
-        print(f"File not found: {MERGED_JSON}", file=sys.stderr)
+    source_path = CANONICALIZED_JSON if CANONICALIZED_JSON.is_file() else MERGED_JSON
+    if not source_path.is_file():
+        print(
+            f"File not found: {CANONICALIZED_JSON} (or fallback {MERGED_JSON})",
+            file=sys.stderr,
+        )
         sys.exit(1)
 
-    records = json.loads(MERGED_JSON.read_text(encoding="utf-8"))
+    records = json.loads(source_path.read_text(encoding="utf-8"))
 
     if not isinstance(records, list):
-        print("merged_glossary_terms.json must be a JSON array.", file=sys.stderr)
+        print("Glossary JSON must be a JSON array.", file=sys.stderr)
         sys.exit(1)
 
     loaded = len(records)
@@ -173,7 +183,7 @@ def main() -> None:
         prepared.append(prepare_row(rec))
 
     print(f"Credentials: {cred_source}")
-    print(f"Source file: {MERGED_JSON}")
+    print(f"Source file: {source_path}")
     print(f"Records loaded from JSON: {loaded}")
     print(f"Records passing validation: {len(prepared)}")
     print(f"Records skipped (validation): {loaded - len(prepared)}")
