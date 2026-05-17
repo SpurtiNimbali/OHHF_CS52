@@ -1,0 +1,77 @@
+Glossary canonicalization report
+============================================================
+Input: C:\Users\penae\Desktop\Academics\Spring 2026\CS 52\OHHF Product\OHHF_CS52\scripts\glossary_terms_pipeline\output\merged_glossary_terms.json
+Output: C:\Users\penae\Desktop\Academics\Spring 2026\CS 52\OHHF Product\OHHF_CS52\scripts\glossary_terms_pipeline\output\canonicalized_glossary_terms.json
+
+Input array length: 179
+Object records processed: 179
+
+Output record count: 164
+Records changed (term/slug/aliases/categories vs input): 142
+Canonical map entries applied (rows touched by map): 41
+Paren/or normalization passes (heuristic counter): 5
+Category reassigned (per pre-merge row): 132
+Duplicate slug groups merged: 15
+Input rows absorbed in merges: 15
+Output rows with only fallback category: 32
+Output rows with 3+ categories: 0
+
+Canonicalization mappings applied (from map keys used):
+  - as -> Aortic Stenosis
+  - asd -> Atrial Septal Defect
+  - avc or av canal defect -> Atrioventricular Canal Defect
+  - be -> Bacterial Endocarditis
+  - bt shunt -> Blalock-Taussig Shunt
+  - cavc -> Complete Atrioventricular Canal
+  - chd -> Congenital Heart Disease
+  - chf -> Congestive Heart Failure
+  - coa -> Coarctation of the Aorta
+  - cxr -> Chest X-ray
+  - d-tga -> Dextro-Transposition of the Great Arteries
+  - ecg or ekg -> Electrocardiogram
+  - echo -> Echocardiogram
+  - ecmo -> Extracorporeal Membrane Oxygenation
+  - fetal echo -> Fetal Echocardiogram
+  - ftt -> Failure to Thrive
+  - glenn or bidirectional glenn shunt -> Bidirectional Glenn Shunt
+  - hlhs -> Hypoplastic Left Heart Syndrome
+  - hrhs -> Hypoplastic Right Heart Syndrome
+  - htn -> Hypertension
+  - iaa -> Interrupted Aortic Arch
+  - l-tga -> Levo-Transposition of the Great Arteries
+  - la -> Left Atrium
+  - mi -> Myocardial Infarction
+  - mpa -> Main Pulmonary Artery
+  - ohs -> Open-Heart Surgery
+  - pa -> Pulmonary Artery
+  - papvr -> Partial Anomalous Pulmonary Venous Return
+  - pda -> Patent Ductus Arteriosus
+  - pfo -> Patent Foramen Ovale
+  - pge1 -> Prostaglandin E1
+  - ps -> Pulmonary Stenosis
+  - pv -> Pulmonary Valve
+  - ra -> Right Atrium
+  - sbe -> Subacute Bacterial Endocarditis
+  - sv -> Single Ventricle
+  - svc -> Superior Vena Cava
+  - tapvr -> Total Anomalous Pulmonary Venous Return
+  - tga -> Transposition of the Great Arteries
+  - tof -> Tetralogy of Fallot
+  - vsd -> Ventricular Septal Defect
+
+Duplicate slugs merged:
+  - aortic-stenosis
+  - atrial-septal-defect
+  - bacterial-endocarditis
+  - coarctation-of-the-aorta
+  - congestive-heart-failure
+  - echocardiogram
+  - electrocardiogram
+  - fetal-echocardiogram
+  - hypertension
+  - open-heart-surgery
+  - patent-ductus-arteriosus
+  - patent-foramen-ovale
+  - pulmonary-artery
+  - tetralogy-of-fallot
+  - ventricular-septal-defect

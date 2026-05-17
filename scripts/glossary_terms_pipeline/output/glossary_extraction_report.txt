@@ -1,0 +1,21 @@
+Files scanned: 2
+
+File: childrens_heart_foundation_org__its_my_heart.md
+Glossary sections found: 1
+  Section 1 (Glossary of Terms): 115 candidate entries
+
+File: mended_hearts_org__mended_little_heartguide__local_pdfs.md
+Glossary sections found: 1
+  Section 1 (Glossary of Common CHD Terms and Abbreviations): 79 candidate entries
+
+Scraped records: 194
+Manual records: 8
+Total raw records: 202
+Merged final records: 179
+Manual files loaded: 1
+  - mended_hearts_org__mended_little_heartguide__local_pdfs__manual_glossary_terms.json
+Manual overrides of scraped duplicates: 4
+  - normalized='electrocardiogram' scraped_term='Electrocardiogram' -> manual_term='Electrocardiogram'
+  - normalized='catheterization' scraped_term='Catheterization' -> manual_term='Catheterization'
+  - normalized='non stress test' scraped_term='Non-Stress Test' -> manual_term='Non-Stress Test'
+  - normalized='amniocentesis' scraped_term='Amniocentesis' -> manual_term='Amniocentesis'
