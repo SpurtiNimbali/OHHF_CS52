@@ -8,15 +8,17 @@ import { useMood, moodShellBackgroundClasses, MoodHeartFill } from '../mood'
 import MedicalGlossary from './MedicalGlossary'
 import FindSupport from './FindSupport'
 import QuestionsForCardiologist from './QuestionsForCardiologist'
+import StandardCareTeamQuestions from './StandardCareTeamQuestions'
 import { CARDEA_FONT_PRIMARY, CARDEA_LIGHT_BLUE, CARDEA_MUTED, CARDEA_NAVY } from '../ui/cardeaTokens'
 
-type Screen = 'landing' | 'glossary' | 'support' | 'questions'
+type Screen = 'landing' | 'glossary' | 'support' | 'questions' | 'standard-questions'
 
 function screenFromParams(searchParams: URLSearchParams): Screen {
   const v = searchParams.get('view')?.trim().toLowerCase()
   if (v === 'glossary') return 'glossary'
   if (v === 'support') return 'support'
   if (v === 'questions') return 'questions'
+  if (v === 'standard-questions') return 'standard-questions'
   return 'landing'
 }
 
@@ -36,9 +38,11 @@ function ResourcesShell({ children }: { children: ReactNode }) {
 function SubpageChrome({
   children,
   onBack,
+  backText = 'Back to Resources',
 }: {
   children: ReactNode
   onBack: () => void
+  backText?: string
 }) {
   const { theme } = useMood()
   return (
@@ -47,7 +51,7 @@ function SubpageChrome({
         className="bg-white px-6 sm:px-8 py-5 border-b-4 border-transparent"
         style={{ borderImage: theme.borderGradient }}
       >
-        <BackButton onClick={onBack} text="Back to Resources" variant="onLight" />
+        <BackButton onClick={onBack} text={backText} variant="onLight" />
       </header>
       <div
         className="flex-1 px-6 sm:px-8 py-8 sm:py-10 pb-14 w-full max-w-[960px] mx-auto box-border border border-white/50 bg-white/55 shadow-[0_4px_30px_rgba(25,43,63,0.04)] backdrop-blur-sm transition-all duration-700"
@@ -76,7 +80,7 @@ const landingCards: {
   },
   {
     Icon: MessageCircle,
-    title: 'Questions for Your Cardiologist',
+    title: 'Questions for Your Health Care Team',
     description: 'Important questions and conversation starters for your appointments',
     view: 'questions',
     iconWrapClass: 'bg-[#192b3f]',
@@ -125,6 +129,14 @@ const ResourcesLanding: FC = () => {
     return (
       <SubpageChrome onBack={goLanding}>
         <QuestionsForCardiologist />
+      </SubpageChrome>
+    )
+  }
+
+  if (currentScreen === 'standard-questions') {
+    return (
+      <SubpageChrome onBack={() => setSearchParams({ view: 'questions' })} backText="Back to Questions">
+        <StandardCareTeamQuestions />
       </SubpageChrome>
     )
   }

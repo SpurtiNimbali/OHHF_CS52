@@ -1,7 +1,15 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { useSearchParams } from 'react-router-dom'
 import { motion, AnimatePresence } from 'motion/react'
 import { Bookmark, ChevronDown, Plus, Trash2 } from 'lucide-react'
-import { supabase, ensureAuthUserId, CardiologistQuestion, SavedQuestion } from '../lib/supabase'
+import { CareTeamIntakeForm } from '../components/careTeam/CareTeamIntakeForm'
+import { fetchCareTeamCorpusList } from '../lib/careTeamCorpusApi'
+import {
+  fetchLatestGeneratedQuestionsFromApi,
+  generateCareTeamQuestionsFromApi,
+} from '../lib/careTeamQuestionApi'
+import { EMPTY_CARE_TEAM_INTAKE, isCareTeamIntakeComplete } from '../lib/careTeamQuestionIntake'
+import { supabase, ensureAuthUserId, SavedQuestion } from '../lib/supabase'
 
 const NAVY = '#192b3f'
 const LIGHT_BLUE = '#c6d9e5'
@@ -11,39 +19,65 @@ const MUTED_GREEN = '#acb7a8'
 
 const META_STORAGE_PREFIX = 'cardea-saved-q-meta'
 
-/** Visit context chips for generation (templates + filtering). Custom question tags use bank categories instead. */
-const VISIT_CONTEXT_FILTERS = [
-  'Surgery or procedure',
-  'New diagnosis',
-  'Routine follow-up',
-  'Medications',
-  'Test results',
-  'Lifestyle & wellbeing',
-  'Symptoms & concerns',
-  'Family history & genetics',
-  'Prevention & heart health',
-  'Care coordination & referrals',
-] as const
-
-type VisitFilter = (typeof VISIT_CONTEXT_FILTERS)[number]
-
-/** Matches `welcomeScreen` age option labels; school age and younger vs older. */
-const SCHOOL_AGE_OR_BELOW_LABELS = [
-  'Prenatal',
-  'Infant (1 and under)',
-  'Preschooler (2-5)',
-  'School Age (6-12)',
-] as const
-
-type UserProfileFields = {
-  diagnosis_age_category: string | null
-  current_age_category: string | null
-  condition: string | null
+type SavedQuestionMeta = {
+  source: 'generated' | 'custom' | 'bank'
+  contextTags: string[]
+  notes: string
+  /** Links a saved row back to `care_team_generated_questions.id` for + Save button state. */
+  generatedSourceId?: string
 }
 
-function isSchoolAgeOrBelow(currentAgeCategory: string | null | undefined): boolean {
-  if (!currentAgeCategory?.trim()) return false
-  return (SCHOOL_AGE_OR_BELOW_LABELS as readonly string[]).includes(currentAgeCategory.trim())
+function metaStorageKey(userId: string | null): string {
+  return userId ? `${META_STORAGE_PREFIX}:${userId}` : `${META_STORAGE_PREFIX}:anon`
+}
+
+function normalizeStoredMeta(raw: unknown): Record<string, SavedQuestionMeta> {
+  if (!raw || typeof raw !== 'object') return {}
+  const out: Record<string, SavedQuestionMeta> = {}
+  for (const [id, entry] of Object.entries(raw as Record<string, unknown>)) {
+    if (!entry || typeof entry !== 'object') continue
+    const e = entry as Record<string, unknown>
+    const source = e.source
+    if (source !== 'generated' && source !== 'custom' && source !== 'bank') continue
+    const notes = typeof e.notes === 'string' ? e.notes : ''
+    const contextTags = Array.isArray(e.contextTags)
+      ? e.contextTags.filter((t): t is string => typeof t === 'string')
+      : []
+    const generatedSourceId =
+      typeof e.generatedSourceId === 'string' && e.generatedSourceId.trim()
+        ? e.generatedSourceId.trim()
+        : undefined
+    out[id] = {
+      source: source as SavedQuestionMeta['source'],
+      contextTags,
+      notes,
+      ...(generatedSourceId ? { generatedSourceId } : {}),
+    }
+  }
+  return out
+}
+
+function buildSavedGeneratedIds(
+  generated: GeneratedItem[],
+  saved: SavedQuestion[],
+  meta: Record<string, SavedQuestionMeta>,
+): Set<string> {
+  const ids = new Set<string>()
+  for (const g of generated) {
+    for (const s of saved) {
+      const m = meta[s.id]
+      if (!m) continue
+      if (m.generatedSourceId === g.id) {
+        ids.add(g.id)
+        break
+      }
+      if (m.source === 'generated' && s.custom_text?.trim() === g.text.trim()) {
+        ids.add(g.id)
+        break
+      }
+    }
+  }
+  return ids
 }
 
 function loadAllMeta(userId: string | null): Record<string, SavedQuestionMeta> {
@@ -65,211 +99,56 @@ function persistAllMeta(userId: string | null, meta: Record<string, SavedQuestio
 }
 
 type GeneratedItem = {
-  tempId: string
+  id: string
+  position: number
   text: string
-  filter: VisitFilter | 'General'
+  category: string
 }
 
-const FILTER_TEMPLATES: Partial<Record<VisitFilter, string[]>> = {
-  'Surgery or procedure': [
-    'What do I need to stop or change before a procedure (medications, food, supplements)?',
-    'What activity limits apply after my procedure, and for how long?',
-    'What symptoms should prompt me to call you or seek emergency care?',
-    'Who will coordinate updates with my other doctors?',
-  ],
-  'New diagnosis': [
-    'Can you explain my diagnosis in plain language and what it means day to day?',
-    'What caused this condition, and could it affect my family?',
-    'What are the treatment options and the goals of each?',
-    'What should I read or avoid reading online about this?',
-  ],
-  'Routine follow-up': [
-    'Are my symptoms stable, or should we change the plan?',
-    'When is my next follow-up, and what will you check?',
-    'How do I reach your team between visits if something changes?',
-    'What targets should I aim for (blood pressure, weight, exercise)?',
-  ],
-  Medications: [
-    'What is each medication for, and what are the most important side effects?',
-    'Are any of my medications risky when combined?',
-    'Is there a simpler or less expensive option for any of these?',
-    'What should I do if I miss a dose?',
-  ],
-  'Test results': [
-    'Can you walk through my recent test results and what they mean for my heart?',
-    'Do I need repeat testing, and on what schedule?',
-    'Were there any findings that need a new treatment or referral?',
-    'How will we track whether treatment is working?',
-  ],
-  'Lifestyle & wellbeing': [
-    'How can stress or anxiety affect my heart, and what supports do you recommend?',
-    'What diet changes matter most for my condition?',
-    'What type and amount of exercise is safe for me?',
-    'Is a cardiac rehab or counseling referral appropriate?',
-  ],
-  'Symptoms & concerns': [
-    'Could my symptoms be heart-related, and what should I watch for?',
-    'When should I call your office vs. go to the ER for these symptoms?',
-    'Are there triggers I should avoid or track day to day?',
-    'What tests would help clarify what I am feeling?',
-  ],
-  'Family history & genetics': [
-    'Given my family history, what is my risk and how often should I be checked?',
-    'Would genetic testing or screening for relatives be useful?',
-    'What symptoms should family members report to a doctor?',
-    'Does my family history change my treatment or monitoring plan?',
-  ],
-  'Prevention & heart health': [
-    'What can I do to lower my risk of a heart event in the next few years?',
-    'How do blood pressure, cholesterol, and weight goals apply to me?',
-    'Are vaccines or other preventive steps especially important for my heart?',
-    'What follow-up schedule makes sense if I stay stable?',
-  ],
-  'Care coordination & referrals': [
-    'Do I need referrals to other specialists, and who will coordinate my care?',
-    'How do I get records or test results to you from other hospitals?',
-    'What should my primary care doctor know or monitor between visits?',
-    'Who do I contact after-hours if something changes?',
-  ],
-}
-
-function tokenize(s: string): Set<string> {
-  return new Set(
-    s
-      .toLowerCase()
-      .replace(/[^a-z0-9\s]/g, ' ')
-      .split(/\s+/)
-      .filter((w) => w.length > 2),
-  )
-}
-
-function scoreBankQuestion(
-  q: CardiologistQuestion,
-  ctxTokens: Set<string>,
-  filters: Set<VisitFilter>,
-): number {
-  let score = 0
-  const text = `${q.question_text ?? ''} ${q.category ?? ''}`.toLowerCase()
-  const cat = (q.category ?? '').toLowerCase()
-
-  for (const f of filters) {
-    const fLow = f.toLowerCase()
-    if (text.includes(fLow) || cat.includes(fLow.split(' ')[0])) score += 3
-    const words = fLow.split(/[^a-z]+/)
-    for (const w of words) {
-      if (w.length > 2 && text.includes(w)) score += 1
-    }
-  }
-
-  for (const t of ctxTokens) {
-    if (text.includes(t)) score += 2
-  }
-
-  return score
-}
-
-function pickFilterForQuestion(
-  q: CardiologistQuestion,
-  filters: Set<VisitFilter>,
-): VisitFilter | 'General' {
-  if (filters.size === 1) return [...filters][0]
-  const text = `${q.question_text} ${q.category}`.toLowerCase()
-  for (const f of filters) {
-    if (text.includes(f.toLowerCase().slice(0, 8))) return f
-  }
-  const first = [...filters][0]
-  return first ?? 'General'
-}
-
-function generateSuggestions(
-  visitContext: string,
-  filters: Set<VisitFilter>,
-  bank: CardiologistQuestion[],
+function mapApiQuestionsToGenerated(
+  questions: { id: string; question: string; category: string; position?: number }[],
 ): GeneratedItem[] {
-  const ctxTokens = tokenize(visitContext)
-  const out: GeneratedItem[] = []
-  const seen = new Set<string>()
-
-  const add = (text: string, filter: VisitFilter | 'General') => {
-    const k = text.trim().toLowerCase()
-    if (!k || seen.has(k)) return
-    seen.add(k)
-    out.push({
-      tempId: `g-${seen.size}-${Math.random().toString(36).slice(2, 9)}`,
-      text: text.trim(),
-      filter,
-    })
-  }
-
-  for (const f of filters) {
-    const temps = FILTER_TEMPLATES[f]
-    if (temps) {
-      for (const t of temps) {
-        add(t, f)
-        if (out.length >= 14) break
-      }
-    }
-    if (out.length >= 14) break
-  }
-
-  if (filters.size === 0 && visitContext.trim().length < 8) {
-    add('What is the most important thing I should understand about my heart health at this visit?', 'General')
-    add('What changes to my medications or lifestyle do you recommend?', 'General')
-  }
-
-  const scored = bank
-    .map((q) => ({ q, s: scoreBankQuestion(q, ctxTokens, filters) }))
-    .filter(({ s }) => s > 0 || filters.size === 0)
-    .sort((a, b) => b.s - a.s)
-
-  for (const { q } of scored) {
-    if (out.length >= 12) break
-    const filt = filters.size ? pickFilterForQuestion(q, filters) : 'General'
-    add(q.question_text, filt)
-  }
-
-  return out.slice(0, 10)
+  return questions.map((q, i) => ({
+    id: q.id?.trim() || `local-${i}`,
+    position: typeof q.position === 'number' && q.position > 0 ? q.position : i + 1,
+    text: q.question,
+    category: q.category?.trim() || 'General',
+  }))
 }
 
-function distinctBankCategories(bank: CardiologistQuestion[]): string[] {
-  const seen = new Set<string>()
-  for (const q of bank) {
-    const c = q.category?.trim()
-    if (c) seen.add(c)
-  }
-  return [...seen].sort((a, b) => a.localeCompare(b))
-}
-
-function getSavedLabel(row: SavedQuestion, bank: CardiologistQuestion[]): string {
+function getSavedLabel(row: SavedQuestion): string {
   if (row.custom_text?.trim()) return row.custom_text.trim()
-  const m = bank.find((q) => String(q.id) === String(row.question_id))
-  return m?.question_text ?? 'Saved question'
+  return 'Saved question'
 }
 
 export default function QuestionsForCardiologist() {
-  const [questions, setQuestions] = useState<CardiologistQuestion[]>([])
+  const [, setSearchParams] = useSearchParams()
   const [saved, setSaved] = useState<SavedQuestion[]>([])
-  const [savedIds, setSavedIds] = useState<Set<string>>(new Set())
   const [userId, setUserId] = useState<string | null>(null)
   const [authBootstrapped, setAuthBootstrapped] = useState(false)
-  const [query, setQuery] = useState('')
-  const [selectedTag, setSelectedTag] = useState<FilterCategory | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
-  const [customText, setCustomText] = useState('')
+
+  const [intake, setIntake] = useState(EMPTY_CARE_TEAM_INTAKE)
+  const [generated, setGenerated] = useState<GeneratedItem[]>([])
+  const [generating, setGenerating] = useState(false)
+  const [savingGeneratedId, setSavingGeneratedId] = useState<string | null>(null)
+  const [savedGeneratedIds, setSavedGeneratedIds] = useState<Set<string>>(() => new Set())
+
+  const [customLine, setCustomLine] = useState('')
   const [adding, setAdding] = useState(false)
   const [showCustomForm, setShowCustomForm] = useState(false)
   const [customQuestionTags, setCustomQuestionTags] = useState<Set<string>>(new Set())
-  const bankCategoryTags = useMemo(() => distinctBankCategories(questions), [questions])
+  const [corpusCategories, setCorpusCategories] = useState<string[]>([])
 
   useEffect(() => {
-    const valid = new Set(bankCategoryTags)
+    const valid = new Set(corpusCategories)
     setCustomQuestionTags((prev) => {
       const filtered = [...prev].filter((t) => valid.has(t))
       if (filtered.length === prev.size && filtered.every((t) => prev.has(t))) return prev
       return new Set(filtered)
     })
-  }, [bankCategoryTags])
+  }, [corpusCategories])
   const customInputRef = useRef<HTMLInputElement>(null)
   const [expandedSavedId, setExpandedSavedId] = useState<string | null>(null)
   const [savedMeta, setSavedMeta] = useState<Record<string, SavedQuestionMeta>>({})
@@ -277,10 +156,13 @@ export default function QuestionsForCardiologist() {
   useEffect(() => {
     let cancelled = false
     ;(async () => {
-      const uid = await ensureAuthUserId()
-      if (!cancelled) {
-        setUserId(uid)
-        setAuthBootstrapped(true)
+      try {
+        const uid = await ensureAuthUserId()
+        if (!cancelled) setUserId(uid)
+      } catch {
+        if (!cancelled) setUserId(null)
+      } finally {
+        if (!cancelled) setAuthBootstrapped(true)
       }
     })()
     return () => {
@@ -294,79 +176,79 @@ export default function QuestionsForCardiologist() {
   }, [authBootstrapped, userId])
 
   useEffect(() => {
+    setSavedGeneratedIds(buildSavedGeneratedIds(generated, saved, savedMeta))
+  }, [generated, saved, savedMeta])
+
+  useEffect(() => {
     if (!authBootstrapped) return
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((_event, session) => {
       setUserId(session?.user?.id ?? null)
     })
     return () => subscription.unsubscribe()
   }, [authBootstrapped])
 
+  useEffect(() => {
+    if (showCustomForm) {
+      window.requestAnimationFrame(() => customInputRef.current?.focus())
+    }
+  }, [showCustomForm])
+
+  const patchMeta = useCallback(
+    (savedId: string, patch: Partial<SavedQuestionMeta>) => {
+      setSavedMeta((prev) => {
+        const base = prev[savedId] ?? { source: 'custom', contextTags: [], notes: '' }
+        const next = { ...prev, [savedId]: { ...base, ...patch } }
+        persistAllMeta(userId, next)
+        return next
+      })
+    },
+    [userId],
+  )
+
   const load = useCallback(async (uid: string | null) => {
     setLoading(true)
     setError(null)
+    try {
+      const savedQuery = uid
+        ? supabase.from('saved_questions').select('*').eq('user_id', uid)
+        : Promise.resolve({ data: [] as SavedQuestion[], error: null })
 
-    const questionsQuery = supabase
-      .from('cardiologist_questions')
-      .select('id, category, question_text')
-      .order('category', { ascending: true })
+      const [corpusResult, { data: savedRows, error: sError }, generatedBatch] = await Promise.all([
+        fetchCareTeamCorpusList().catch(() => ({ questions: [], categories: [] as string[] })),
+        savedQuery,
+        uid
+          ? fetchLatestGeneratedQuestionsFromApi(uid).catch(() => ({
+              generationId: null,
+              expiresAt: null,
+              questions: [],
+            }))
+          : Promise.resolve({ generationId: null, expiresAt: null, questions: [] }),
+      ])
 
-    const savedQuery = uid
-      ? supabase.from('saved_questions').select('*').eq('user_id', uid)
-      : Promise.resolve({ data: [] as SavedQuestion[], error: null })
+      setCorpusCategories(corpusResult.categories)
+      setGenerated(mapApiQuestionsToGenerated(generatedBatch.questions))
 
-    const profileQuery = uid
-      ? supabase
-          .from('users')
-          .select('diagnosis_age_category, current_age_category, condition')
-          .eq('id', uid)
-          .maybeSingle()
-      : Promise.resolve({ data: null as UserProfileFields | null, error: null })
+      if (sError) {
+        setError(sError.message)
+      }
 
-    const [
-      { data: rows, error: qError },
-      { data: savedRows, error: sError },
-      { data: profileRow, error: profileError },
-    ] = await Promise.all([questionsQuery, savedQuery, profileQuery])
+      if (savedRows) {
+        setSaved(savedRows as SavedQuestion[])
+      } else if (!uid) {
+        setSaved([])
+      }
 
-    if (!profileError && profileRow) {
-      setUserProfile(profileRow as UserProfileFields)
-    } else {
-      setUserProfile(null)
-    }
-
-      if (!uid && !qError) {
+      if (!uid) {
         setError((prev) => prev ?? 'Sign in to save questions for your account.')
       }
     } catch (e) {
-      setQuestions([])
-      setError(qError.message)
-    } else {
-      setQuestions((rows as CardiologistQuestion[]) ?? [])
-    }
-
-    if (!qError && sError) {
-      setError((prev) => prev ?? sError.message)
-    }
-
-    if (savedRows) {
-      setSaved(savedRows as SavedQuestion[])
-      setSavedIds(
-        new Set(
-          (savedRows as SavedQuestion[])
-            .filter((r) => r.question_id != null)
-            .map((r) => String(r.question_id)),
-        ),
-      )
-    } else if (!uid) {
       setSaved([])
-      setSavedIds(new Set())
+      setError(e instanceof Error ? e.message : 'Could not load saved questions.')
+    } finally {
+      setLoading(false)
     }
-
-    if (!uid && !qError) {
-      setError((prev) => prev ?? 'Sign in to save questions for your account.')
-    }
-
-    setLoading(false)
   }, [])
 
   useEffect(() => {
@@ -374,76 +256,118 @@ export default function QuestionsForCardiologist() {
     load(userId)
   }, [authBootstrapped, userId, load])
 
-  const toggleFilter = (f: VisitFilter) => {
-    setSelectedFilters((prev) => {
+  const toggleCustomQuestionTag = (tag: string) => {
+    setCustomQuestionTags((prev) => {
       const next = new Set(prev)
-      if (next.has(f)) next.delete(f)
-      else next.add(f)
+      if (next.has(tag)) next.delete(tag)
+      else next.add(tag)
       return next
     })
-  }, [questions, query, selectedTag])
+  }
 
-  const personalizedQuestions = useMemo(() => {
-    return filteredQuestions.filter((row) => {
-      const bucket = normalizeCategory(row.category)
-      return passesPersonalizationFilters(
-        personalizeByAge,
-        personalizeByCondition,
-        userProfile,
-        bucket,
-      )
-    })
-  }, [filteredQuestions, personalizeByAge, personalizeByCondition, userProfile])
-
-  async function toggleQuestion(question: CardiologistQuestion) {
-    if (!userId) {
-      setError('Sign in to save questions for your account.')
+  const runGenerate = async () => {
+    if (!isCareTeamIntakeComplete(intake)) {
+      setError('Please answer all four questions above before generating.')
       return
     }
-    const idStr = String(question.id)
-    if (savedIds.has(idStr)) {
-      const { error: delErr } = await supabase
-        .from('saved_questions')
-        .delete()
-        .eq('user_id', userId)
-        .eq('question_id', question.id)
-      if (delErr) return
-
-      setSavedIds((prev) => {
-        const next = new Set(prev)
-        next.delete(idStr)
-        return next
-      })
-      setSaved((prev) => prev.filter((r) => String(r.question_id) !== idStr))
-    } else {
-      const row = { user_id: userId, question_id: question.id, custom_text: null }
-      const { data, error: upErr } = await supabase
-        .from('saved_questions')
-        .upsert(row)
-        .select()
-        .single()
-      if (upErr) return
-
-      setSavedIds((prev) => new Set([...prev, idStr]))
-      if (data) setSaved((prev) => [...prev, data as SavedQuestion])
+    if (!userId) {
+      setError('Sign in to generate and store questions for your account.')
+      return
+    }
+    setError(null)
+    setGenerating(true)
+    try {
+      const batch = await generateCareTeamQuestionsFromApi(intake, userId)
+      setGenerated(mapApiQuestionsToGenerated(batch.questions))
+      if (batch.questions.length > 0) {
+        window.setTimeout(() => {
+          document.getElementById('suggested-questions')?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+        }, 50)
+      }
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Could not generate questions. Try again.')
+    } finally {
+      setGenerating(false)
     }
   }
 
-  async function addCustomQuestion() {
+  async function saveGeneratedItem(item: GeneratedItem) {
     if (!userId) {
       setError('Sign in to save questions for your account.')
       return
     }
-    if (!customText.trim()) return
-    setAdding(true)
-    const row = { user_id: userId, question_id: null, custom_text: customText.trim() }
+    const text = item.text.trim()
+    if (!text || savingGeneratedId) return
+
+    setSavingGeneratedId(item.id)
+    setError(null)
+
+    const row = { user_id: userId, question_id: null, custom_text: text }
     const { data, error: insErr } = await supabase.from('saved_questions').insert(row).select().single()
-    if (!insErr && data) setSaved((prev) => [...prev, data as SavedQuestion])
-    setCustomText('')
+
+    setSavingGeneratedId(null)
+
+    if (insErr) {
+      setError(insErr.message)
+      return
+    }
+    if (data) {
+      const s = data as SavedQuestion
+      setSaved((prev) => [...prev, s])
+      setSavedMeta((prev) => {
+        const next = {
+          ...prev,
+          [s.id]: {
+            source: 'generated' as const,
+            contextTags: [item.category],
+            notes: '',
+            generatedSourceId: item.id,
+          },
+        }
+        persistAllMeta(userId, next)
+        return next
+      })
+    }
+  }
+
+  async function saveCustomQuestion() {
+    if (!userId) {
+      setError('Sign in to save questions for your account.')
+      return
+    }
+    if (!customLine.trim()) return
+    setAdding(true)
+    const row = { user_id: userId, question_id: null, custom_text: customLine.trim() }
+    const { data, error: insErr } = await supabase.from('saved_questions').insert(row).select().single()
+    if (insErr) {
+      setError(insErr.message)
+      setAdding(false)
+      return
+    }
+    if (data) {
+      const s = data as SavedQuestion
+      setSaved((prev) => [...prev, s])
+      setSavedMeta((prev) => {
+        const next = {
+          ...prev,
+          [s.id]: {
+            source: 'custom' as const,
+            contextTags: [...customQuestionTags],
+            notes: '',
+          },
+        }
+        persistAllMeta(userId, next)
+        return next
+      })
+    }
+    setCustomLine('')
+    setCustomQuestionTags(new Set())
+    setShowCustomForm(false)
     setAdding(false)
   }
 
   async function removeQuestion(row: SavedQuestion) {
+    const linkedGeneratedId = savedMeta[row.id]?.generatedSourceId
     const { error: delErr } = await supabase.from('saved_questions').delete().eq('id', row.id)
     if (delErr) return
 
@@ -454,6 +378,23 @@ export default function QuestionsForCardiologist() {
       persistAllMeta(userId, next)
       return next
     })
+    if (linkedGeneratedId) {
+      setSavedGeneratedIds((prev) => {
+        const next = new Set(prev)
+        next.delete(linkedGeneratedId)
+        return next
+      })
+    } else if (row.custom_text?.trim()) {
+      const text = row.custom_text.trim()
+      const match = generated.find((g) => g.text.trim() === text)
+      if (match) {
+        setSavedGeneratedIds((prev) => {
+          const next = new Set(prev)
+          next.delete(match.id)
+          return next
+        })
+      }
+    }
     if (expandedSavedId === row.id) setExpandedSavedId(null)
   }
 
@@ -477,11 +418,9 @@ export default function QuestionsForCardiologist() {
         }
       }
       if (tags.length) return { label: tags[0] }
-      const cat = questions.find((q) => String(q.id) === String(item.question_id))?.category?.trim()
-      if (cat) return { label: cat }
       return { label: 'Saved' }
     },
-    [savedMeta, questions],
+    [savedMeta],
   )
 
   if (loading) {
@@ -501,107 +440,61 @@ export default function QuestionsForCardiologist() {
     <div className="-mx-2 w-full sm:mx-0" style={{ fontFamily: 'Inter, system-ui, sans-serif', color: NAVY }}>
       {/* Header */}
       <div
-        style={{
-          background: 'linear-gradient(135deg, #f43f5e 0%, #a855f7 50%, #6366f1 100%)',
-          padding: '40px 24px',
-          textAlign: 'center',
-          position: 'relative',
-          overflow: 'hidden',
-        }}
+        className="mb-0 rounded-t-xl border-b bg-white px-3 py-6 sm:rounded-none sm:px-4 sm:py-8"
+        style={{ borderColor: 'rgba(25, 43, 63, 0.1)' }}
       >
-        <div
-          style={{
-            position: 'absolute',
-            top: '-50px',
-            left: '-50px',
-            width: '200px',
-            height: '200px',
-            background: 'rgba(255,255,255,0.1)',
-            borderRadius: '50%',
-          }}
-        />
-        <div
-          style={{
-            position: 'absolute',
-            bottom: '-30px',
-            right: '10%',
-            width: '150px',
-            height: '150px',
-            background: 'rgba(255,255,255,0.1)',
-            borderRadius: '50%',
-          }}
-        />
-        <div
-          style={{
-            position: 'absolute',
-            top: '20px',
-            right: '20%',
-            width: '80px',
-            height: '80px',
-            background: 'rgba(255,255,255,0.08)',
-            borderRadius: '50%',
-          }}
-        />
-
         <h1
-          style={{
-            fontSize: '2.5rem',
-            fontWeight: 800,
-            color: '#ffffff',
-            margin: 0,
-            textShadow: '0 2px 10px rgba(0,0,0,0.2)',
-            position: 'relative',
-          }}
+          className="mb-2 text-3xl tracking-wide text-[#192b3f] sm:text-4xl md:text-5xl"
+          style={{ fontFamily: "'Bebas Neue', sans-serif", letterSpacing: '0.08em' }}
         >
-          💬 Questions for Your Cardiologist
+          QUESTIONS FOR YOUR HEALTH CARE TEAM
         </h1>
         <p className="max-w-2xl text-sm leading-relaxed sm:text-base" style={{ color: MUTED_GREEN }}>
-          Describe your upcoming visit and we&apos;ll suggest questions to ask — or add your own.
+          Tell us about your upcoming visit and we&apos;ll suggest questions for your health care team.
         </p>
       </div>
 
+      {/* Visit context */}
       <div
+        className="border-b px-3 py-6 sm:px-4"
         style={{
-          maxWidth: '800px',
-          margin: '-30px auto 30px',
-          padding: '0 20px',
-          position: 'relative',
-          zIndex: 10,
+          borderColor: 'rgba(25, 43, 63, 0.08)',
+          background: 'linear-gradient(90deg, rgba(198,217,229,0.35) 0%, rgba(245,249,249,0.95) 100%)',
         }}
       >
-        <div className="mx-auto max-w-3xl space-y-4">
-          <label className="sr-only" htmlFor="visit-context">
-            Visit notes
-          </label>
-          <textarea
-            id="visit-context"
-            rows={4}
-            value={visitContext}
-            onChange={(e) => setVisitContext(e.target.value)}
-            placeholder="I have an appointment tomorrow. I want to discuss…"
-            className="min-h-[7.5rem] w-full resize-y rounded-xl border-2 bg-white/95 px-4 py-3 text-sm text-[#192b3f] outline-none focus:ring-2 sm:text-base"
-            style={{ borderColor: LIGHT_BLUE, boxShadow: '0 2px 12px rgba(25, 43, 63, 0.06)' }}
-          />
+        <div className="mx-auto max-w-3xl space-y-6">
+          <CareTeamIntakeForm value={intake} onChange={setIntake} />
 
           <button
             type="button"
-            disabled={generating}
+            disabled={generating || !isCareTeamIntakeComplete(intake)}
             onClick={runGenerate}
-            className="w-full rounded-xl px-5 py-3.5 text-sm font-semibold text-white shadow-sm transition-opacity disabled:opacity-60 sm:w-auto sm:min-w-[200px]"
+            className="w-full rounded-xl px-5 py-4 text-base font-semibold text-white shadow-sm transition-opacity disabled:opacity-60"
             style={{ background: DARK_GREEN }}
           >
             {generating ? 'Generating…' : 'Generate Questions'}
           </button>
 
-          <button
-            type="button"
-            onClick={() => setShowCustomForm((open) => !open)}
-            className="flex w-full items-center justify-center gap-2 rounded-xl border-2 bg-white/90 py-3 text-sm font-semibold shadow-sm transition-colors hover:bg-white sm:justify-start sm:px-4"
-            style={{ borderColor: DARK_GREEN, color: DARK_GREEN }}
-          >
-            <Plus className="h-4 w-4 shrink-0" strokeWidth={2.5} />
-            {showCustomForm ? 'Close — add your own question' : 'Add your own question'}
-          </button>
+          <div className="space-y-3 border-t pt-6" style={{ borderColor: 'rgba(25, 43, 63, 0.1)' }}>
+            <button
+              type="button"
+              onClick={() => setSearchParams({ view: 'standard-questions' })}
+              className="flex w-full items-center justify-center rounded-xl border-2 bg-white px-5 py-4 text-base font-semibold shadow-sm transition-colors hover:bg-white/95"
+              style={{ borderColor: NAVY, color: NAVY }}
+            >
+              View standard questions
+            </button>
+
+            <button
+              type="button"
+              onClick={() => setShowCustomForm((open) => !open)}
+              className="flex w-full items-center justify-center gap-2 rounded-xl border-2 bg-white px-5 py-4 text-base font-semibold shadow-sm transition-colors hover:bg-white/95"
+              style={{ borderColor: DARK_GREEN, color: DARK_GREEN }}
+            >
+              <Plus className="h-5 w-5 shrink-0" strokeWidth={2.5} />
+              {showCustomForm ? 'Close — add your own question' : 'Add your own question'}
+            </button>
+          </div>
 
           <AnimatePresence initial={false}>
             {showCustomForm && (
@@ -630,15 +523,15 @@ export default function QuestionsForCardiologist() {
                   Tags (optional)
                 </p>
                 <p className="mb-3 text-xs leading-snug" style={{ color: MUTED_GREEN }}>
-                  Categories from the question library — same labels as on saved questions.
+                  Optional tags from the standard question library.
                 </p>
                 <div className="mb-4 flex flex-wrap gap-2">
-                  {bankCategoryTags.length === 0 ? (
+                  {corpusCategories.length === 0 ? (
                     <p className="text-xs italic" style={{ color: MUTED_GREEN }}>
                       No categories are available in the question library yet.
                     </p>
                   ) : (
-                    bankCategoryTags.map((tag) => {
+                    corpusCategories.map((tag) => {
                       const on = customQuestionTags.has(tag)
                       return (
                         <button
@@ -666,291 +559,16 @@ export default function QuestionsForCardiologist() {
                     className="rounded-lg px-5 py-2.5 text-sm font-semibold text-white disabled:opacity-50"
                     style={{ background: DARK_GREEN }}
                   >
-                    {cat}
+                    Save question
                   </button>
-                )
-              })}
-            </div>
-          </div>
-
-          <div
-            style={{
-              marginTop: '20px',
-              paddingTop: '16px',
-              borderTop: '1px solid #f3f4f6',
-            }}
-          >
-            <p
-              style={{
-                fontSize: '0.85rem',
-                color: '#888',
-                marginBottom: '12px',
-                fontWeight: 600,
-              }}
-            >
-              Personalize from your profile (PLACEHOLDER RULES CURRENTLY):
-            </p>
-            <label
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: '10px',
-                cursor: 'pointer',
-                marginBottom: '10px',
-                fontSize: '0.9rem',
-                color: '#444',
-              }}
-            >
-              <input
-                type="checkbox"
-                checked={personalizeByAge}
-                onChange={(e) => setPersonalizeByAge(e.target.checked)}
-                style={{ width: '18px', height: '18px', accentColor: '#f43f5e' }}
-              />
-              Related to age
-            </label>
-            <label
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: '10px',
-                cursor: 'pointer',
-                fontSize: '0.9rem',
-                color: '#444',
-              }}
-            >
-              <input
-                type="checkbox"
-                checked={personalizeByCondition}
-                onChange={(e) => setPersonalizeByCondition(e.target.checked)}
-                style={{ width: '18px', height: '18px', accentColor: '#f43f5e' }}
-              />
-              Related to condition
-            </label>
-          </div>
-
-          <div
-            style={{
-              marginTop: '20px',
-              paddingTop: '20px',
-              borderTop: '1px solid #fce7f3',
-            }}
-          >
-            <p
-              style={{
-                fontSize: '0.85rem',
-                color: '#888',
-                marginBottom: '10px',
-                fontWeight: 600,
-              }}
-            >
-              Add your own question
-            </p>
-            <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
-              <input
-                type="text"
-                value={customText}
-                onChange={(e) => setCustomText(e.target.value)}
-                onKeyDown={(e) => e.key === 'Enter' && addCustomQuestion()}
-                placeholder="Type your question..."
-                style={{
-                  flex: '1 1 200px',
-                  border: '1px solid #fbcfe8',
-                  borderRadius: '12px',
-                  padding: '10px 14px',
-                  fontSize: '0.95rem',
-                  outline: 'none',
-                }}
-              />
-              <button
-                type="button"
-                onClick={addCustomQuestion}
-                disabled={adding || !customText.trim()}
-                style={{
-                  padding: '10px 20px',
-                  borderRadius: '12px',
-                  border: 'none',
-                  background: adding || !customText.trim() ? '#fda4af' : '#f43f5e',
-                  color: '#fff',
-                  fontWeight: 600,
-                  cursor: adding || !customText.trim() ? 'not-allowed' : 'pointer',
-                  fontSize: '0.9rem',
-                }}
-              >
-                + Add
-              </button>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <div style={{ maxWidth: '1000px', margin: '0 auto', padding: '0 20px 40px' }}>
-        {loading && (
-          <div style={{ textAlign: 'center', padding: '60px 20px' }}>
-            <div style={{ fontSize: '3rem' }}>⏳</div>
-            <p style={{ color: '#f43f5e', fontSize: '1.2rem', fontWeight: 600 }}>Loading questions...</p>
-          </div>
-        )}
-
-        {!loading && error && (
-          <div
-            style={{
-              background: '#ffebee',
-              border: '2px solid #ffcdd2',
-              borderRadius: '16px',
-              padding: '24px',
-              textAlign: 'center',
-            }}
-          >
-            <span style={{ fontSize: '2rem' }}>⚠️</span>
-            <p style={{ color: '#c62828', fontWeight: 600, marginTop: '8px' }}>{error}</p>
-          </div>
-        )}
-
-        {!loading && !error && questions.length === 0 && (
-          <div
-            style={{
-              background: '#fff8e1',
-              border: '2px solid #ffe082',
-              borderRadius: '16px',
-              padding: '40px 24px',
-              textAlign: 'center',
-            }}
-          >
-            <span style={{ fontSize: '3rem' }}>📋</span>
-            <p style={{ color: '#f57f17', fontSize: '1.2rem', fontWeight: 600, marginTop: '12px' }}>
-              No questions in the database yet
-            </p>
-          </div>
-        )}
-
-        {!loading && !error && questions.length > 0 && filteredQuestions.length === 0 && (
-          <div
-            style={{
-              background: '#fff8e1',
-              border: '2px solid #ffe082',
-              borderRadius: '16px',
-              padding: '40px 24px',
-              textAlign: 'center',
-            }}
-          >
-            <span style={{ fontSize: '3rem' }}>🔍</span>
-            <p style={{ color: '#f57f17', fontSize: '1.2rem', fontWeight: 600, marginTop: '12px' }}>
-              {selectedTag ? `No ${selectedTag} questions match` : 'No questions match your search'}
-            </p>
-          </div>
-        )}
-
-        {!loading &&
-          !error &&
-          questions.length > 0 &&
-          filteredQuestions.length > 0 &&
-          personalizedQuestions.length === 0 && (
-            <div
-              style={{
-                background: '#fff8e1',
-                border: '2px solid #ffe082',
-                borderRadius: '16px',
-                padding: '40px 24px',
-                textAlign: 'center',
-              }}
-            >
-              <span style={{ fontSize: '3rem' }}>✨</span>
-              <p style={{ color: '#f57f17', fontSize: '1.2rem', fontWeight: 600, marginTop: '12px' }}>
-                No questions match your personalization settings
-              </p>
-              <p style={{ color: '#b45309', fontSize: '0.95rem', marginTop: '8px', lineHeight: 1.5 }}>
-                Try turning off the age or condition options above, or adjust your topic filter.
-              </p>
-            </div>
-          )}
-
-        {!loading && !error && personalizedQuestions.length > 0 && (
-          <div
-            style={{
-              display: 'grid',
-              gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))',
-              gap: '20px',
-            }}
-          >
-            {personalizedQuestions.map((question, index) => {
-              const bucket = normalizeCategory(question.category)
-              const displayCat = bucket === 'other' ? question.category?.trim() || 'General' : bucket
-              const colors = categoryStyle(bucket)
-
-              return (
-                <div
-                  key={question.id}
-                  style={{
-                    background: '#ffffff',
-                    borderRadius: '20px',
-                    padding: '24px',
-                    boxShadow: '0 4px 20px rgba(0,0,0,0.08)',
-                    border: '2px solid transparent',
-                    transition: 'all 0.3s ease',
-                    animation: `fadeInUp 0.5s ease ${index * 0.04}s both`,
-                  }}
-                  onMouseEnter={(e) => {
-                    e.currentTarget.style.transform = 'translateY(-5px)'
-                    e.currentTarget.style.boxShadow = '0 12px 40px rgba(244, 63, 94, 0.18)'
-                    e.currentTarget.style.borderColor = colors.border
-                  }}
-                  onMouseLeave={(e) => {
-                    e.currentTarget.style.transform = 'translateY(0)'
-                    e.currentTarget.style.boxShadow = '0 4px 20px rgba(0,0,0,0.08)'
-                    e.currentTarget.style.borderColor = 'transparent'
-                  }}
-                >
-                  <div
-                    style={{
-                      display: 'flex',
-                      alignItems: 'flex-start',
-                      justifyContent: 'space-between',
-                      gap: '12px',
-                      marginBottom: '12px',
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setShowCustomForm(false)
+                      setCustomLine('')
+                      setCustomQuestionTags(new Set())
                     }}
-                  >
-                    <div
-                      style={{
-                        display: 'inline-block',
-                        background: colors.bg,
-                        color: colors.text,
-                        padding: '4px 12px',
-                        borderRadius: '20px',
-                        fontSize: '0.75rem',
-                        fontWeight: 700,
-                        letterSpacing: '0.5px',
-                        border: `1px solid ${colors.border}`,
-                      }}
-                    >
-                      {displayCat}
-                    </div>
-                    <button
-                      type="button"
-                      onClick={() => toggleQuestion(question)}
-                      aria-label={savedIds.has(String(question.id)) ? 'Remove from saved' : 'Save question'}
-                      style={{
-                        border: 'none',
-                        background: savedIds.has(String(question.id)) ? '#fce7f3' : '#f3f4f6',
-                        borderRadius: '12px',
-                        padding: '8px 12px',
-                        cursor: 'pointer',
-                        fontSize: '1.1rem',
-                        lineHeight: 1,
-                      }}
-                    >
-                      {savedIds.has(String(question.id)) ? '❤️' : '🤍'}
-                    </button>
-                  </div>
-
-                  <p
-                    style={{
-                      color: '#2c3e50',
-                      fontSize: '1.05rem',
-                      lineHeight: 1.55,
-                      margin: 0,
-                      fontWeight: 500,
-                    }}
+                    className="rounded-lg bg-[#e8ecec] px-4 py-2.5 text-sm font-medium text-[#192b3f] hover:bg-[#dce2e2]"
                   >
                     Cancel
                   </button>
@@ -959,32 +577,8 @@ export default function QuestionsForCardiologist() {
             )}
           </AnimatePresence>
 
-          <div>
-            <p className="mb-2 text-xs font-semibold uppercase tracking-wider" style={{ color: MUTED_GREEN }}>
-              My visit context:
-            </p>
-            <div className="flex flex-wrap gap-2">
-              {VISIT_CONTEXT_FILTERS.map((f) => {
-                const on = selectedFilters.has(f)
-                return (
-                  <button
-                    key={f}
-                    type="button"
-                    onClick={() => toggleFilter(f)}
-                    className={`rounded-full border-2 px-3 py-1.5 text-left text-xs font-medium transition-colors sm:text-sm ${
-                      on
-                        ? 'border-transparent text-white'
-                        : 'border-[rgba(25,43,63,0.15)] bg-white/90 text-[#192b3f] hover:border-[rgba(87,117,104,0.4)]'
-                    }`}
-                    style={on ? { background: DARK_GREEN, borderColor: DARK_GREEN } : undefined}
-                  >
-                    {f}
-                  </button>
-                )
-              })}
-            </div>
-          </div>
-        )}
+        </div>
+      </div>
 
       {error && (
         <div
@@ -994,6 +588,54 @@ export default function QuestionsForCardiologist() {
         >
           {error}
         </div>
+      )}
+
+      {generated.length > 0 && (
+        <section
+          id="suggested-questions"
+          className="relative isolate z-10 scroll-mt-4 border-t px-3 py-8 sm:px-4 sm:scroll-mt-6"
+          style={{ borderColor: 'rgba(25, 43, 63, 0.08)', background: ALMOST_WHITE }}
+        >
+          <h2 className="mb-1 text-lg font-semibold text-[#192b3f]">Suggested for your visit</h2>
+          <p className="mb-5 max-w-2xl text-sm leading-relaxed" style={{ color: MUTED_GREEN }}>
+            Based on what you shared. Tap to save any question.
+          </p>
+          <ul className="mx-auto max-w-3xl space-y-3">
+            {generated.map((g) => {
+              const alreadySaved = savedGeneratedIds.has(g.id)
+              const isSaving = savingGeneratedId === g.id
+              return (
+                <li
+                  key={`${g.id}-${g.position}`}
+                  className="relative z-10 flex flex-col gap-3 rounded-xl border bg-white p-4 sm:flex-row sm:items-center sm:justify-between"
+                  style={{ borderColor: 'rgba(25, 43, 63, 0.1)' }}
+                >
+                  <div className="min-w-0 flex-1">
+                    <p className="text-sm font-medium leading-snug text-[#192b3f]">{g.text}</p>
+                    <span
+                      className="mt-2 inline-block rounded-full px-2.5 py-0.5 text-xs font-semibold"
+                      style={{ background: 'rgba(198, 217, 229, 0.5)', color: NAVY }}
+                    >
+                      {g.category}
+                    </span>
+                  </div>
+                  <button
+                    type="button"
+                    disabled={alreadySaved || isSaving || Boolean(savingGeneratedId)}
+                    onClick={(e) => {
+                      e.stopPropagation()
+                      void saveGeneratedItem(g)
+                    }}
+                    className="relative z-20 shrink-0 rounded-lg border-2 px-4 py-2 text-sm font-semibold transition-colors disabled:opacity-50"
+                    style={{ borderColor: DARK_GREEN, color: DARK_GREEN }}
+                  >
+                    {alreadySaved ? 'Saved' : isSaving ? 'Saving…' : '+ Save'}
+                  </button>
+                </li>
+              )
+            })}
+          </ul>
+        </section>
       )}
 
       {/* Saved */}
@@ -1009,14 +651,14 @@ export default function QuestionsForCardiologist() {
             style={{ borderColor: LIGHT_BLUE }}
           >
             <p className="text-sm" style={{ color: MUTED_GREEN }}>
-              No saved questions yet. Generate suggestions or add your own below.
+              No saved questions yet. Generate suggestions above or add your own.
             </p>
           </div>
         ) : (
           <div className="space-y-3">
             <AnimatePresence>
               {saved.map((item, index) => {
-                const label = getSavedLabel(item, questions)
+                const label = getSavedLabel(item)
                 const badge = savedBadge(item)
                 const open = expandedSavedId === item.id
                 const notes = savedMeta[item.id]?.notes ?? ''
@@ -1024,7 +666,6 @@ export default function QuestionsForCardiologist() {
                 return (
                   <motion.div
                     key={item.id}
-                    layout
                     initial={{ opacity: 0, y: 14 }}
                     animate={{ opacity: 1, y: 0 }}
                     exit={{ opacity: 0, height: 0 }}
@@ -1092,52 +733,6 @@ export default function QuestionsForCardiologist() {
           </div>
         )}
       </div>
-
-      {/* Generated */}
-      <AnimatePresence>
-        {generated.length > 0 && (
-          <motion.section
-            id="suggested-questions"
-            initial={{ opacity: 0, y: 12 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -8 }}
-            className="scroll-mt-4 border-t px-3 py-8 sm:px-4 sm:scroll-mt-6"
-            style={{ borderColor: 'rgba(25, 43, 63, 0.08)', background: ALMOST_WHITE }}
-          >
-            <h2 className="mb-1 text-lg font-semibold text-[#192b3f]">Suggested for your visit</h2>
-            <p className="mb-5 max-w-2xl text-sm leading-relaxed" style={{ color: MUTED_GREEN }}>
-              Based on what you shared. Tap to save any question.
-            </p>
-            <ul className="mx-auto max-w-3xl space-y-3">
-              {generated.map((g) => (
-                <li
-                  key={g.tempId}
-                  className="flex flex-col gap-3 rounded-xl border bg-white p-4 sm:flex-row sm:items-center sm:justify-between"
-                  style={{ borderColor: 'rgba(25, 43, 63, 0.1)' }}
-                >
-                  <div className="min-w-0 flex-1">
-                    <p className="text-sm font-medium leading-snug text-[#192b3f]">{g.text}</p>
-                    <span
-                      className="mt-2 inline-block rounded-full px-2.5 py-0.5 text-xs font-semibold"
-                      style={{ background: 'rgba(198, 217, 229, 0.5)', color: NAVY }}
-                    >
-                      {g.filter}
-                    </span>
-                  </div>
-                  <button
-                    type="button"
-                    onClick={() => saveGeneratedLine(g.text, g.filter)}
-                    className="shrink-0 rounded-lg border-2 px-4 py-2 text-sm font-semibold transition-colors"
-                    style={{ borderColor: DARK_GREEN, color: DARK_GREEN }}
-                  >
-                    + Save
-                  </button>
-                </li>
-              ))}
-            </ul>
-          </motion.section>
-        )}
-      </AnimatePresence>
     </div>
   )
 }

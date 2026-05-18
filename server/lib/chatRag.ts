@@ -55,7 +55,7 @@ const REDIRECT_RULES: Array<{
   },
   {
     kind: 'cardiologist_questions',
-    label: 'Questions for your cardiologist',
+    label: 'Questions for your health care team',
     path: '/resources?view=questions',
     patterns:
       /\b(cardiologist|cardiology|doctor|appointment|visit|procedure|surgery|medication|prescription|test results|lab|echo|ekg|ecg|diagnosis|hlhs|chd|congenital|heart defect|follow[- ]up)\b/i,

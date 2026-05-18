@@ -2,6 +2,7 @@ import express from 'express'
 import './env.js'
 import checkInRouter from './routes/checkIn.js'
 import chatRouter from './routes/chat.js'
+import careTeamQuestionsRouter from './routes/careTeamQuestions.js'
 
 const app = express()
 const PORT = process.env.PORT ?? 3001
@@ -11,6 +12,7 @@ app.use(express.json())
 // ── Routes ────────────────────────────────────────────────────────────────────
 app.use('/api/check-in', checkInRouter)
 app.use('/api/chat', chatRouter)
+app.use('/api/care-team-questions', careTeamQuestionsRouter)
 
 // ── Health check ──────────────────────────────────────────────────────────────
 app.get('/health', (_req, res) => {
