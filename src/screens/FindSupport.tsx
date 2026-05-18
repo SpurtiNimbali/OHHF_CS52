@@ -81,9 +81,9 @@ function ResourceCard({ resource }: { resource: SupportResource }) {
         </p>
       )}
 
-      {(resource.city || resource.zipcode) && (
+      {(resource.location || resource.zipcode) && (
         <p style={{ margin: 0, fontSize: '0.78rem', color: '#acb7a8', fontFamily: 'Inter, system-ui, sans-serif' }}>
-          📍 {[resource.city, resource.zipcode].filter(Boolean).join(', ')}
+          📍 {[resource.location, resource.zipcode].filter(Boolean).join(', ')}
         </p>
       )}
 
@@ -168,7 +168,7 @@ export default function FindSupport() {
 
     const { data, error: dbError } = await supabase
       .from('support_resources')
-      .select('id, name, description, link, city, zipcode, category')
+      .select('id, name, description, link, location, zipcode, category')
       .order('name', { ascending: true })
 
     if (dbError) {
@@ -206,16 +206,16 @@ export default function FindSupport() {
       .map((r) => {
         const name = String(r.name ?? '').toLowerCase()
         const desc = String(r.description ?? '').toLowerCase()
-        const city = String(r.city ?? '').toLowerCase()
+        const location = String(r.location ?? '').toLowerCase()
         const zip = String(r.zipcode ?? '').toLowerCase()
 
         const hasTextMatch = name.includes(q) || desc.includes(q)
-        const hasLocation = Boolean(city || zip)
+        const hasLocation = Boolean(location || zip)
 
         let score = 5
-        if (city === q || zip === q) score = 0
-        else if (city.startsWith(q) || zip.startsWith(q)) score = 1
-        else if (city.includes(q) || zip.includes(q)) score = 2
+        if (location === q || zip === q) score = 0
+        else if (location.startsWith(q) || zip.startsWith(q)) score = 1
+        else if (location.includes(q) || zip.includes(q)) score = 2
         else if (hasTextMatch) score = 3
         else if (!hasLocation) score = 4
 
@@ -315,7 +315,7 @@ export default function FindSupport() {
                 {personalizedResources.map((r, index) => {
                   const catLabel = normalizeCategoryLabel(r.category) || 'Resource'
                   const href = safeExternalHref(r.link)
-                  const locationLine = [r.city, r.zipcode]
+                  const locationLine = [r.location, r.zipcode]
                     .filter((v) => v != null && String(v).trim() !== '')
                     .map((v) => String(v))
                     .join(', ')

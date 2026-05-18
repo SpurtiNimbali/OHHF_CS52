@@ -61,10 +61,7 @@ export function GlossaryCategoryFilters({
               type="button"
               key={cat}
               onClick={() => onSelectTag(isSelected ? null : cat)}
-              style={{
-                ...(isSelected ? pillActive : pillInactive),
-                textTransform: 'capitalize',
-              }}
+              style={isSelected ? pillActive : pillInactive}
             >
               {cat}
             </button>

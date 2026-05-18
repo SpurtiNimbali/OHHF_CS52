@@ -82,7 +82,7 @@ function GridCardInterior({
 }
 
 type PersonalizedSupportGridCardProps = {
-  resource: Pick<SupportResource, 'id' | 'name' | 'description' | 'city' | 'zipcode'>
+  resource: Pick<SupportResource, 'id' | 'name' | 'description' | 'location' | 'zipcode'>
   categoryLabel: string
   locationLine: string
   href: string | null

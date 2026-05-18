@@ -73,7 +73,7 @@ export function SupportResourceListCard({ resource }: { resource: SupportResourc
         </p>
       )}
 
-      {(resource.city || resource.zipcode) && (
+      {(resource.location || resource.zipcode) && (
         <p
           style={{
             margin: 0,
@@ -82,7 +82,7 @@ export function SupportResourceListCard({ resource }: { resource: SupportResourc
             fontFamily: 'Inter, system-ui, sans-serif',
           }}
         >
-          📍 {[resource.city, resource.zipcode].filter(Boolean).join(', ')}
+          📍 {[resource.location, resource.zipcode].filter(Boolean).join(', ')}
         </p>
       )}
 

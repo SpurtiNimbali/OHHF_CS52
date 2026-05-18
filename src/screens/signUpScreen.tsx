@@ -6,7 +6,12 @@ import {
   type SecurityQuestionId,
 } from '../constants/securityQuestions'
 import { hashSecurityAnswerBcrypt } from '../lib/securityAnswerBcrypt'
-import { supabase } from '../lib/supabaseClient'
+import {
+  supabase,
+  isSupabaseConfigured,
+  SUPABASE_SETUP_MESSAGE,
+  formatSupabaseClientError,
+} from '../lib/supabaseClient'
 import { AUTH_FONT_FAMILY, AUTH_NAVY } from '../ui/authTokens'
 
 function randomUsername() {
@@ -226,26 +231,6 @@ export function SignUpScreen() {
     })
   }
 
-  function formatSupabaseishError(e: unknown): string {
-    if (!e) return 'Something went wrong. Please try again.'
-    if (e instanceof Error) return e.message || 'Something went wrong. Please try again.'
-
-    // Supabase/PostgREST errors are often plain objects.
-    if (typeof e === 'object') {
-      const maybe = e as { message?: unknown; details?: unknown; hint?: unknown; code?: unknown }
-      const parts = [maybe.message, maybe.details, maybe.hint, maybe.code]
-        .filter((p) => typeof p === 'string' && p.trim().length > 0) as string[]
-      if (parts.length) return parts.join(' — ')
-      try {
-        return JSON.stringify(e)
-      } catch {
-        // ignore
-      }
-    }
-
-    return String(e)
-  }
-
   function isUniqueOrUsernameConflict(e: unknown): boolean {
     if (typeof e !== 'object' || e === null) return false
     const o = e as { code?: unknown; message?: unknown }
@@ -260,6 +245,9 @@ export function SignUpScreen() {
   }
 
   async function ensureAuthedUserId(): Promise<string> {
+    if (!isSupabaseConfigured) {
+      throw new Error(SUPABASE_SETUP_MESSAGE)
+    }
     const { data: sessionData, error: sessionError } =
       await supabase.auth.getSession()
     if (sessionError) throw sessionError
@@ -277,6 +265,10 @@ export function SignUpScreen() {
     const clientErr = localUsernameValidationError(username)
     if (clientErr) {
       setError(clientErr)
+      return
+    }
+    if (!isSupabaseConfigured) {
+      setError(SUPABASE_SETUP_MESSAGE)
       return
     }
 
@@ -396,7 +388,7 @@ export function SignUpScreen() {
       setSecurityAnswerBegan(false)
       setStep('security')
     } catch (e) {
-      const full = formatSupabaseishError(e)
+      const full = formatSupabaseClientError(e)
       const lower = full.toLowerCase()
       if (
         lower.includes('username_is_available') ||
@@ -417,6 +409,10 @@ export function SignUpScreen() {
   async function persistSecurityQaAndGoHome(
     completed: { questionId: SecurityQuestionId; answer: string }[],
   ) {
+    if (!isSupabaseConfigured) {
+      setError(SUPABASE_SETUP_MESSAGE)
+      return
+    }
     setIsWorking(true)
     setError(null)
     try {
@@ -442,7 +438,7 @@ export function SignUpScreen() {
       setSecurityQaCompleted(completed)
       navigate('/onboarding')
     } catch (e) {
-      setError(formatSupabaseishError(e))
+      setError(formatSupabaseClientError(e))
     } finally {
       setIsWorking(false)
     }

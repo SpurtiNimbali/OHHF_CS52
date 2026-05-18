@@ -1,13 +1,23 @@
+import { useState } from 'react'
+
+import type { GlossaryTermRow } from '../../types/glossary'
+import { glossaryFullText, glossaryShortText, normalizeGlossaryCategories } from '../../types/glossary'
 import { CARDEA_BORDER_SOFT, CARDEA_MUTED, CARDEA_NAVY, CARDEA_RADIUS_CARD } from '../../ui/cardeaTokens'
 import { CategoryBadge } from './categoryBadge'
 
 type GlossaryTermCardProps = {
-  term: string
-  definition: string
-  categoryLabel: string
+  row: GlossaryTermRow
 }
 
-export function GlossaryTermCard({ term, definition, categoryLabel }: GlossaryTermCardProps) {
+export function GlossaryTermCard({ row }: GlossaryTermCardProps) {
+  const [expanded, setExpanded] = useState(false)
+  const categories = normalizeGlossaryCategories(row.categories)
+  const shortText = glossaryShortText(row)
+  const fullText = glossaryFullText(row)
+  const canExpand = Boolean(fullText && fullText !== shortText)
+  const sourceUrl = row.source_url?.trim() || null
+  const sourceName = row.source_name?.trim() || null
+
   return (
     <article
       style={{
@@ -18,38 +28,99 @@ export function GlossaryTermCard({ term, definition, categoryLabel }: GlossaryTe
         boxShadow: '0 2px 12px rgba(25, 43, 63, 0.04)',
       }}
     >
-      <div
+      <h3
         style={{
-          display: 'flex',
-          alignItems: 'flex-start',
-          justifyContent: 'space-between',
-          gap: 16,
-          marginBottom: 12,
+          fontSize: '1.0625rem',
+          fontWeight: 700,
+          color: CARDEA_NAVY,
+          margin: '0 0 10px',
+          lineHeight: 1.35,
         }}
       >
-        <h3
+        {row.term}
+      </h3>
+
+      {categories.length > 0 && (
+        <div
           style={{
-            fontSize: '1.0625rem',
-            fontWeight: 700,
-            color: CARDEA_NAVY,
-            margin: 0,
-            lineHeight: 1.35,
+            display: 'flex',
+            flexWrap: 'wrap',
+            gap: 8,
+            marginBottom: 12,
           }}
         >
-          {term}
-        </h3>
-        <CategoryBadge variant="glossary">{categoryLabel}</CategoryBadge>
-      </div>
-      <p
-        style={{
-          color: CARDEA_MUTED,
-          fontSize: '0.9375rem',
-          lineHeight: 1.7,
-          margin: 0,
-        }}
-      >
-        {definition}
-      </p>
+          {categories.map((category) => (
+            <CategoryBadge key={category} variant="glossary">
+              {category}
+            </CategoryBadge>
+          ))}
+        </div>
+      )}
+
+      {shortText ? (
+        <p
+          style={{
+            color: CARDEA_MUTED,
+            fontSize: '0.9375rem',
+            lineHeight: 1.7,
+            margin: '0 0 10px',
+          }}
+        >
+          {expanded && canExpand ? fullText : shortText}
+        </p>
+      ) : (
+        <p style={{ color: CARDEA_MUTED, fontSize: '0.9375rem', margin: '0 0 10px', fontStyle: 'italic' }}>
+          Definition coming soon.
+        </p>
+      )}
+
+      {canExpand && (
+        <button
+          type="button"
+          onClick={() => setExpanded((open) => !open)}
+          style={{
+            border: 'none',
+            background: 'none',
+            padding: 0,
+            margin: '0 0 12px',
+            fontSize: '0.875rem',
+            fontWeight: 600,
+            color: CARDEA_NAVY,
+            cursor: 'pointer',
+            textDecoration: 'underline',
+            textUnderlineOffset: 3,
+          }}
+        >
+          {expanded ? 'Show shorter summary' : 'Read full definition'}
+        </button>
+      )}
+
+      {sourceName && (
+        <p
+          style={{
+            margin: 0,
+            paddingTop: 12,
+            borderTop: `1px solid ${CARDEA_BORDER_SOFT}`,
+            fontSize: '0.8125rem',
+            lineHeight: 1.5,
+            color: CARDEA_MUTED,
+          }}
+        >
+          <span style={{ fontWeight: 600, color: CARDEA_NAVY }}>Source: </span>
+          {sourceUrl ? (
+            <a
+              href={sourceUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              style={{ color: CARDEA_NAVY, fontWeight: 600 }}
+            >
+              {sourceName}
+            </a>
+          ) : (
+            <span style={{ color: CARDEA_NAVY }}>{sourceName}</span>
+          )}
+        </p>
+      )}
     </article>
   )
 }
