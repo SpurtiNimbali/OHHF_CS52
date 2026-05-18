@@ -1,5 +1,6 @@
 import { useState } from 'react'
 
+import { safeExternalHref } from '../../lib/supportResourceHref'
 import type { SupportResource } from '../../lib/supabase'
 import { CARDEA_ALMOST_WHITE, CARDEA_DARK_GREEN, CARDEA_MUTED, CARDEA_NAVY } from '../../ui/cardeaTokens'
 import { CategoryBadge } from '../ui/categoryBadge'
@@ -25,6 +26,7 @@ function ExternalLinkIcon() {
 /** Single-column resource row (primary Find Support list). */
 export function SupportResourceListCard({ resource }: { resource: SupportResource }) {
   const [hovered, setHovered] = useState(false)
+  const href = safeExternalHref(resource.link)
 
   return (
     <li
@@ -86,9 +88,9 @@ export function SupportResourceListCard({ resource }: { resource: SupportResourc
         </p>
       )}
 
-      {resource.link && (
+      {href && (
         <a
-          href={resource.link}
+          href={href}
           target="_blank"
           rel="noopener noreferrer"
           style={{

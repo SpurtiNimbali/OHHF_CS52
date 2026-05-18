@@ -4,12 +4,19 @@ import type { SupportResource } from '../../lib/supabase'
 import { CARDEA_DARK_GREEN, CARDEA_MUTED, CARDEA_NAVY } from '../../ui/cardeaTokens'
 import { CategoryBadge } from '../ui/categoryBadge'
 
+type GridCardInteriorProps = {
+  name: string
+  categoryLabel: string
+  description: string
+  locationLine: string
+}
+
 function GridCardInterior({
   name,
   categoryLabel,
   description,
   locationLine,
-}: Pick<PersonalizedSupportGridCardProps, 'name' | 'categoryLabel' | 'description' | 'locationLine'>) {
+}: GridCardInteriorProps) {
   return (
     <>
       <div
@@ -139,7 +146,12 @@ export function PersonalizedSupportGridCard({
           e.currentTarget.style.borderColor = 'rgba(25, 43, 63, 0.1)'
         }}
       >
-        <GridCardInterior name={name} categoryLabel={categoryLabel} description={description} locationLine={locationLine} />
+        <GridCardInterior
+          name={name}
+          categoryLabel={categoryLabel}
+          description={description ?? ''}
+          locationLine={locationLine}
+        />
       </a>
     )
   }
@@ -154,7 +166,12 @@ export function PersonalizedSupportGridCard({
         e.currentTarget.style.borderColor = 'rgba(25, 43, 63, 0.1)'
       }}
     >
-      <GridCardInterior name={name} categoryLabel={categoryLabel} description={description} locationLine={locationLine} />
+      <GridCardInterior
+        name={name}
+        categoryLabel={categoryLabel}
+        description={description ?? ''}
+        locationLine={locationLine}
+      />
     </div>
   )
 }
