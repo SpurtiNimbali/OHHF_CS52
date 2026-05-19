@@ -1,0 +1,24 @@
+Glossary quality review
+============================================================
+Input: C:\Users\penae\Desktop\Academics\Spring 2026\CS 52\OHHF Product\OHHF_CS52\scripts\glossary_terms_pipeline\output\merged_glossary_terms.json
+Total records: 179
+Records with at least one flag: 152
+
+Flag counts (records may have multiple flags):
+  alias_equals_other_term: 6
+  aliases_empty_for_acronym_like_term: 36
+  category_count_high: 44
+  category_general_medical_terms: 16
+  definition_very_long: 12
+  missing_period: 51
+  possible_duplicate_acronym_or_alias: 53
+  short_equals_full_definition: 106
+  term_contains_or: 3
+  term_contains_parentheses_but_no_alias: 4
+  term_nested_inside_another_term: 51
+  term_very_long: 3
+
+Outputs written:
+  C:\Users\penae\Desktop\Academics\Spring 2026\CS 52\OHHF Product\OHHF_CS52\scripts\glossary_terms_pipeline\output\glossary_review.csv
+  C:\Users\penae\Desktop\Academics\Spring 2026\CS 52\OHHF Product\OHHF_CS52\scripts\glossary_terms_pipeline\output\glossary_quality_flags.json
+  C:\Users\penae\Desktop\Academics\Spring 2026\CS 52\OHHF Product\OHHF_CS52\scripts\glossary_terms_pipeline\output\glossary_quality_report.txt

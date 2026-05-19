@@ -1,0 +1,1613 @@
+[
+  {
+    "slug": "amniocentesis",
+    "term": "Amniocentesis",
+    "flags": [
+      "definition_very_long"
+    ],
+    "review_notes": ""
+  },
+  {
+    "slug": "aneurysm",
+    "term": "Aneurysm",
+    "flags": [
+      "short_equals_full_definition"
+    ],
+    "review_notes": ""
+  },
+  {
+    "slug": "angiocardiography",
+    "term": "Angiocardiography",
+    "flags": [],
+    "review_notes": ""
+  },
+  {
+    "slug": "anoxia",
+    "term": "Anoxia",
+    "flags": [
+      "category_count_high",
+      "short_equals_full_definition"
+    ],
+    "review_notes": ""
+  },
+  {
+    "slug": "anti-coagulant",
+    "term": "Anti-coagulant",
+    "flags": [
+      "missing_period",
+      "short_equals_full_definition"
+    ],
+    "review_notes": ""
+  },
+  {
+    "slug": "antiarrhythmic-drugs",
+    "term": "Antiarrhythmic Drugs",
+    "flags": [
+      "short_equals_full_definition"
+    ],
+    "review_notes": ""
+  },
+  {
+    "slug": "anticoagulant",
+    "term": "Anticoagulant",
+    "flags": [],
+    "review_notes": ""
+  },
+  {
+    "slug": "aorta",
+    "term": "Aorta",
+    "flags": [
+      "possible_duplicate_acronym_or_alias",
+      "term_nested_inside_another_term"
+    ],
+    "review_notes": "Normalized term is substring of another: vs 'Coarctation of the Aorta'"
+  },
+  {
+    "slug": "aortic-stenosis",
+    "term": "Aortic Stenosis",
+    "flags": [
+      "possible_duplicate_acronym_or_alias",
+      "short_equals_full_definition",
+      "term_nested_inside_another_term"
+    ],
+    "review_notes": "Another normalized term is substring: 'Stenosis'"
+  },
+  {
+    "slug": "aortic-valve",
+    "term": "Aortic valve",
+    "flags": [
+      "possible_duplicate_acronym_or_alias",
+      "term_nested_inside_another_term"
+    ],
+    "review_notes": "Another normalized term is substring: 'Valve'"
+  },
+  {
+    "slug": "arrhythmia",
+    "term": "Arrhythmia",
+    "flags": [
+      "possible_duplicate_acronym_or_alias",
+      "short_equals_full_definition",
+      "term_nested_inside_another_term"
+    ],
+    "review_notes": "Normalized term is substring of another: vs 'Dysrhythmia (Arrhythmia)'"
+  },
+  {
+    "slug": "arterial-blood",
+    "term": "Arterial Blood",
+    "flags": [
+      "category_count_high"
+    ],
+    "review_notes": ""
+  },
+  {
+    "slug": "artery",
+    "term": "Artery",
+    "flags": [
+      "category_count_high",
+      "possible_duplicate_acronym_or_alias",
+      "term_nested_inside_another_term"
+    ],
+    "review_notes": "Normalized term is substring of another: vs 'Pulmonary Artery'"
+  },
+  {
+    "slug": "as",
+    "term": "AS",
+    "flags": [
+      "aliases_empty_for_acronym_like_term",
+      "missing_period",
+      "short_equals_full_definition"
+    ],
+    "review_notes": ""
+  },
+  {
+    "slug": "asd",
+    "term": "ASD",
+    "flags": [
+      "aliases_empty_for_acronym_like_term",
+      "missing_period",
+      "short_equals_full_definition"
+    ],
+    "review_notes": ""
+  },
+  {
+    "slug": "asymptomatic",
+    "term": "Asymptomatic",
+    "flags": [
+      "short_equals_full_definition"
+    ],
+    "review_notes": ""
+  },
+  {
+    "slug": "atresia",
+    "term": "Atresia",
+    "flags": [
+      "missing_period",
+      "possible_duplicate_acronym_or_alias",
+      "short_equals_full_definition",
+      "term_nested_inside_another_term"
+    ],
+    "review_notes": "Normalized term is substring of another: vs 'Tricuspid Atresia'"
+  },
+  {
+    "slug": "atrial-septal-defect",
+    "term": "Atrial Septal Defect",
+    "flags": [
+      "category_count_high",
+      "short_equals_full_definition"
+    ],
+    "review_notes": ""
+  },
+  {
+    "slug": "atrial-septum",
+    "term": "Atrial Septum",
+    "flags": [
+      "possible_duplicate_acronym_or_alias",
+      "short_equals_full_definition",
+      "term_nested_inside_another_term"
+    ],
+    "review_notes": "Another normalized term is substring: 'Septum'"
+  },
+  {
+    "slug": "atrio-ventricular-node-av-node",
+    "term": "Atrio-Ventricular Node (AV Node)",
+    "flags": [
+      "aliases_empty_for_acronym_like_term",
+      "missing_period",
+      "short_equals_full_definition",
+      "term_contains_parentheses_but_no_alias"
+    ],
+    "review_notes": ""
+  },
+  {
+    "slug": "atrium",
+    "term": "Atrium",
+    "flags": [
+      "category_count_high"
+    ],
+    "review_notes": ""
+  },
+  {
+    "slug": "avc-or-av-canal-defect",
+    "term": "AVC or AV Canal Defect",
+    "flags": [
+      "missing_period",
+      "short_equals_full_definition",
+      "term_contains_or",
+      "term_very_long"
+    ],
+    "review_notes": ""
+  },
+  {
+    "slug": "bacterial-endocarditis",
+    "term": "Bacterial Endocarditis",
+    "flags": [
+      "category_count_high"
+    ],
+    "review_notes": ""
+  },
+  {
+    "slug": "balloon-angioplasty",
+    "term": "Balloon Angioplasty",
+    "flags": [],
+    "review_notes": ""
+  },
+  {
+    "slug": "balloon-valvuloplasty",
+    "term": "Balloon Valvuloplasty",
+    "flags": [],
+    "review_notes": ""
+  },
+  {
+    "slug": "be",
+    "term": "BE",
+    "flags": [
+      "aliases_empty_for_acronym_like_term",
+      "missing_period",
+      "short_equals_full_definition"
+    ],
+    "review_notes": ""
+  },
+  {
+    "slug": "bicuspid-valve",
+    "term": "Bicuspid Valve",
+    "flags": [
+      "possible_duplicate_acronym_or_alias",
+      "term_nested_inside_another_term"
+    ],
+    "review_notes": "Another normalized term is substring: 'Valve'"
+  },
+  {
+    "slug": "blalock-hanlon",
+    "term": "Blalock-Hanlon",
+    "flags": [
+      "missing_period",
+      "short_equals_full_definition"
+    ],
+    "review_notes": ""
+  },
+  {
+    "slug": "blood-pressure",
+    "term": "Blood Pressure",
+    "flags": [
+      "possible_duplicate_acronym_or_alias",
+      "term_nested_inside_another_term"
+    ],
+    "review_notes": "Normalized term is substring of another: vs 'Diastolic Blood Pressure' | Normalized term is substring of another: vs 'High Blood Pressure' | Normalized term is substring of another: vs 'Systolic Blood Pressure'"
+  },
+  {
+    "slug": "blue-babies",
+    "term": "Blue Babies",
+    "flags": [
+      "category_count_high"
+    ],
+    "review_notes": ""
+  },
+  {
+    "slug": "bradycardia",
+    "term": "Bradycardia",
+    "flags": [],
+    "review_notes": ""
+  },
+  {
+    "slug": "bt-shunt",
+    "term": "BT Shunt",
+    "flags": [
+      "aliases_empty_for_acronym_like_term",
+      "possible_duplicate_acronym_or_alias",
+      "short_equals_full_definition",
+      "term_nested_inside_another_term"
+    ],
+    "review_notes": "Another normalized term is substring: 'Shunt'"
+  },
+  {
+    "slug": "bundle-of-his",
+    "term": "Bundle of His",
+    "flags": [],
+    "review_notes": ""
+  },
+  {
+    "slug": "cardiac",
+    "term": "Cardiac",
+    "flags": [
+      "category_general_medical_terms",
+      "possible_duplicate_acronym_or_alias",
+      "short_equals_full_definition",
+      "term_nested_inside_another_term"
+    ],
+    "review_notes": "Normalized term is substring of another: vs 'Cardiac Arrest'"
+  },
+  {
+    "slug": "cardiac-arrest",
+    "term": "Cardiac Arrest",
+    "flags": [
+      "possible_duplicate_acronym_or_alias",
+      "term_nested_inside_another_term"
+    ],
+    "review_notes": "Another normalized term is substring: 'Cardiac'"
+  },
+  {
+    "slug": "cardiologist",
+    "term": "Cardiologist",
+    "flags": [
+      "short_equals_full_definition"
+    ],
+    "review_notes": ""
+  },
+  {
+    "slug": "cardiology",
+    "term": "Cardiology",
+    "flags": [
+      "short_equals_full_definition"
+    ],
+    "review_notes": ""
+  },
+  {
+    "slug": "cardiopulmonary-bypass",
+    "term": "Cardiopulmonary Bypass",
+    "flags": [
+      "category_count_high",
+      "missing_period",
+      "short_equals_full_definition"
+    ],
+    "review_notes": ""
+  },
+  {
+    "slug": "cardiopulmonary-resuscitation-cpr",
+    "term": "Cardiopulmonary Resuscitation (CPR)",
+    "flags": [
+      "category_count_high"
+    ],
+    "review_notes": ""
+  },
+  {
+    "slug": "cardiovascular",
+    "term": "Cardiovascular",
+    "flags": [
+      "category_general_medical_terms",
+      "short_equals_full_definition"
+    ],
+    "review_notes": ""
+  },
+  {
+    "slug": "carditis",
+    "term": "Carditis",
+    "flags": [
+      "category_general_medical_terms",
+      "short_equals_full_definition"
+    ],
+    "review_notes": ""
+  },
+  {
+    "slug": "catheter",
+    "term": "Catheter",
+    "flags": [],
+    "review_notes": ""
+  },
+  {
+    "slug": "catheterization",
+    "term": "Catheterization",
+    "flags": [
+      "definition_very_long"
+    ],
+    "review_notes": ""
+  },
+  {
+    "slug": "cavc",
+    "term": "CAVC",
+    "flags": [
+      "aliases_empty_for_acronym_like_term",
+      "missing_period",
+      "short_equals_full_definition"
+    ],
+    "review_notes": ""
+  },
+  {
+    "slug": "chd",
+    "term": "CHD",
+    "flags": [
+      "aliases_empty_for_acronym_like_term",
+      "missing_period",
+      "short_equals_full_definition"
+    ],
+    "review_notes": ""
+  },
+  {
+    "slug": "chf",
+    "term": "CHF",
+    "flags": [
+      "aliases_empty_for_acronym_like_term",
+      "missing_period",
+      "short_equals_full_definition"
+    ],
+    "review_notes": ""
+  },
+  {
+    "slug": "cineangiocardiography",
+    "term": "Cineangiocardiography",
+    "flags": [
+      "short_equals_full_definition"
+    ],
+    "review_notes": ""
+  },
+  {
+    "slug": "clubbed-fingers",
+    "term": "Clubbed Fingers",
+    "flags": [],
+    "review_notes": ""
+  },
+  {
+    "slug": "coa",
+    "term": "CoA",
+    "flags": [
+      "category_count_high",
+      "missing_period",
+      "short_equals_full_definition"
+    ],
+    "review_notes": ""
+  },
+  {
+    "slug": "coarctation-of-the-aorta",
+    "term": "Coarctation of the Aorta",
+    "flags": [
+      "category_count_high",
+      "possible_duplicate_acronym_or_alias",
+      "short_equals_full_definition",
+      "term_nested_inside_another_term"
+    ],
+    "review_notes": "Another normalized term is substring: 'Aorta'"
+  },
+  {
+    "slug": "comorbidity",
+    "term": "Comorbidity",
+    "flags": [
+      "category_general_medical_terms"
+    ],
+    "review_notes": ""
+  },
+  {
+    "slug": "congenital-anomaly",
+    "term": "Congenital Anomaly",
+    "flags": [
+      "category_general_medical_terms",
+      "short_equals_full_definition"
+    ],
+    "review_notes": ""
+  },
+  {
+    "slug": "congenital-heart-defect",
+    "term": "Congenital Heart Defect",
+    "flags": [
+      "short_equals_full_definition"
+    ],
+    "review_notes": ""
+  },
+  {
+    "slug": "congestive-heart-failure",
+    "term": "Congestive Heart Failure",
+    "flags": [
+      "category_count_high"
+    ],
+    "review_notes": ""
+  },
+  {
+    "slug": "coronary-arteries",
+    "term": "Coronary Arteries",
+    "flags": [
+      "short_equals_full_definition"
+    ],
+    "review_notes": ""
+  },
+  {
+    "slug": "cxr",
+    "term": "CXR",
+    "flags": [
+      "aliases_empty_for_acronym_like_term",
+      "missing_period",
+      "short_equals_full_definition"
+    ],
+    "review_notes": ""
+  },
+  {
+    "slug": "cyanosis",
+    "term": "Cyanosis",
+    "flags": [
+      "category_count_high"
+    ],
+    "review_notes": ""
+  },
+  {
+    "slug": "d-tga",
+    "term": "D-TGA",
+    "flags": [
+      "aliases_empty_for_acronym_like_term",
+      "category_count_high",
+      "missing_period",
+      "possible_duplicate_acronym_or_alias",
+      "short_equals_full_definition",
+      "term_nested_inside_another_term"
+    ],
+    "review_notes": "Another normalized term is substring: 'TGA'"
+  },
+  {
+    "slug": "dextrocardia",
+    "term": "Dextrocardia",
+    "flags": [],
+    "review_notes": ""
+  },
+  {
+    "slug": "diastolic-blood-pressure",
+    "term": "Diastolic Blood Pressure",
+    "flags": [
+      "possible_duplicate_acronym_or_alias",
+      "short_equals_full_definition",
+      "term_nested_inside_another_term"
+    ],
+    "review_notes": "Another normalized term is substring: 'Blood Pressure'"
+  },
+  {
+    "slug": "digoxin-digitalis",
+    "term": "Digoxin (Digitalis)",
+    "flags": [
+      "category_count_high",
+      "term_contains_parentheses_but_no_alias"
+    ],
+    "review_notes": ""
+  },
+  {
+    "slug": "diuretic",
+    "term": "Diuretic",
+    "flags": [],
+    "review_notes": ""
+  },
+  {
+    "slug": "dysrhythmia-arrhythmia",
+    "term": "Dysrhythmia (Arrhythmia)",
+    "flags": [
+      "possible_duplicate_acronym_or_alias",
+      "short_equals_full_definition",
+      "term_contains_parentheses_but_no_alias",
+      "term_nested_inside_another_term"
+    ],
+    "review_notes": "Another normalized term is substring: 'Arrhythmia'"
+  },
+  {
+    "slug": "ecg-or-ekg",
+    "term": "ECG or EKG",
+    "flags": [
+      "alias_equals_other_term",
+      "missing_period",
+      "possible_duplicate_acronym_or_alias",
+      "short_equals_full_definition",
+      "term_contains_or"
+    ],
+    "review_notes": "Term matched as alias on slug 'electrocardiogram' ('ECG or EKG')"
+  },
+  {
+    "slug": "echo",
+    "term": "ECHO",
+    "flags": [
+      "alias_equals_other_term",
+      "aliases_empty_for_acronym_like_term",
+      "missing_period",
+      "possible_duplicate_acronym_or_alias",
+      "short_equals_full_definition",
+      "term_nested_inside_another_term"
+    ],
+    "review_notes": "Normalized term is substring of another: vs 'Fetal Echo' | Term matched as alias on slug 'echocardiogram' ('echo')"
+  },
+  {
+    "slug": "echocardiogram",
+    "term": "Echocardiogram",
+    "flags": [
+      "alias_equals_other_term",
+      "definition_very_long",
+      "possible_duplicate_acronym_or_alias",
+      "term_nested_inside_another_term"
+    ],
+    "review_notes": "Normalized term is substring of another: vs 'Fetal Echocardiogram' | Alias 'echo' equals term of slug 'echo'"
+  },
+  {
+    "slug": "echocardiography",
+    "term": "Echocardiography",
+    "flags": [],
+    "review_notes": ""
+  },
+  {
+    "slug": "ecmo",
+    "term": "ECMO",
+    "flags": [
+      "aliases_empty_for_acronym_like_term"
+    ],
+    "review_notes": ""
+  },
+  {
+    "slug": "edema",
+    "term": "Edema",
+    "flags": [
+      "category_count_high",
+      "definition_very_long",
+      "possible_duplicate_acronym_or_alias",
+      "term_nested_inside_another_term"
+    ],
+    "review_notes": "Normalized term is substring of another: vs 'Pulmonary Edema'"
+  },
+  {
+    "slug": "electrocardiogram",
+    "term": "Electrocardiogram",
+    "flags": [
+      "alias_equals_other_term",
+      "definition_very_long",
+      "possible_duplicate_acronym_or_alias"
+    ],
+    "review_notes": "Alias 'ECG or EKG' equals term of slug 'ecg-or-ekg'"
+  },
+  {
+    "slug": "endocardial-cushion-defect",
+    "term": "Endocardial Cushion Defect",
+    "flags": [
+      "category_count_high",
+      "short_equals_full_definition"
+    ],
+    "review_notes": ""
+  },
+  {
+    "slug": "enlarged-heart",
+    "term": "Enlarged Heart",
+    "flags": [],
+    "review_notes": ""
+  },
+  {
+    "slug": "extra-beats-skipped-beats",
+    "term": "Extra Beats/Skipped Beats",
+    "flags": [
+      "category_general_medical_terms",
+      "short_equals_full_definition"
+    ],
+    "review_notes": ""
+  },
+  {
+    "slug": "fenestration",
+    "term": "Fenestration",
+    "flags": [
+      "missing_period",
+      "short_equals_full_definition"
+    ],
+    "review_notes": ""
+  },
+  {
+    "slug": "fetal-echo",
+    "term": "Fetal Echo",
+    "flags": [
+      "alias_equals_other_term",
+      "missing_period",
+      "possible_duplicate_acronym_or_alias",
+      "short_equals_full_definition",
+      "term_nested_inside_another_term"
+    ],
+    "review_notes": "Another normalized term is substring: 'ECHO' | Term matched as alias on slug 'fetal-echocardiogram' ('fetal echo')"
+  },
+  {
+    "slug": "fetal-echocardiogram",
+    "term": "Fetal Echocardiogram",
+    "flags": [
+      "alias_equals_other_term",
+      "definition_very_long",
+      "possible_duplicate_acronym_or_alias",
+      "term_nested_inside_another_term"
+    ],
+    "review_notes": "Another normalized term is substring: 'Echocardiogram' | Alias 'fetal echo' equals term of slug 'fetal-echo'"
+  },
+  {
+    "slug": "fluoroscope",
+    "term": "Fluoroscope",
+    "flags": [],
+    "review_notes": ""
+  },
+  {
+    "slug": "fontan",
+    "term": "Fontan",
+    "flags": [
+      "category_count_high",
+      "missing_period",
+      "short_equals_full_definition"
+    ],
+    "review_notes": ""
+  },
+  {
+    "slug": "foramen-ovale",
+    "term": "Foramen Ovale",
+    "flags": [
+      "category_general_medical_terms",
+      "possible_duplicate_acronym_or_alias",
+      "short_equals_full_definition",
+      "term_nested_inside_another_term"
+    ],
+    "review_notes": "Normalized term is substring of another: vs 'Patent Foramen Ovale'"
+  },
+  {
+    "slug": "ftt",
+    "term": "FTT",
+    "flags": [
+      "aliases_empty_for_acronym_like_term",
+      "missing_period",
+      "short_equals_full_definition"
+    ],
+    "review_notes": ""
+  },
+  {
+    "slug": "glenn-or-bidirectional-glenn-shunt",
+    "term": "Glenn or Bidirectional Glenn Shunt",
+    "flags": [
+      "category_count_high",
+      "missing_period",
+      "possible_duplicate_acronym_or_alias",
+      "term_contains_or",
+      "term_nested_inside_another_term",
+      "term_very_long"
+    ],
+    "review_notes": "Another normalized term is substring: 'Shunt'"
+  },
+  {
+    "slug": "heart-attack",
+    "term": "Heart Attack",
+    "flags": [
+      "category_count_high"
+    ],
+    "review_notes": ""
+  },
+  {
+    "slug": "heart-block",
+    "term": "Heart Block",
+    "flags": [],
+    "review_notes": ""
+  },
+  {
+    "slug": "heart-disease",
+    "term": "Heart Disease",
+    "flags": [
+      "possible_duplicate_acronym_or_alias",
+      "short_equals_full_definition",
+      "term_nested_inside_another_term"
+    ],
+    "review_notes": "Normalized term is substring of another: vs 'Organic Heart Disease' | Normalized term is substring of another: vs 'Rheumatic Heart Disease'"
+  },
+  {
+    "slug": "heart-lung-machine",
+    "term": "Heart-Lung Machine",
+    "flags": [
+      "short_equals_full_definition"
+    ],
+    "review_notes": ""
+  },
+  {
+    "slug": "heparin",
+    "term": "Heparin",
+    "flags": [
+      "short_equals_full_definition"
+    ],
+    "review_notes": ""
+  },
+  {
+    "slug": "high-blood-pressure",
+    "term": "High Blood Pressure",
+    "flags": [
+      "possible_duplicate_acronym_or_alias",
+      "short_equals_full_definition",
+      "term_nested_inside_another_term"
+    ],
+    "review_notes": "Another normalized term is substring: 'Blood Pressure'"
+  },
+  {
+    "slug": "hlhs",
+    "term": "HLHS",
+    "flags": [
+      "aliases_empty_for_acronym_like_term",
+      "category_count_high",
+      "short_equals_full_definition"
+    ],
+    "review_notes": ""
+  },
+  {
+    "slug": "holter-monitoring",
+    "term": "Holter Monitoring",
+    "flags": [],
+    "review_notes": ""
+  },
+  {
+    "slug": "hrhs",
+    "term": "HRHS",
+    "flags": [
+      "aliases_empty_for_acronym_like_term",
+      "category_count_high",
+      "missing_period",
+      "short_equals_full_definition"
+    ],
+    "review_notes": ""
+  },
+  {
+    "slug": "htn",
+    "term": "HTN",
+    "flags": [
+      "aliases_empty_for_acronym_like_term",
+      "missing_period",
+      "short_equals_full_definition"
+    ],
+    "review_notes": ""
+  },
+  {
+    "slug": "hypertension",
+    "term": "Hypertension",
+    "flags": [
+      "possible_duplicate_acronym_or_alias",
+      "term_nested_inside_another_term"
+    ],
+    "review_notes": "Normalized term is substring of another: vs 'Pulmonary Hypertension'"
+  },
+  {
+    "slug": "hypertrophy",
+    "term": "Hypertrophy",
+    "flags": [
+      "category_general_medical_terms"
+    ],
+    "review_notes": ""
+  },
+  {
+    "slug": "hypoplastic",
+    "term": "Hypoplastic",
+    "flags": [
+      "short_equals_full_definition"
+    ],
+    "review_notes": ""
+  },
+  {
+    "slug": "hypotension",
+    "term": "Hypotension",
+    "flags": [],
+    "review_notes": ""
+  },
+  {
+    "slug": "hypoxia",
+    "term": "Hypoxia",
+    "flags": [],
+    "review_notes": ""
+  },
+  {
+    "slug": "iaa",
+    "term": "IAA",
+    "flags": [
+      "aliases_empty_for_acronym_like_term",
+      "missing_period",
+      "short_equals_full_definition"
+    ],
+    "review_notes": ""
+  },
+  {
+    "slug": "ischemia",
+    "term": "Ischemia",
+    "flags": [
+      "category_general_medical_terms",
+      "missing_period",
+      "short_equals_full_definition"
+    ],
+    "review_notes": ""
+  },
+  {
+    "slug": "isoproterenol",
+    "term": "Isoproterenol",
+    "flags": [
+      "short_equals_full_definition"
+    ],
+    "review_notes": ""
+  },
+  {
+    "slug": "jantene-operation",
+    "term": "Jantene Operation",
+    "flags": [
+      "missing_period",
+      "short_equals_full_definition"
+    ],
+    "review_notes": ""
+  },
+  {
+    "slug": "l-tga",
+    "term": "L-TGA",
+    "flags": [
+      "aliases_empty_for_acronym_like_term",
+      "category_count_high",
+      "missing_period",
+      "possible_duplicate_acronym_or_alias",
+      "short_equals_full_definition",
+      "term_nested_inside_another_term"
+    ],
+    "review_notes": "Another normalized term is substring: 'TGA'"
+  },
+  {
+    "slug": "la",
+    "term": "LA",
+    "flags": [
+      "aliases_empty_for_acronym_like_term",
+      "missing_period",
+      "short_equals_full_definition"
+    ],
+    "review_notes": ""
+  },
+  {
+    "slug": "lanoxin",
+    "term": "Lanoxin",
+    "flags": [
+      "short_equals_full_definition"
+    ],
+    "review_notes": ""
+  },
+  {
+    "slug": "mi",
+    "term": "MI",
+    "flags": [
+      "aliases_empty_for_acronym_like_term",
+      "category_count_high",
+      "missing_period",
+      "short_equals_full_definition"
+    ],
+    "review_notes": ""
+  },
+  {
+    "slug": "mitral-valve",
+    "term": "Mitral Valve",
+    "flags": [
+      "missing_period",
+      "possible_duplicate_acronym_or_alias",
+      "short_equals_full_definition",
+      "term_nested_inside_another_term"
+    ],
+    "review_notes": "Normalized term is substring of another: vs 'Mitral Valve Stenosis' | Another normalized term is substring: 'Valve'"
+  },
+  {
+    "slug": "mitral-valve-stenosis",
+    "term": "Mitral Valve Stenosis",
+    "flags": [
+      "category_count_high",
+      "possible_duplicate_acronym_or_alias",
+      "term_nested_inside_another_term"
+    ],
+    "review_notes": "Another normalized term is substring: 'Mitral Valve' | Another normalized term is substring: 'Stenosis' | Another normalized term is substring: 'Valve'"
+  },
+  {
+    "slug": "mpa",
+    "term": "MPA",
+    "flags": [
+      "aliases_empty_for_acronym_like_term",
+      "category_count_high",
+      "missing_period",
+      "short_equals_full_definition"
+    ],
+    "review_notes": ""
+  },
+  {
+    "slug": "mri_ct_scans",
+    "term": "MRI/CT Scans",
+    "flags": [
+      "definition_very_long"
+    ],
+    "review_notes": ""
+  },
+  {
+    "slug": "murmur",
+    "term": "Murmur",
+    "flags": [],
+    "review_notes": ""
+  },
+  {
+    "slug": "myocarditis",
+    "term": "Myocarditis",
+    "flags": [
+      "missing_period",
+      "short_equals_full_definition"
+    ],
+    "review_notes": ""
+  },
+  {
+    "slug": "non-invasive",
+    "term": "Non-invasive",
+    "flags": [],
+    "review_notes": ""
+  },
+  {
+    "slug": "non-stress-test",
+    "term": "Non-Stress Test",
+    "flags": [
+      "definition_very_long",
+      "possible_duplicate_acronym_or_alias",
+      "term_nested_inside_another_term"
+    ],
+    "review_notes": "Another normalized term is substring: 'Stress Test'"
+  },
+  {
+    "slug": "norwood-procedure",
+    "term": "Norwood Procedure",
+    "flags": [
+      "category_count_high"
+    ],
+    "review_notes": ""
+  },
+  {
+    "slug": "ohs",
+    "term": "OHS",
+    "flags": [
+      "aliases_empty_for_acronym_like_term",
+      "missing_period",
+      "short_equals_full_definition"
+    ],
+    "review_notes": ""
+  },
+  {
+    "slug": "open-heart-surgery",
+    "term": "Open-Heart Surgery",
+    "flags": [
+      "short_equals_full_definition"
+    ],
+    "review_notes": ""
+  },
+  {
+    "slug": "organic-heart-disease",
+    "term": "Organic Heart Disease",
+    "flags": [
+      "possible_duplicate_acronym_or_alias",
+      "short_equals_full_definition",
+      "term_nested_inside_another_term"
+    ],
+    "review_notes": "Another normalized term is substring: 'Heart Disease'"
+  },
+  {
+    "slug": "pa",
+    "term": "PA",
+    "flags": [
+      "aliases_empty_for_acronym_like_term",
+      "category_count_high",
+      "missing_period",
+      "short_equals_full_definition"
+    ],
+    "review_notes": ""
+  },
+  {
+    "slug": "pa02",
+    "term": "Pa02",
+    "flags": [
+      "missing_period",
+      "short_equals_full_definition"
+    ],
+    "review_notes": ""
+  },
+  {
+    "slug": "pacemaker",
+    "term": "Pacemaker",
+    "flags": [
+      "category_count_high",
+      "definition_very_long"
+    ],
+    "review_notes": ""
+  },
+  {
+    "slug": "palliative-care",
+    "term": "Palliative Care",
+    "flags": [
+      "category_general_medical_terms",
+      "short_equals_full_definition"
+    ],
+    "review_notes": ""
+  },
+  {
+    "slug": "palpitations",
+    "term": "Palpitations",
+    "flags": [
+      "category_general_medical_terms",
+      "short_equals_full_definition"
+    ],
+    "review_notes": ""
+  },
+  {
+    "slug": "papvr",
+    "term": "PAPVR",
+    "flags": [
+      "aliases_empty_for_acronym_like_term",
+      "missing_period",
+      "short_equals_full_definition"
+    ],
+    "review_notes": ""
+  },
+  {
+    "slug": "patent-ductus-arteriosus",
+    "term": "Patent Ductus Arteriosus",
+    "flags": [
+      "category_count_high",
+      "definition_very_long",
+      "missing_period"
+    ],
+    "review_notes": ""
+  },
+  {
+    "slug": "patent-foramen-ovale",
+    "term": "Patent Foramen Ovale",
+    "flags": [
+      "category_general_medical_terms",
+      "possible_duplicate_acronym_or_alias",
+      "short_equals_full_definition",
+      "term_nested_inside_another_term"
+    ],
+    "review_notes": "Another normalized term is substring: 'Foramen Ovale'"
+  },
+  {
+    "slug": "pda",
+    "term": "PDA",
+    "flags": [
+      "aliases_empty_for_acronym_like_term"
+    ],
+    "review_notes": ""
+  },
+  {
+    "slug": "pericarditis",
+    "term": "Pericarditis",
+    "flags": [
+      "category_general_medical_terms",
+      "short_equals_full_definition"
+    ],
+    "review_notes": ""
+  },
+  {
+    "slug": "pericardium",
+    "term": "Pericardium",
+    "flags": [
+      "category_general_medical_terms"
+    ],
+    "review_notes": ""
+  },
+  {
+    "slug": "persistent-truncus-arteriosus",
+    "term": "Persistent Truncus Arteriosus",
+    "flags": [
+      "category_count_high",
+      "possible_duplicate_acronym_or_alias",
+      "short_equals_full_definition",
+      "term_nested_inside_another_term"
+    ],
+    "review_notes": "Another normalized term is substring: 'Truncus'"
+  },
+  {
+    "slug": "pfo",
+    "term": "PFO",
+    "flags": [
+      "aliases_empty_for_acronym_like_term",
+      "missing_period",
+      "short_equals_full_definition"
+    ],
+    "review_notes": ""
+  },
+  {
+    "slug": "pge1",
+    "term": "PGE1",
+    "flags": [
+      "category_count_high",
+      "missing_period",
+      "short_equals_full_definition"
+    ],
+    "review_notes": ""
+  },
+  {
+    "slug": "prostaglandins",
+    "term": "Prostaglandins",
+    "flags": [],
+    "review_notes": ""
+  },
+  {
+    "slug": "ps",
+    "term": "PS",
+    "flags": [
+      "aliases_empty_for_acronym_like_term",
+      "missing_period",
+      "short_equals_full_definition"
+    ],
+    "review_notes": ""
+  },
+  {
+    "slug": "pulmonary",
+    "term": "Pulmonary",
+    "flags": [
+      "possible_duplicate_acronym_or_alias",
+      "short_equals_full_definition",
+      "term_nested_inside_another_term"
+    ],
+    "review_notes": "Normalized term is substring of another: vs 'Pulmonary Artery' | Normalized term is substring of another: vs 'Pulmonary Edema' | Normalized term is substring of another: vs 'Pulmonary Hypertension' | Normalized term is substring of another: vs 'Pulmonary Valve Stenosis' | Normalized term is substring of another: vs 'Pulmonic (pulmonary) Valve'"
+  },
+  {
+    "slug": "pulmonary-artery",
+    "term": "Pulmonary Artery",
+    "flags": [
+      "category_count_high",
+      "possible_duplicate_acronym_or_alias",
+      "term_nested_inside_another_term"
+    ],
+    "review_notes": "Another normalized term is substring: 'Artery' | Another normalized term is substring: 'Pulmonary'"
+  },
+  {
+    "slug": "pulmonary-edema",
+    "term": "Pulmonary Edema",
+    "flags": [
+      "possible_duplicate_acronym_or_alias",
+      "short_equals_full_definition",
+      "term_nested_inside_another_term"
+    ],
+    "review_notes": "Another normalized term is substring: 'Edema' | Another normalized term is substring: 'Pulmonary'"
+  },
+  {
+    "slug": "pulmonary-hypertension",
+    "term": "Pulmonary Hypertension",
+    "flags": [
+      "category_count_high",
+      "possible_duplicate_acronym_or_alias",
+      "term_nested_inside_another_term"
+    ],
+    "review_notes": "Another normalized term is substring: 'Hypertension' | Another normalized term is substring: 'Pulmonary'"
+  },
+  {
+    "slug": "pulmonary-valve-stenosis",
+    "term": "Pulmonary Valve Stenosis",
+    "flags": [
+      "category_count_high",
+      "possible_duplicate_acronym_or_alias",
+      "short_equals_full_definition",
+      "term_nested_inside_another_term"
+    ],
+    "review_notes": "Another normalized term is substring: 'Pulmonary' | Another normalized term is substring: 'Stenosis' | Another normalized term is substring: 'Valve'"
+  },
+  {
+    "slug": "pulmonic-pulmonary-valve",
+    "term": "Pulmonic (pulmonary) Valve",
+    "flags": [
+      "possible_duplicate_acronym_or_alias",
+      "term_contains_parentheses_but_no_alias",
+      "term_nested_inside_another_term"
+    ],
+    "review_notes": "Another normalized term is substring: 'Pulmonary' | Another normalized term is substring: 'Valve'"
+  },
+  {
+    "slug": "pulse-oximetry",
+    "term": "Pulse Oximetry",
+    "flags": [
+      "definition_very_long"
+    ],
+    "review_notes": ""
+  },
+  {
+    "slug": "pv",
+    "term": "PV",
+    "flags": [
+      "aliases_empty_for_acronym_like_term",
+      "missing_period",
+      "short_equals_full_definition"
+    ],
+    "review_notes": ""
+  },
+  {
+    "slug": "ra",
+    "term": "RA",
+    "flags": [
+      "aliases_empty_for_acronym_like_term",
+      "missing_period",
+      "short_equals_full_definition"
+    ],
+    "review_notes": ""
+  },
+  {
+    "slug": "radioisotopic-scanning",
+    "term": "Radioisotopic Scanning",
+    "flags": [],
+    "review_notes": ""
+  },
+  {
+    "slug": "regurgitation",
+    "term": "Regurgitation",
+    "flags": [
+      "short_equals_full_definition"
+    ],
+    "review_notes": ""
+  },
+  {
+    "slug": "rheumatic-heart-disease",
+    "term": "Rheumatic Heart Disease",
+    "flags": [
+      "possible_duplicate_acronym_or_alias",
+      "short_equals_full_definition",
+      "term_nested_inside_another_term"
+    ],
+    "review_notes": "Another normalized term is substring: 'Heart Disease'"
+  },
+  {
+    "slug": "rubella",
+    "term": "Rubella",
+    "flags": [
+      "category_general_medical_terms",
+      "short_equals_full_definition"
+    ],
+    "review_notes": ""
+  },
+  {
+    "slug": "sbe",
+    "term": "SBE",
+    "flags": [
+      "aliases_empty_for_acronym_like_term",
+      "short_equals_full_definition"
+    ],
+    "review_notes": ""
+  },
+  {
+    "slug": "septa",
+    "term": "Septa",
+    "flags": [],
+    "review_notes": ""
+  },
+  {
+    "slug": "septum",
+    "term": "Septum",
+    "flags": [
+      "missing_period",
+      "possible_duplicate_acronym_or_alias",
+      "short_equals_full_definition",
+      "term_nested_inside_another_term"
+    ],
+    "review_notes": "Normalized term is substring of another: vs 'Atrial Septum'"
+  },
+  {
+    "slug": "shock",
+    "term": "Shock",
+    "flags": [
+      "short_equals_full_definition"
+    ],
+    "review_notes": ""
+  },
+  {
+    "slug": "shunt",
+    "term": "Shunt",
+    "flags": [
+      "possible_duplicate_acronym_or_alias",
+      "term_nested_inside_another_term"
+    ],
+    "review_notes": "Normalized term is substring of another: vs 'BT Shunt' | Normalized term is substring of another: vs 'Glenn or Bidirectional Glenn Shunt'"
+  },
+  {
+    "slug": "sphygmomanometer",
+    "term": "Sphygmomanometer",
+    "flags": [
+      "short_equals_full_definition"
+    ],
+    "review_notes": ""
+  },
+  {
+    "slug": "stenosis",
+    "term": "Stenosis",
+    "flags": [
+      "category_count_high",
+      "possible_duplicate_acronym_or_alias",
+      "term_nested_inside_another_term"
+    ],
+    "review_notes": "Normalized term is substring of another: vs 'Aortic Stenosis' | Normalized term is substring of another: vs 'Mitral Valve Stenosis' | Normalized term is substring of another: vs 'Pulmonary Valve Stenosis'"
+  },
+  {
+    "slug": "stress-test",
+    "term": "Stress Test",
+    "flags": [
+      "category_count_high",
+      "possible_duplicate_acronym_or_alias",
+      "term_nested_inside_another_term"
+    ],
+    "review_notes": "Normalized term is substring of another: vs 'Non-Stress Test'"
+  },
+  {
+    "slug": "sv",
+    "term": "SV",
+    "flags": [
+      "aliases_empty_for_acronym_like_term",
+      "missing_period",
+      "short_equals_full_definition"
+    ],
+    "review_notes": ""
+  },
+  {
+    "slug": "svc",
+    "term": "SVC",
+    "flags": [
+      "aliases_empty_for_acronym_like_term",
+      "missing_period",
+      "short_equals_full_definition"
+    ],
+    "review_notes": ""
+  },
+  {
+    "slug": "symptomatic",
+    "term": "Symptomatic",
+    "flags": [
+      "short_equals_full_definition"
+    ],
+    "review_notes": ""
+  },
+  {
+    "slug": "systolic-blood-pressure",
+    "term": "Systolic Blood Pressure",
+    "flags": [
+      "possible_duplicate_acronym_or_alias",
+      "short_equals_full_definition",
+      "term_nested_inside_another_term"
+    ],
+    "review_notes": "Another normalized term is substring: 'Blood Pressure'"
+  },
+  {
+    "slug": "tachycardia",
+    "term": "Tachycardia",
+    "flags": [],
+    "review_notes": ""
+  },
+  {
+    "slug": "tapvr",
+    "term": "TAPVR",
+    "flags": [
+      "aliases_empty_for_acronym_like_term",
+      "missing_period",
+      "short_equals_full_definition"
+    ],
+    "review_notes": ""
+  },
+  {
+    "slug": "tetralogy-of-fallot",
+    "term": "Tetralogy of Fallot",
+    "flags": [
+      "category_count_high",
+      "missing_period"
+    ],
+    "review_notes": ""
+  },
+  {
+    "slug": "tga",
+    "term": "TGA",
+    "flags": [
+      "aliases_empty_for_acronym_like_term",
+      "missing_period",
+      "possible_duplicate_acronym_or_alias",
+      "short_equals_full_definition",
+      "term_nested_inside_another_term"
+    ],
+    "review_notes": "Normalized term is substring of another: vs 'D-TGA' | Normalized term is substring of another: vs 'L-TGA'"
+  },
+  {
+    "slug": "tof",
+    "term": "TOF",
+    "flags": [
+      "aliases_empty_for_acronym_like_term",
+      "category_count_high",
+      "missing_period",
+      "short_equals_full_definition"
+    ],
+    "review_notes": ""
+  },
+  {
+    "slug": "transplantation-heart",
+    "term": "Transplantation, Heart",
+    "flags": [],
+    "review_notes": ""
+  },
+  {
+    "slug": "transposition-of-the-great-vessels",
+    "term": "Transposition of the Great Vessels",
+    "flags": [
+      "category_count_high",
+      "definition_very_long",
+      "term_very_long"
+    ],
+    "review_notes": ""
+  },
+  {
+    "slug": "tricuspid-atresia",
+    "term": "Tricuspid Atresia",
+    "flags": [
+      "category_count_high",
+      "possible_duplicate_acronym_or_alias",
+      "term_nested_inside_another_term"
+    ],
+    "review_notes": "Another normalized term is substring: 'Atresia'"
+  },
+  {
+    "slug": "tricuspid-valve",
+    "term": "Tricuspid Valve",
+    "flags": [
+      "possible_duplicate_acronym_or_alias",
+      "short_equals_full_definition",
+      "term_nested_inside_another_term"
+    ],
+    "review_notes": "Another normalized term is substring: 'Valve'"
+  },
+  {
+    "slug": "truncus",
+    "term": "Truncus",
+    "flags": [
+      "possible_duplicate_acronym_or_alias",
+      "short_equals_full_definition",
+      "term_nested_inside_another_term"
+    ],
+    "review_notes": "Normalized term is substring of another: vs 'Persistent Truncus Arteriosus'"
+  },
+  {
+    "slug": "ultrasound",
+    "term": "Ultrasound",
+    "flags": [],
+    "review_notes": ""
+  },
+  {
+    "slug": "valve",
+    "term": "Valve",
+    "flags": [
+      "possible_duplicate_acronym_or_alias",
+      "term_nested_inside_another_term"
+    ],
+    "review_notes": "Normalized term is substring of another: vs 'Aortic valve' | Normalized term is substring of another: vs 'Bicuspid Valve' | Normalized term is substring of another: vs 'Mitral Valve' | Normalized term is substring of another: vs 'Mitral Valve Stenosis' | Normalized term is substring of another: vs 'Pulmonary Valve Stenosis' | Normalized term is substring of another: vs 'Pulmonic (pulmonary) Valve' | Normalized term is substring of another: vs 'Tricuspid Valve' | Normalized term is substring of another: vs 'Valve Conduit'"
+  },
+  {
+    "slug": "valve-conduit",
+    "term": "Valve Conduit",
+    "flags": [
+      "possible_duplicate_acronym_or_alias",
+      "short_equals_full_definition",
+      "term_nested_inside_another_term"
+    ],
+    "review_notes": "Another normalized term is substring: 'Valve'"
+  },
+  {
+    "slug": "valvular-insufficiency",
+    "term": "Valvular Insufficiency",
+    "flags": [],
+    "review_notes": ""
+  },
+  {
+    "slug": "vascular",
+    "term": "Vascular",
+    "flags": [
+      "category_general_medical_terms",
+      "short_equals_full_definition"
+    ],
+    "review_notes": ""
+  },
+  {
+    "slug": "vectorcardiography",
+    "term": "Vectorcardiography",
+    "flags": [
+      "short_equals_full_definition"
+    ],
+    "review_notes": ""
+  },
+  {
+    "slug": "vein",
+    "term": "Vein",
+    "flags": [
+      "short_equals_full_definition"
+    ],
+    "review_notes": ""
+  },
+  {
+    "slug": "venous-blood",
+    "term": "Venous Blood",
+    "flags": [],
+    "review_notes": ""
+  },
+  {
+    "slug": "ventilator",
+    "term": "Ventilator",
+    "flags": [
+      "missing_period",
+      "short_equals_full_definition"
+    ],
+    "review_notes": ""
+  },
+  {
+    "slug": "ventricle",
+    "term": "Ventricle",
+    "flags": [
+      "category_count_high"
+    ],
+    "review_notes": ""
+  },
+  {
+    "slug": "ventricular-septal-defect",
+    "term": "Ventricular Septal Defect",
+    "flags": [
+      "category_count_high",
+      "short_equals_full_definition"
+    ],
+    "review_notes": ""
+  },
+  {
+    "slug": "vsd",
+    "term": "VSD",
+    "flags": [
+      "aliases_empty_for_acronym_like_term",
+      "category_count_high",
+      "short_equals_full_definition"
+    ],
+    "review_notes": ""
+  }
+]
