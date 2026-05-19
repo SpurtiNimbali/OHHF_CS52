@@ -34,8 +34,6 @@ type RawGlossaryRow = {
   categories?: unknown
   short_definition?: string | null
   full_definition?: string | null
-  source_name?: string | null
-  source_url?: string | null
 }
 
 function mapRow(raw: RawGlossaryRow): GlossaryTermRow {
@@ -47,8 +45,6 @@ function mapRow(raw: RawGlossaryRow): GlossaryTermRow {
     categories: normalizeGlossaryCategories(raw.categories),
     short_definition: raw.short_definition ?? null,
     full_definition: raw.full_definition ?? null,
-    source_name: raw.source_name ?? null,
-    source_url: raw.source_url ?? null,
   }
 }
 

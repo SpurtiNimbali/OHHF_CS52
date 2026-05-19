@@ -15,7 +15,7 @@ export const GLOSSARY_CATEGORIES = [
 export type GlossaryCategory = (typeof GLOSSARY_CATEGORIES)[number]
 
 export const GLOSSARY_SELECT =
-  'id, term, slug, aliases, categories, short_definition, full_definition, source_name, source_url'
+  'id, term, slug, aliases, categories, short_definition, full_definition'
 
 export type GlossaryTermRow = {
   id: string | number
@@ -25,8 +25,6 @@ export type GlossaryTermRow = {
   categories: string[] | null
   short_definition: string | null
   full_definition: string | null
-  source_name: string | null
-  source_url: string | null
 }
 
 export function normalizeGlossaryCategories(raw: unknown): string[] {

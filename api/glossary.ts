@@ -16,7 +16,7 @@ type ApiResponse = {
 }
 
 const GLOSSARY_SELECT =
-  'id, term, slug, aliases, categories, short_definition, full_definition, source_name, source_url'
+  'id, term, slug, aliases, categories, short_definition, full_definition'
 
 export default async function handler(req: ApiRequest, res: ApiResponse) {
   if (req.method !== 'GET') {

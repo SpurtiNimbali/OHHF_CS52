@@ -15,8 +15,6 @@ export function GlossaryTermCard({ row }: GlossaryTermCardProps) {
   const shortText = glossaryShortText(row)
   const fullText = glossaryFullText(row)
   const canExpand = Boolean(fullText && fullText !== shortText)
-  const sourceUrl = row.source_url?.trim() || null
-  const sourceName = row.source_name?.trim() || null
 
   return (
     <article
@@ -93,33 +91,6 @@ export function GlossaryTermCard({ row }: GlossaryTermCardProps) {
         >
           {expanded ? 'Show shorter summary' : 'Read full definition'}
         </button>
-      )}
-
-      {sourceName && (
-        <p
-          style={{
-            margin: 0,
-            paddingTop: 12,
-            borderTop: `1px solid ${CARDEA_BORDER_SOFT}`,
-            fontSize: '0.8125rem',
-            lineHeight: 1.5,
-            color: CARDEA_MUTED,
-          }}
-        >
-          <span style={{ fontWeight: 600, color: CARDEA_NAVY }}>Source: </span>
-          {sourceUrl ? (
-            <a
-              href={sourceUrl}
-              target="_blank"
-              rel="noopener noreferrer"
-              style={{ color: CARDEA_NAVY, fontWeight: 600 }}
-            >
-              {sourceName}
-            </a>
-          ) : (
-            <span style={{ color: CARDEA_NAVY }}>{sourceName}</span>
-          )}
-        </p>
       )}
     </article>
   )
