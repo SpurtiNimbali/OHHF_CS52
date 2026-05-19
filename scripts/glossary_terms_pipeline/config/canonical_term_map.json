@@ -1,0 +1,232 @@
+{
+  "AS": {
+    "canonical_term": "Aortic Stenosis",
+    "aliases": [],
+    "notes": "Aortic valve narrowing shorthand"
+  },
+  "ASD": {
+    "canonical_term": "Atrial Septal Defect",
+    "aliases": [],
+    "notes": "Interatrial communication"
+  },
+  "AVC": {
+    "canonical_term": "Atrioventricular Canal Defect",
+    "aliases": [],
+    "notes": "AV canal shorthand"
+  },
+  "AV Canal Defect": {
+    "canonical_term": "Atrioventricular Canal Defect",
+    "aliases": [],
+    "notes": "Synonym"
+  },
+  "AVC or AV Canal Defect": {
+    "canonical_term": "Atrioventricular Canal Defect",
+    "aliases": [],
+    "notes": "Combined label"
+  },
+  "BE": {
+    "canonical_term": "Bacterial Endocarditis",
+    "aliases": [],
+    "notes": "Acronym"
+  },
+  "BT Shunt": {
+    "canonical_term": "Blalock-Taussig Shunt",
+    "aliases": [],
+    "notes": "Systemic-to-PA shunt"
+  },
+  "CAVC": {
+    "canonical_term": "Complete Atrioventricular Canal",
+    "aliases": [],
+    "notes": "Complete AV canal"
+  },
+  "CHD": {
+    "canonical_term": "Congenital Heart Disease",
+    "aliases": [],
+    "notes": "Broad CHD label"
+  },
+  "CHF": {
+    "canonical_term": "Congestive Heart Failure",
+    "aliases": [],
+    "notes": "Heart failure acronym"
+  },
+  "CoA": {
+    "canonical_term": "Coarctation of the Aorta",
+    "aliases": [],
+    "notes": "Aortic coarctation"
+  },
+  "CXR": {
+    "canonical_term": "Chest X-ray",
+    "aliases": [],
+    "notes": "Radiograph shorthand"
+  },
+  "D-TGA": {
+    "canonical_term": "Dextro-Transposition of the Great Arteries",
+    "aliases": [],
+    "notes": "d-TGA"
+  },
+  "ECG": {
+    "canonical_term": "Electrocardiogram",
+    "aliases": [],
+    "notes": "Same as EKG"
+  },
+  "EKG": {
+    "canonical_term": "Electrocardiogram",
+    "aliases": [],
+    "notes": "Same as ECG"
+  },
+  "ECG or EKG": {
+    "canonical_term": "Electrocardiogram",
+    "aliases": [],
+    "notes": "Dual label"
+  },
+  "ECHO": {
+    "canonical_term": "Echocardiogram",
+    "aliases": [],
+    "notes": "All-caps echo"
+  },
+  "Echo": {
+    "canonical_term": "Echocardiogram",
+    "aliases": [],
+    "notes": "Informal echo"
+  },
+  "ECMO": {
+    "canonical_term": "Extracorporeal Membrane Oxygenation",
+    "aliases": [],
+    "notes": "Life support circuit"
+  },
+  "FTT": {
+    "canonical_term": "Failure to Thrive",
+    "aliases": [],
+    "notes": "Growth concern"
+  },
+  "HLHS": {
+    "canonical_term": "Hypoplastic Left Heart Syndrome",
+    "aliases": [],
+    "notes": "Single-ventricle spectrum"
+  },
+  "HRHS": {
+    "canonical_term": "Hypoplastic Right Heart Syndrome",
+    "aliases": [],
+    "notes": "Right-sided hypoplasia"
+  },
+  "HTN": {
+    "canonical_term": "Hypertension",
+    "aliases": [],
+    "notes": "Elevated BP"
+  },
+  "IAA": {
+    "canonical_term": "Interrupted Aortic Arch",
+    "aliases": [],
+    "notes": "Arch interruption"
+  },
+  "LA": {
+    "canonical_term": "Left Atrium",
+    "aliases": [],
+    "notes": "Chamber acronym"
+  },
+  "L-TGA": {
+    "canonical_term": "Levo-Transposition of the Great Arteries",
+    "aliases": [],
+    "notes": "l-TGA / ccTGA context"
+  },
+  "MI": {
+    "canonical_term": "Myocardial Infarction",
+    "aliases": [],
+    "notes": "Heart attack"
+  },
+  "MPA": {
+    "canonical_term": "Main Pulmonary Artery",
+    "aliases": [],
+    "notes": "Central PA"
+  },
+  "OHS": {
+    "canonical_term": "Open-Heart Surgery",
+    "aliases": [],
+    "notes": "Sternotomy surgery"
+  },
+  "PA": {
+    "canonical_term": "Pulmonary Artery",
+    "aliases": [],
+    "notes": "Vessel acronym"
+  },
+  "PAPVR": {
+    "canonical_term": "Partial Anomalous Pulmonary Venous Return",
+    "aliases": [],
+    "notes": "Partial APVR"
+  },
+  "PDA": {
+    "canonical_term": "Patent Ductus Arteriosus",
+    "aliases": [],
+    "notes": "Ductus"
+  },
+  "PFO": {
+    "canonical_term": "Patent Foramen Ovale",
+    "aliases": [],
+    "notes": "Interatrial communication"
+  },
+  "PGE1": {
+    "canonical_term": "Prostaglandin E1",
+    "aliases": [],
+    "notes": "Ductal patency med"
+  },
+  "PS": {
+    "canonical_term": "Pulmonary Stenosis",
+    "aliases": [],
+    "notes": "RV outflow obstruction"
+  },
+  "PV": {
+    "canonical_term": "Pulmonary Valve",
+    "aliases": [],
+    "notes": "Valve shorthand"
+  },
+  "RA": {
+    "canonical_term": "Right Atrium",
+    "aliases": [],
+    "notes": "Chamber acronym"
+  },
+  "SBE": {
+    "canonical_term": "Subacute Bacterial Endocarditis",
+    "aliases": [],
+    "notes": "Infective endocarditis variant"
+  },
+  "SV": {
+    "canonical_term": "Single Ventricle",
+    "aliases": [],
+    "notes": "Univentricular physiology"
+  },
+  "SVC": {
+    "canonical_term": "Superior Vena Cava",
+    "aliases": [],
+    "notes": "Central vein"
+  },
+  "TAPVR": {
+    "canonical_term": "Total Anomalous Pulmonary Venous Return",
+    "aliases": [],
+    "notes": "All pulmonary veins anomalous"
+  },
+  "TGA": {
+    "canonical_term": "Transposition of the Great Arteries",
+    "aliases": [],
+    "notes": "Generic TGA"
+  },
+  "TOF": {
+    "canonical_term": "Tetralogy of Fallot",
+    "aliases": [],
+    "notes": "Classic tet spell lesion"
+  },
+  "VSD": {
+    "canonical_term": "Ventricular Septal Defect",
+    "aliases": [],
+    "notes": "VSD acronym"
+  },
+  "Glenn or Bidirectional Glenn Shunt": {
+    "canonical_term": "Bidirectional Glenn Shunt",
+    "aliases": [],
+    "notes": "Fontan pathway staging"
+  },
+  "Fetal Echo": {
+    "canonical_term": "Fetal Echocardiogram",
+    "aliases": [],
+    "notes": "Prenatal echo shorthand"
+  }
+}

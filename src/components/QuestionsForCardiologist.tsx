@@ -482,7 +482,7 @@ export default function QuestionsForCardiologist() {
             color: '#192b3f',
             lineHeight: 1,
           }}>
-            Questions for Your Cardiologist
+            Questions for Your Health Care Team
           </h1>
           <p style={{ margin: 0, fontSize: '0.875rem', color: '#acb7a8', lineHeight: 1.65, fontFamily: 'Inter, system-ui, sans-serif' }}>
             Save questions to bring to your next appointment.

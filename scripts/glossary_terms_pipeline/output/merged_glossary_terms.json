@@ -1,0 +1,3239 @@
+[
+  {
+    "term": "Amniocentesis",
+    "slug": "amniocentesis",
+    "aliases": [
+      "amnio"
+    ],
+    "categories": [
+      "Tests & Imaging"
+    ],
+    "short_definition": "A test used to check for chromosomal abnormalities like Down syndrome or to determine whether a baby’s lungs are developed enough to be born.",
+    "full_definition": "Amniocentesis is a test used to check for chromosomal abnormalities like Down syndrome. It is also sometimes done to determine whether a baby’s lungs are developed enough to be born. During amniocentesis, a small amount of amniotic fluid (the water-like fluid that surrounds your baby before he or she is born) is removed with a thin, hollow needle. The spot on your belly where the needle is inserted will be cleaned before the procedure, and you may get a local anesthetic to relieve discomfort. An ultrasound will be performed at the same time so that the doctor can see where to place the needle in the uterus without getting too close to your baby. The amniotic fluid is then sent to a lab for testing. Your doctor will tell you when to expect the results. You may have some cramping during the amniocentesis and for a few hours afterward. You should rest for the remainder of the day after the procedure. Your doctor will tell you if you can take any medication for discomfort.",
+    "source_name": "Mended Little Hearts",
+    "source_url": "https://mendedhearts.org/wp-content/uploads/2025/02/MLHG_2015-2025.pdf",
+    "raw_source_file": "mended_hearts_org__mended_little_heartguide__local_pdfs.md",
+    "source_section": "common_prenatal_tests_and_procedures",
+    "entry_method": "manual",
+    "search_keywords": [],
+    "priority": 2
+  },
+  {
+    "term": "Aneurysm",
+    "slug": "aneurysm",
+    "aliases": [],
+    "categories": [
+      "Anatomy"
+    ],
+    "short_definition": "A ballooning of the wall of a vein or an artery or the heart itself due to weakening of the wall by disease, traumatic injury or an abnormality present at birth.",
+    "full_definition": "A ballooning of the wall of a vein or an artery or the heart itself due to weakening of the wall by disease, traumatic injury or an abnormality present at birth.",
+    "source_name": "Children's Heart Foundation",
+    "source_url": "https://www.childrensheartfoundation.org/file_download/afc69f23-39fb-40e5-93f3-8e143dc3114a",
+    "raw_source_file": "childrens_heart_foundation_org__its_my_heart.md",
+    "source_section": "glossary_of_terms",
+    "entry_method": "scraped",
+    "search_keywords": [],
+    "priority": 2
+  },
+  {
+    "term": "Angiocardiography",
+    "slug": "angiocardiography",
+    "aliases": [],
+    "categories": [
+      "Tests & Imaging"
+    ],
+    "short_definition": "A diagnostic method involving injection of a dye into the bloodstream.",
+    "full_definition": "A diagnostic method involving injection of a dye into the bloodstream. Chest x-rays taken after the injection show the inside dimensions of the heart and great vessels, as outlined by the dye.",
+    "source_name": "Children's Heart Foundation",
+    "source_url": "https://www.childrensheartfoundation.org/file_download/afc69f23-39fb-40e5-93f3-8e143dc3114a",
+    "raw_source_file": "childrens_heart_foundation_org__its_my_heart.md",
+    "source_section": "glossary_of_terms",
+    "entry_method": "scraped",
+    "search_keywords": [],
+    "priority": 2
+  },
+  {
+    "term": "Anoxia",
+    "slug": "anoxia",
+    "aliases": [],
+    "categories": [
+      "Tests & Imaging",
+      "Devices & Equipment",
+      "Symptoms & Monitoring"
+    ],
+    "short_definition": "Literally, no oxygen. This condition most frequently occurs when the oxygen supply to a part of the body is critically diminished. This may result in the death of the affected tissue.",
+    "full_definition": "Literally, no oxygen. This condition most frequently occurs when the oxygen supply to a part of the body is critically diminished. This may result in the death of the affected tissue.",
+    "source_name": "Children's Heart Foundation",
+    "source_url": "https://www.childrensheartfoundation.org/file_download/afc69f23-39fb-40e5-93f3-8e143dc3114a",
+    "raw_source_file": "childrens_heart_foundation_org__its_my_heart.md",
+    "source_section": "glossary_of_terms",
+    "entry_method": "scraped",
+    "search_keywords": [],
+    "priority": 2
+  },
+  {
+    "term": "Anti-coagulant",
+    "slug": "anti-coagulant",
+    "aliases": [],
+    "categories": [
+      "Medications"
+    ],
+    "short_definition": "A medication that prevents the forming of blood clots",
+    "full_definition": "A medication that prevents the forming of blood clots",
+    "source_name": "Mended Little Hearts",
+    "source_url": "https://mendedhearts.org/wp-content/uploads/2025/02/MLHG_2015-2025.pdf",
+    "raw_source_file": "mended_hearts_org__mended_little_heartguide__local_pdfs.md",
+    "source_section": "glossary_common_chd_terms_and_abbreviations",
+    "entry_method": "scraped",
+    "search_keywords": [],
+    "priority": 2
+  },
+  {
+    "term": "Antiarrhythmic Drugs",
+    "slug": "antiarrhythmic-drugs",
+    "aliases": [],
+    "categories": [
+      "Medications",
+      "Symptoms & Monitoring"
+    ],
+    "short_definition": "Drugs that are used to treat disorders of the heart rate and rhythm, such as lidocaine, procaine amide, quinidine, digitalis, propranolol, atropine, and isoproterenol.",
+    "full_definition": "Drugs that are used to treat disorders of the heart rate and rhythm, such as lidocaine, procaine amide, quinidine, digitalis, propranolol, atropine, and isoproterenol.",
+    "source_name": "Children's Heart Foundation",
+    "source_url": "https://www.childrensheartfoundation.org/file_download/afc69f23-39fb-40e5-93f3-8e143dc3114a",
+    "raw_source_file": "childrens_heart_foundation_org__its_my_heart.md",
+    "source_section": "glossary_of_terms",
+    "entry_method": "scraped",
+    "search_keywords": [],
+    "priority": 2
+  },
+  {
+    "term": "Anticoagulant",
+    "slug": "anticoagulant",
+    "aliases": [],
+    "categories": [
+      "Medications",
+      "Anatomy"
+    ],
+    "short_definition": "A drug that delays clotting (coagulation) of the blood.",
+    "full_definition": "A drug that delays clotting (coagulation) of the blood. When given in cases where a blood vessel has been plugged by a clot, an anticoagulant tends to prevent new clots from forming, or the existing clots from enlarging, but does not dissolve an existing clot. Anticoagulants are also used to prevent clots from forming on artificial material, such as artificial valves.",
+    "source_name": "Children's Heart Foundation",
+    "source_url": "https://www.childrensheartfoundation.org/file_download/afc69f23-39fb-40e5-93f3-8e143dc3114a",
+    "raw_source_file": "childrens_heart_foundation_org__its_my_heart.md",
+    "source_section": "glossary_of_terms",
+    "entry_method": "scraped",
+    "search_keywords": [],
+    "priority": 2
+  },
+  {
+    "term": "Aorta",
+    "slug": "aorta",
+    "aliases": [],
+    "categories": [
+      "Tests & Imaging",
+      "Anatomy"
+    ],
+    "short_definition": "The main artery to the body, originating from the base of the heart, arching up over the heart like a cane handle, and passing down through the chest and abdomen near the spine.",
+    "full_definition": "The main artery to the body, originating from the base of the heart, arching up over the heart like a cane handle, and passing down through the chest and abdomen near the spine. The aorta normally receives blood from the left ventricle of the heart and moves it to the many lesser arteries that conduct blood to all parts of the body, except the lungs.",
+    "source_name": "Children's Heart Foundation",
+    "source_url": "https://www.childrensheartfoundation.org/file_download/afc69f23-39fb-40e5-93f3-8e143dc3114a",
+    "raw_source_file": "childrens_heart_foundation_org__its_my_heart.md",
+    "source_section": "glossary_of_terms",
+    "entry_method": "scraped",
+    "search_keywords": [],
+    "priority": 2
+  },
+  {
+    "term": "Aortic Stenosis",
+    "slug": "aortic-stenosis",
+    "aliases": [],
+    "categories": [
+      "Conditions",
+      "Anatomy"
+    ],
+    "short_definition": "A narrowing at the valve opening, or just above or below the valve, between the left ventricle of the heart and the large artery called the aorta.",
+    "full_definition": "A narrowing at the valve opening, or just above or below the valve, between the left ventricle of the heart and the large artery called the aorta.",
+    "source_name": "Children's Heart Foundation",
+    "source_url": "https://www.childrensheartfoundation.org/file_download/afc69f23-39fb-40e5-93f3-8e143dc3114a",
+    "raw_source_file": "childrens_heart_foundation_org__its_my_heart.md",
+    "source_section": "glossary_of_terms",
+    "entry_method": "scraped",
+    "search_keywords": [],
+    "priority": 2
+  },
+  {
+    "term": "Aortic valve",
+    "slug": "aortic-valve",
+    "aliases": [],
+    "categories": [
+      "Anatomy"
+    ],
+    "short_definition": "The valve between the aorta and the left ventricle (main pumping chamber).",
+    "full_definition": "The valve between the aorta and the left ventricle (main pumping chamber). The aortic valve usually has three leaflets.",
+    "source_name": "Mended Little Hearts",
+    "source_url": "https://mendedhearts.org/wp-content/uploads/2025/02/MLHG_2015-2025.pdf",
+    "raw_source_file": "mended_hearts_org__mended_little_heartguide__local_pdfs.md",
+    "source_section": "glossary_common_chd_terms_and_abbreviations",
+    "entry_method": "scraped",
+    "search_keywords": [],
+    "priority": 2
+  },
+  {
+    "term": "Arrhythmia",
+    "slug": "arrhythmia",
+    "aliases": [],
+    "categories": [
+      "Conditions"
+    ],
+    "short_definition": "Any variation from the normal rhythm of the heartbeat.",
+    "full_definition": "Any variation from the normal rhythm of the heartbeat.",
+    "source_name": "Children's Heart Foundation",
+    "source_url": "https://www.childrensheartfoundation.org/file_download/afc69f23-39fb-40e5-93f3-8e143dc3114a",
+    "raw_source_file": "childrens_heart_foundation_org__its_my_heart.md",
+    "source_section": "glossary_of_terms",
+    "entry_method": "scraped",
+    "search_keywords": [],
+    "priority": 2
+  },
+  {
+    "term": "Arterial Blood",
+    "slug": "arterial-blood",
+    "aliases": [],
+    "categories": [
+      "Devices & Equipment",
+      "Anatomy",
+      "Symptoms & Monitoring"
+    ],
+    "short_definition": "Blood that picks up oxygen in the lungs and normally passes from the lungs to the left side of the heart via the pulmonary veins.",
+    "full_definition": "Blood that picks up oxygen in the lungs and normally passes from the lungs to the left side of the heart via the pulmonary veins. This blood is then pumped by the left side of the heart into the arteries that carry it to all parts of the body.",
+    "source_name": "Children's Heart Foundation",
+    "source_url": "https://www.childrensheartfoundation.org/file_download/afc69f23-39fb-40e5-93f3-8e143dc3114a",
+    "raw_source_file": "childrens_heart_foundation_org__its_my_heart.md",
+    "source_section": "glossary_of_terms",
+    "entry_method": "scraped",
+    "search_keywords": [],
+    "priority": 2
+  },
+  {
+    "term": "Artery",
+    "slug": "artery",
+    "aliases": [],
+    "categories": [
+      "Devices & Equipment",
+      "Anatomy",
+      "Symptoms & Monitoring"
+    ],
+    "short_definition": "Any blood vessel that carries blood away from the heart to the various parts of the body.",
+    "full_definition": "Any blood vessel that carries blood away from the heart to the various parts of the body. Arteries usually carry oxygenated blood, except for the pulmonary artery, which carries unoxygenated blood from the heart to the lungs, where it picks up oxygen.",
+    "source_name": "Children's Heart Foundation",
+    "source_url": "https://www.childrensheartfoundation.org/file_download/afc69f23-39fb-40e5-93f3-8e143dc3114a",
+    "raw_source_file": "childrens_heart_foundation_org__its_my_heart.md",
+    "source_section": "glossary_of_terms",
+    "entry_method": "scraped",
+    "search_keywords": [],
+    "priority": 2
+  },
+  {
+    "term": "AS",
+    "slug": "as",
+    "aliases": [],
+    "categories": [
+      "Conditions",
+      "Anatomy"
+    ],
+    "short_definition": "Aortic stenosis, in which the vessel going from the heart to the aorta is narrow or blocked",
+    "full_definition": "Aortic stenosis, in which the vessel going from the heart to the aorta is narrow or blocked",
+    "source_name": "Mended Little Hearts",
+    "source_url": "https://mendedhearts.org/wp-content/uploads/2025/02/MLHG_2015-2025.pdf",
+    "raw_source_file": "mended_hearts_org__mended_little_heartguide__local_pdfs.md",
+    "source_section": "glossary_common_chd_terms_and_abbreviations",
+    "entry_method": "scraped",
+    "search_keywords": [],
+    "priority": 2
+  },
+  {
+    "term": "ASD",
+    "slug": "asd",
+    "aliases": [],
+    "categories": [
+      "Conditions",
+      "Tests & Imaging"
+    ],
+    "short_definition": "Atrial septal defect, a hole in the wall that separates the right and left atria (top chambers of the heart)",
+    "full_definition": "Atrial septal defect, a hole in the wall that separates the right and left atria (top chambers of the heart)",
+    "source_name": "Mended Little Hearts",
+    "source_url": "https://mendedhearts.org/wp-content/uploads/2025/02/MLHG_2015-2025.pdf",
+    "raw_source_file": "mended_hearts_org__mended_little_heartguide__local_pdfs.md",
+    "source_section": "glossary_common_chd_terms_and_abbreviations",
+    "entry_method": "scraped",
+    "search_keywords": [],
+    "priority": 2
+  },
+  {
+    "term": "Asymptomatic",
+    "slug": "asymptomatic",
+    "aliases": [],
+    "categories": [
+      "Tests & Imaging"
+    ],
+    "short_definition": "Without symptoms. A person is considered asymptomatic when he does not exhibit functional evidence of a disease or condition.",
+    "full_definition": "Without symptoms. A person is considered asymptomatic when he does not exhibit functional evidence of a disease or condition.",
+    "source_name": "Children's Heart Foundation",
+    "source_url": "https://www.childrensheartfoundation.org/file_download/afc69f23-39fb-40e5-93f3-8e143dc3114a",
+    "raw_source_file": "childrens_heart_foundation_org__its_my_heart.md",
+    "source_section": "glossary_of_terms",
+    "entry_method": "scraped",
+    "search_keywords": [],
+    "priority": 2
+  },
+  {
+    "term": "Atresia",
+    "slug": "atresia",
+    "aliases": [],
+    "categories": [
+      "Conditions"
+    ],
+    "short_definition": "absence or abnormal narrowing of a passage",
+    "full_definition": "absence or abnormal narrowing of a passage",
+    "source_name": "Mended Little Hearts",
+    "source_url": "https://mendedhearts.org/wp-content/uploads/2025/02/MLHG_2015-2025.pdf",
+    "raw_source_file": "mended_hearts_org__mended_little_heartguide__local_pdfs.md",
+    "source_section": "glossary_common_chd_terms_and_abbreviations",
+    "entry_method": "scraped",
+    "search_keywords": [],
+    "priority": 2
+  },
+  {
+    "term": "Atrial Septal Defect",
+    "slug": "atrial-septal-defect",
+    "aliases": [],
+    "categories": [
+      "Conditions",
+      "Tests & Imaging",
+      "Anatomy"
+    ],
+    "short_definition": "An opening in the wall, or septum, that normally divides the left and right upper heart chambers, called the atria.",
+    "full_definition": "An opening in the wall, or septum, that normally divides the left and right upper heart chambers, called the atria.",
+    "source_name": "Children's Heart Foundation",
+    "source_url": "https://www.childrensheartfoundation.org/file_download/afc69f23-39fb-40e5-93f3-8e143dc3114a",
+    "raw_source_file": "childrens_heart_foundation_org__its_my_heart.md",
+    "source_section": "glossary_of_terms",
+    "entry_method": "scraped",
+    "search_keywords": [],
+    "priority": 2
+  },
+  {
+    "term": "Atrial Septum",
+    "slug": "atrial-septum",
+    "aliases": [],
+    "categories": [
+      "Anatomy"
+    ],
+    "short_definition": "Sometimes called the interatrial septum, this is the muscular wall that divides the left and right upper chambers of the heart, called the atria.",
+    "full_definition": "Sometimes called the interatrial septum, this is the muscular wall that divides the left and right upper chambers of the heart, called the atria.",
+    "source_name": "Children's Heart Foundation",
+    "source_url": "https://www.childrensheartfoundation.org/file_download/afc69f23-39fb-40e5-93f3-8e143dc3114a",
+    "raw_source_file": "childrens_heart_foundation_org__its_my_heart.md",
+    "source_section": "glossary_of_terms",
+    "entry_method": "scraped",
+    "search_keywords": [],
+    "priority": 2
+  },
+  {
+    "term": "Atrio-Ventricular Node (AV Node)",
+    "slug": "atrio-ventricular-node-av-node",
+    "aliases": [],
+    "categories": [
+      "Tests & Imaging",
+      "Anatomy"
+    ],
+    "short_definition": "Part of the electrical (conduction) pathway of the heart that tells the ventricles when to beat",
+    "full_definition": "Part of the electrical (conduction) pathway of the heart that tells the ventricles when to beat",
+    "source_name": "Mended Little Hearts",
+    "source_url": "https://mendedhearts.org/wp-content/uploads/2025/02/MLHG_2015-2025.pdf",
+    "raw_source_file": "mended_hearts_org__mended_little_heartguide__local_pdfs.md",
+    "source_section": "glossary_common_chd_terms_and_abbreviations",
+    "entry_method": "scraped",
+    "search_keywords": [],
+    "priority": 2
+  },
+  {
+    "term": "Atrium",
+    "slug": "atrium",
+    "aliases": [
+      "the auricle"
+    ],
+    "categories": [
+      "Devices & Equipment",
+      "Anatomy",
+      "Symptoms & Monitoring"
+    ],
+    "short_definition": "Sometimes referred to as the auricle.",
+    "full_definition": "Sometimes referred to as the auricle. The atrium is one of the two upper chambers of the heart. The right atrium receives unoxygenated blood from the body. The left atrium receives oxygenated blood from the lungs.",
+    "source_name": "Children's Heart Foundation",
+    "source_url": "https://www.childrensheartfoundation.org/file_download/afc69f23-39fb-40e5-93f3-8e143dc3114a",
+    "raw_source_file": "childrens_heart_foundation_org__its_my_heart.md",
+    "source_section": "glossary_of_terms",
+    "entry_method": "scraped",
+    "search_keywords": [],
+    "priority": 2
+  },
+  {
+    "term": "AVC or AV Canal Defect",
+    "slug": "avc-or-av-canal-defect",
+    "aliases": [
+      "AV Canal Defect",
+      "AVC"
+    ],
+    "categories": [
+      "Conditions",
+      "Tests & Imaging"
+    ],
+    "short_definition": "Atrioventricular canal defect, also known as endocardial cushion defect",
+    "full_definition": "Atrioventricular canal defect, also known as endocardial cushion defect",
+    "source_name": "Mended Little Hearts",
+    "source_url": "https://mendedhearts.org/wp-content/uploads/2025/02/MLHG_2015-2025.pdf",
+    "raw_source_file": "mended_hearts_org__mended_little_heartguide__local_pdfs.md",
+    "source_section": "glossary_common_chd_terms_and_abbreviations",
+    "entry_method": "scraped",
+    "search_keywords": [],
+    "priority": 2
+  },
+  {
+    "term": "Bacterial Endocarditis",
+    "slug": "bacterial-endocarditis",
+    "aliases": [],
+    "categories": [
+      "Procedures & Surgeries",
+      "Tests & Imaging",
+      "Anatomy"
+    ],
+    "short_definition": "An inflammation of the inner layer of the heart caused by bacteria, sometimes resulting as a complication of another infectious disease, an operation or injury.",
+    "full_definition": "An inflammation of the inner layer of the heart caused by bacteria, sometimes resulting as a complication of another infectious disease, an operation or injury. The lining of the heart valves is most frequently affected, especially valves with previous damage from rheumatic disease or congenital abnormality.",
+    "source_name": "Children's Heart Foundation",
+    "source_url": "https://www.childrensheartfoundation.org/file_download/afc69f23-39fb-40e5-93f3-8e143dc3114a",
+    "raw_source_file": "childrens_heart_foundation_org__its_my_heart.md",
+    "source_section": "glossary_of_terms",
+    "entry_method": "scraped",
+    "search_keywords": [],
+    "priority": 2
+  },
+  {
+    "term": "Balloon Angioplasty",
+    "slug": "balloon-angioplasty",
+    "aliases": [],
+    "categories": [
+      "Procedures & Surgeries",
+      "Devices & Equipment"
+    ],
+    "short_definition": "A technique accomplished during cardiac catheterization or surgery using a balloon tipped catheter inserted into a vessel, usually to dilate a narrowing or to open a blockage.",
+    "full_definition": "A technique accomplished during cardiac catheterization or surgery using a balloon tipped catheter inserted into a vessel, usually to dilate a narrowing or to open a blockage. This is a fairly new procedure.",
+    "source_name": "Children's Heart Foundation",
+    "source_url": "https://www.childrensheartfoundation.org/file_download/afc69f23-39fb-40e5-93f3-8e143dc3114a",
+    "raw_source_file": "childrens_heart_foundation_org__its_my_heart.md",
+    "source_section": "glossary_of_terms",
+    "entry_method": "scraped",
+    "search_keywords": [],
+    "priority": 2
+  },
+  {
+    "term": "Balloon Valvuloplasty",
+    "slug": "balloon-valvuloplasty",
+    "aliases": [],
+    "categories": [
+      "Procedures & Surgeries",
+      "Anatomy"
+    ],
+    "short_definition": "A procedure in which a balloon is inserted into the opening of a narrowed heart valve, then inflated to stretched the valve open.",
+    "full_definition": "A procedure in which a balloon is inserted into the opening of a narrowed heart valve, then inflated to stretched the valve open. When the procedure is complete, the balloon is removed.",
+    "source_name": "Children's Heart Foundation",
+    "source_url": "https://www.childrensheartfoundation.org/file_download/afc69f23-39fb-40e5-93f3-8e143dc3114a",
+    "raw_source_file": "childrens_heart_foundation_org__its_my_heart.md",
+    "source_section": "glossary_of_terms",
+    "entry_method": "scraped",
+    "search_keywords": [],
+    "priority": 2
+  },
+  {
+    "term": "BE",
+    "slug": "be",
+    "aliases": [],
+    "categories": [
+      "Tests & Imaging",
+      "Anatomy"
+    ],
+    "short_definition": "Bacterial endocarditis, an infection of the inner layer and/or valves of the heart, caused by bacteria",
+    "full_definition": "Bacterial endocarditis, an infection of the inner layer and/or valves of the heart, caused by bacteria",
+    "source_name": "Mended Little Hearts",
+    "source_url": "https://mendedhearts.org/wp-content/uploads/2025/02/MLHG_2015-2025.pdf",
+    "raw_source_file": "mended_hearts_org__mended_little_heartguide__local_pdfs.md",
+    "source_section": "glossary_common_chd_terms_and_abbreviations",
+    "entry_method": "scraped",
+    "search_keywords": [],
+    "priority": 2
+  },
+  {
+    "term": "Bicuspid Valve",
+    "slug": "bicuspid-valve",
+    "aliases": [],
+    "categories": [
+      "Anatomy"
+    ],
+    "short_definition": "Any valve with two leaflets.",
+    "full_definition": "Any valve with two leaflets. The term may refer to a normal mitral valve or an abnormal aortic or pulmonary valve, which normally has three leaflets.",
+    "source_name": "Children's Heart Foundation",
+    "source_url": "https://www.childrensheartfoundation.org/file_download/afc69f23-39fb-40e5-93f3-8e143dc3114a",
+    "raw_source_file": "childrens_heart_foundation_org__its_my_heart.md",
+    "source_section": "glossary_of_terms",
+    "entry_method": "scraped",
+    "search_keywords": [],
+    "priority": 2
+  },
+  {
+    "term": "Blalock-Hanlon",
+    "slug": "blalock-hanlon",
+    "aliases": [],
+    "categories": [
+      "Procedures & Surgeries"
+    ],
+    "short_definition": "Surgical septostomy performed for palliative treatment of transposition of the great vessels",
+    "full_definition": "Surgical septostomy performed for palliative treatment of transposition of the great vessels",
+    "source_name": "Mended Little Hearts",
+    "source_url": "https://mendedhearts.org/wp-content/uploads/2025/02/MLHG_2015-2025.pdf",
+    "raw_source_file": "mended_hearts_org__mended_little_heartguide__local_pdfs.md",
+    "source_section": "glossary_common_chd_terms_and_abbreviations",
+    "entry_method": "scraped",
+    "search_keywords": [],
+    "priority": 2
+  },
+  {
+    "term": "Blood Pressure",
+    "slug": "blood-pressure",
+    "aliases": [],
+    "categories": [
+      "Tests & Imaging",
+      "Symptoms & Monitoring"
+    ],
+    "short_definition": "The pressure of the blood in the arteries.",
+    "full_definition": "The pressure of the blood in the arteries. Systolic blood pressure is the top number (when the heart is contracted). Diastolic blood pressure is the bottom number (when the heart is relaxed).",
+    "source_name": "Mended Little Hearts",
+    "source_url": "https://mendedhearts.org/wp-content/uploads/2025/02/MLHG_2015-2025.pdf",
+    "raw_source_file": "mended_hearts_org__mended_little_heartguide__local_pdfs.md",
+    "source_section": "glossary_common_chd_terms_and_abbreviations",
+    "entry_method": "scraped",
+    "search_keywords": [],
+    "priority": 2
+  },
+  {
+    "term": "Blue Babies",
+    "slug": "blue-babies",
+    "aliases": [],
+    "categories": [
+      "Conditions",
+      "Tests & Imaging",
+      "Devices & Equipment",
+      "Symptoms & Monitoring"
+    ],
+    "short_definition": "Babies having a blue color of skin, called cyanosis, caused by insufficient oxygen in the arterial blood.",
+    "full_definition": "Babies having a blue color of skin, called cyanosis, caused by insufficient oxygen in the arterial blood. This often indicates a heart defect, but may have other causes, such as premature birth or impaired respiration.",
+    "source_name": "Children's Heart Foundation",
+    "source_url": "https://www.childrensheartfoundation.org/file_download/afc69f23-39fb-40e5-93f3-8e143dc3114a",
+    "raw_source_file": "childrens_heart_foundation_org__its_my_heart.md",
+    "source_section": "glossary_of_terms",
+    "entry_method": "scraped",
+    "search_keywords": [],
+    "priority": 2
+  },
+  {
+    "term": "Bradycardia",
+    "slug": "bradycardia",
+    "aliases": [],
+    "categories": [
+      "Symptoms & Monitoring"
+    ],
+    "short_definition": "An abnormally slow heart rate.",
+    "full_definition": "An abnormally slow heart rate. Generally, anything below 60 beats per minute is considered bradycardia.",
+    "source_name": "Children's Heart Foundation",
+    "source_url": "https://www.childrensheartfoundation.org/file_download/afc69f23-39fb-40e5-93f3-8e143dc3114a",
+    "raw_source_file": "childrens_heart_foundation_org__its_my_heart.md",
+    "source_section": "glossary_of_terms",
+    "entry_method": "scraped",
+    "search_keywords": [],
+    "priority": 2
+  },
+  {
+    "term": "BT Shunt",
+    "slug": "bt-shunt",
+    "aliases": [],
+    "categories": [
+      "Procedures & Surgeries",
+      "Anatomy"
+    ],
+    "short_definition": "Blalock-Taussig shunt, a surgical, systemic-to-pulmonary artery shunt procedure.",
+    "full_definition": "Blalock-Taussig shunt, a surgical, systemic-to-pulmonary artery shunt procedure.",
+    "source_name": "Mended Little Hearts",
+    "source_url": "https://mendedhearts.org/wp-content/uploads/2025/02/MLHG_2015-2025.pdf",
+    "raw_source_file": "mended_hearts_org__mended_little_heartguide__local_pdfs.md",
+    "source_section": "glossary_common_chd_terms_and_abbreviations",
+    "entry_method": "scraped",
+    "search_keywords": [],
+    "priority": 2
+  },
+  {
+    "term": "Bundle of His",
+    "slug": "bundle-of-his",
+    "aliases": [
+      "the atrioventricular bundle or A-V bundle"
+    ],
+    "categories": [
+      "Tests & Imaging",
+      "Anatomy"
+    ],
+    "short_definition": "Also called the atrioventricular bundle or A-V bundle.",
+    "full_definition": "Also called the atrioventricular bundle or A-V bundle. This bundle of microscopic specialized fibers lies between the atria and ventricles and is the only known normal direct connection between the atria and the ventricles, serving to conduct impulses to the ventricular heart muscle. It is named after German anatomist Wilhelm His.",
+    "source_name": "Children's Heart Foundation",
+    "source_url": "https://www.childrensheartfoundation.org/file_download/afc69f23-39fb-40e5-93f3-8e143dc3114a",
+    "raw_source_file": "childrens_heart_foundation_org__its_my_heart.md",
+    "source_section": "glossary_of_terms",
+    "entry_method": "scraped",
+    "search_keywords": [],
+    "priority": 2
+  },
+  {
+    "term": "Cardiac",
+    "slug": "cardiac",
+    "aliases": [],
+    "categories": [
+      "General Medical Terms"
+    ],
+    "short_definition": "Pertaining to the heart. Sometimes refers to a person who has heart disease.",
+    "full_definition": "Pertaining to the heart. Sometimes refers to a person who has heart disease.",
+    "source_name": "Children's Heart Foundation",
+    "source_url": "https://www.childrensheartfoundation.org/file_download/afc69f23-39fb-40e5-93f3-8e143dc3114a",
+    "raw_source_file": "childrens_heart_foundation_org__its_my_heart.md",
+    "source_section": "glossary_of_terms",
+    "entry_method": "scraped",
+    "search_keywords": [],
+    "priority": 2
+  },
+  {
+    "term": "Cardiac Arrest",
+    "slug": "cardiac-arrest",
+    "aliases": [],
+    "categories": [
+      "Symptoms & Monitoring"
+    ],
+    "short_definition": "The cessation of the heartbeat.",
+    "full_definition": "The cessation of the heartbeat. As a result, blood pressure drops abruptly and circulation of blood ceases.",
+    "source_name": "Children's Heart Foundation",
+    "source_url": "https://www.childrensheartfoundation.org/file_download/afc69f23-39fb-40e5-93f3-8e143dc3114a",
+    "raw_source_file": "childrens_heart_foundation_org__its_my_heart.md",
+    "source_section": "glossary_of_terms",
+    "entry_method": "scraped",
+    "search_keywords": [],
+    "priority": 2
+  },
+  {
+    "term": "Cardiologist",
+    "slug": "cardiologist",
+    "aliases": [],
+    "categories": [
+      "Hospital & Care Journey"
+    ],
+    "short_definition": "A specialist in the diagnosis and treatment of heart disease.",
+    "full_definition": "A specialist in the diagnosis and treatment of heart disease.",
+    "source_name": "Children's Heart Foundation",
+    "source_url": "https://www.childrensheartfoundation.org/file_download/afc69f23-39fb-40e5-93f3-8e143dc3114a",
+    "raw_source_file": "childrens_heart_foundation_org__its_my_heart.md",
+    "source_section": "glossary_of_terms",
+    "entry_method": "scraped",
+    "search_keywords": [],
+    "priority": 2
+  },
+  {
+    "term": "Cardiology",
+    "slug": "cardiology",
+    "aliases": [],
+    "categories": [
+      "Tests & Imaging"
+    ],
+    "short_definition": "The study of the heart and its functions in health and disease.",
+    "full_definition": "The study of the heart and its functions in health and disease.",
+    "source_name": "Children's Heart Foundation",
+    "source_url": "https://www.childrensheartfoundation.org/file_download/afc69f23-39fb-40e5-93f3-8e143dc3114a",
+    "raw_source_file": "childrens_heart_foundation_org__its_my_heart.md",
+    "source_section": "glossary_of_terms",
+    "entry_method": "scraped",
+    "search_keywords": [],
+    "priority": 2
+  },
+  {
+    "term": "Cardiopulmonary Bypass",
+    "slug": "cardiopulmonary-bypass",
+    "aliases": [],
+    "categories": [
+      "Procedures & Surgeries",
+      "Tests & Imaging",
+      "Devices & Equipment",
+      "Anatomy"
+    ],
+    "short_definition": "A machine that can perform the function of the heart and lung",
+    "full_definition": "A machine that can perform the function of the heart and lung",
+    "source_name": "Mended Little Hearts",
+    "source_url": "https://mendedhearts.org/wp-content/uploads/2025/02/MLHG_2015-2025.pdf",
+    "raw_source_file": "mended_hearts_org__mended_little_heartguide__local_pdfs.md",
+    "source_section": "glossary_common_chd_terms_and_abbreviations",
+    "entry_method": "scraped",
+    "search_keywords": [],
+    "priority": 2
+  },
+  {
+    "term": "Cardiopulmonary Resuscitation (CPR)",
+    "slug": "cardiopulmonary-resuscitation-cpr",
+    "aliases": [
+      "CPR"
+    ],
+    "categories": [
+      "Tests & Imaging",
+      "Devices & Equipment",
+      "Anatomy",
+      "Symptoms & Monitoring"
+    ],
+    "short_definition": "An emergency measure used by one or two people to artificially maintain another person’s breathing and circulation if these functions suddenly stop.",
+    "full_definition": "An emergency measure used by one or two people to artificially maintain another person’s breathing and circulation if these functions suddenly stop. CPR is done by keeping the airway open, performing rescue breathing and external cardiac compression, or heart massage, to keep oxygenated blood circulating through the vital organs of the body.",
+    "source_name": "Children's Heart Foundation",
+    "source_url": "https://www.childrensheartfoundation.org/file_download/afc69f23-39fb-40e5-93f3-8e143dc3114a",
+    "raw_source_file": "childrens_heart_foundation_org__its_my_heart.md",
+    "source_section": "glossary_of_terms",
+    "entry_method": "scraped",
+    "search_keywords": [],
+    "priority": 2
+  },
+  {
+    "term": "Cardiovascular",
+    "slug": "cardiovascular",
+    "aliases": [],
+    "categories": [
+      "General Medical Terms"
+    ],
+    "short_definition": "Pertaining to the heart and blood vessels.",
+    "full_definition": "Pertaining to the heart and blood vessels.",
+    "source_name": "Children's Heart Foundation",
+    "source_url": "https://www.childrensheartfoundation.org/file_download/afc69f23-39fb-40e5-93f3-8e143dc3114a",
+    "raw_source_file": "childrens_heart_foundation_org__its_my_heart.md",
+    "source_section": "glossary_of_terms",
+    "entry_method": "scraped",
+    "search_keywords": [],
+    "priority": 2
+  },
+  {
+    "term": "Carditis",
+    "slug": "carditis",
+    "aliases": [],
+    "categories": [
+      "General Medical Terms"
+    ],
+    "short_definition": "Inflammation of the heart.",
+    "full_definition": "Inflammation of the heart.",
+    "source_name": "Children's Heart Foundation",
+    "source_url": "https://www.childrensheartfoundation.org/file_download/afc69f23-39fb-40e5-93f3-8e143dc3114a",
+    "raw_source_file": "childrens_heart_foundation_org__its_my_heart.md",
+    "source_section": "glossary_of_terms",
+    "entry_method": "scraped",
+    "search_keywords": [],
+    "priority": 2
+  },
+  {
+    "term": "Catheter",
+    "slug": "catheter",
+    "aliases": [],
+    "categories": [
+      "Devices & Equipment",
+      "Anatomy"
+    ],
+    "short_definition": "A thin, flexible tube that can be guided into body organs.",
+    "full_definition": "A thin, flexible tube that can be guided into body organs. A cardiac catheter is made of woven plastic, or other material to which blood will not adhere, and is inserted into a vein or artery, usually of an arm or a leg, and gently threaded into the heart. Its progress can be watched on a fluoroscope.",
+    "source_name": "Children's Heart Foundation",
+    "source_url": "https://www.childrensheartfoundation.org/file_download/afc69f23-39fb-40e5-93f3-8e143dc3114a",
+    "raw_source_file": "childrens_heart_foundation_org__its_my_heart.md",
+    "source_section": "glossary_of_terms",
+    "entry_method": "scraped",
+    "search_keywords": [],
+    "priority": 2
+  },
+  {
+    "term": "Catheterization",
+    "slug": "catheterization",
+    "aliases": [
+      "cardiac cath",
+      "cardiac catherization",
+      "cath"
+    ],
+    "categories": [
+      "Tests & Imaging",
+      "Procedures & Surgeries"
+    ],
+    "short_definition": "An invasive procedure where long hollow tubes are inserted through the skin and placed in various chambers of the heart to measure pressures, take pictures of various structures and perform interventions on the heart.",
+    "full_definition": "Cardiac catheterization (often called “cardiac cath” or just “cath”) is one of the oldest tests that cardiologists use to help evaluate, manage and treat patients with CHD. In the past, cardiac catheterization was often used to diagnose CHD, but today, doctors typically use echocardiography and MRI instead. More and more procedures are being done in the cath lab instead of in the operating room, and catheterization has provided a great alternative for some types of heart disease that would have required surgery in the past. Some interventions done via catheterization include opening up tight valves, closing unwanted holes or vessels in various chambers of the heart, evaluating and treating abnormal heart rhythms and even replacing some types of valves without surgery. This is an invasive test, meaning that needles and tubes are put into the child’s body, so it is only used when it is really needed. Because it is invasive, there are risks associated with it, but most children do well. Radiation is used in catheterization so that doctors can see images of the heart and vessels during the procedure. Before a cardiac cath, the child will typically be anesthetized so that they are not awake during the procedure. This is sometimes done via an IV in the arm. The child may be told not to eat or drink for a period of time before the procedure so that he or she doesn’t get sick from the anesthetics. The child is then taken to the cath lab. (You can look at pictures of cath labs online. If your child is undergoing a catheterization, some hospitals will show you the cath lab if it will make you more comfortable.) During the cath, long hollow tubes are inserted through the skin and placed in various chambers of the heart to measure pressures, take pictures of various structures and perform interventions on the heart. These tubes may be inserted through the groin, neck or other areas of the body. After the cath, the child will have to lay flat for a period of time to make sure there is no bleeding where the tube went into the body. Recovery time from cath procedures is usually much shorter than for surgery. Sometimes, the child will be able to go home that evening; in other cases, they will remain in the hospital for one or more nights to recover.",
+    "source_name": "Mended Little Hearts",
+    "source_url": "https://mendedhearts.org/wp-content/uploads/2025/02/MLHG_2015-2025.pdf",
+    "raw_source_file": "mended_hearts_org__mended_little_heartguide__local_pdfs.md",
+    "source_section": "common_tests_and_procedures",
+    "entry_method": "manual",
+    "search_keywords": [],
+    "priority": 2
+  },
+  {
+    "term": "CAVC",
+    "slug": "cavc",
+    "aliases": [],
+    "categories": [
+      "Conditions",
+      "Tests & Imaging"
+    ],
+    "short_definition": "Complete atrioventricular canal, the main heart defect seen in patients with Down syndrome",
+    "full_definition": "Complete atrioventricular canal, the main heart defect seen in patients with Down syndrome",
+    "source_name": "Mended Little Hearts",
+    "source_url": "https://mendedhearts.org/wp-content/uploads/2025/02/MLHG_2015-2025.pdf",
+    "raw_source_file": "mended_hearts_org__mended_little_heartguide__local_pdfs.md",
+    "source_section": "glossary_common_chd_terms_and_abbreviations",
+    "entry_method": "scraped",
+    "search_keywords": [],
+    "priority": 2
+  },
+  {
+    "term": "CHD",
+    "slug": "chd",
+    "aliases": [],
+    "categories": [
+      "Conditions",
+      "Tests & Imaging"
+    ],
+    "short_definition": "An abbreviation that can stand for either congenital heart defect, congenital heart disease or congestive heart disease",
+    "full_definition": "An abbreviation that can stand for either congenital heart defect, congenital heart disease or congestive heart disease",
+    "source_name": "Mended Little Hearts",
+    "source_url": "https://mendedhearts.org/wp-content/uploads/2025/02/MLHG_2015-2025.pdf",
+    "raw_source_file": "mended_hearts_org__mended_little_heartguide__local_pdfs.md",
+    "source_section": "glossary_common_chd_terms_and_abbreviations",
+    "entry_method": "scraped",
+    "search_keywords": [],
+    "priority": 2
+  },
+  {
+    "term": "CHF",
+    "slug": "chf",
+    "aliases": [],
+    "categories": [
+      "Conditions",
+      "Anatomy"
+    ],
+    "short_definition": "Congestive heart failure, a condition in which the heart cannot pump well enough, creating a backup of blood and congestion in the veins and lungs",
+    "full_definition": "Congestive heart failure, a condition in which the heart cannot pump well enough, creating a backup of blood and congestion in the veins and lungs",
+    "source_name": "Mended Little Hearts",
+    "source_url": "https://mendedhearts.org/wp-content/uploads/2025/02/MLHG_2015-2025.pdf",
+    "raw_source_file": "mended_hearts_org__mended_little_heartguide__local_pdfs.md",
+    "source_section": "glossary_common_chd_terms_and_abbreviations",
+    "entry_method": "scraped",
+    "search_keywords": [],
+    "priority": 2
+  },
+  {
+    "term": "Cineangiocardiography",
+    "slug": "cineangiocardiography",
+    "aliases": [],
+    "categories": [
+      "Tests & Imaging"
+    ],
+    "short_definition": "A diagnostic method similar to angiocardiography, except that instead of still x-ray pictures, motion pictures of the heart are made by fluoroscope as an injected opaque liquid is carried through the heart and blood vessels.",
+    "full_definition": "A diagnostic method similar to angiocardiography, except that instead of still x-ray pictures, motion pictures of the heart are made by fluoroscope as an injected opaque liquid is carried through the heart and blood vessels.",
+    "source_name": "Children's Heart Foundation",
+    "source_url": "https://www.childrensheartfoundation.org/file_download/afc69f23-39fb-40e5-93f3-8e143dc3114a",
+    "raw_source_file": "childrens_heart_foundation_org__its_my_heart.md",
+    "source_section": "glossary_of_terms",
+    "entry_method": "scraped",
+    "search_keywords": [],
+    "priority": 2
+  },
+  {
+    "term": "Clubbed Fingers",
+    "slug": "clubbed-fingers",
+    "aliases": [],
+    "categories": [
+      "Conditions",
+      "Tests & Imaging"
+    ],
+    "short_definition": "Fingers with a short broad tip and overhanging nail, somewhat resembling a drumstick.",
+    "full_definition": "Fingers with a short broad tip and overhanging nail, somewhat resembling a drumstick. This condition is sometimes seen in children born with certain kinds of cyanotic heart defects and in adults with heart, lung or gastrointestinal diseases. It may also be hereditary and insignificant.",
+    "source_name": "Children's Heart Foundation",
+    "source_url": "https://www.childrensheartfoundation.org/file_download/afc69f23-39fb-40e5-93f3-8e143dc3114a",
+    "raw_source_file": "childrens_heart_foundation_org__its_my_heart.md",
+    "source_section": "glossary_of_terms",
+    "entry_method": "scraped",
+    "search_keywords": [],
+    "priority": 2
+  },
+  {
+    "term": "CoA",
+    "slug": "coa",
+    "aliases": [],
+    "categories": [
+      "Conditions",
+      "Tests & Imaging",
+      "Anatomy"
+    ],
+    "short_definition": "Coarctation of the aorta, a blockage in the aorta that may be caused by narrowing of the vessel",
+    "full_definition": "Coarctation of the aorta, a blockage in the aorta that may be caused by narrowing of the vessel",
+    "source_name": "Mended Little Hearts",
+    "source_url": "https://mendedhearts.org/wp-content/uploads/2025/02/MLHG_2015-2025.pdf",
+    "raw_source_file": "mended_hearts_org__mended_little_heartguide__local_pdfs.md",
+    "source_section": "glossary_common_chd_terms_and_abbreviations",
+    "entry_method": "scraped",
+    "search_keywords": [],
+    "priority": 2
+  },
+  {
+    "term": "Coarctation of the Aorta",
+    "slug": "coarctation-of-the-aorta",
+    "aliases": [],
+    "categories": [
+      "Conditions",
+      "Tests & Imaging",
+      "Anatomy"
+    ],
+    "short_definition": "A congenital narrowing of the aorta, the main artery that conducts blood from the heart to the body.",
+    "full_definition": "A congenital narrowing of the aorta, the main artery that conducts blood from the heart to the body.",
+    "source_name": "Children's Heart Foundation",
+    "source_url": "https://www.childrensheartfoundation.org/file_download/afc69f23-39fb-40e5-93f3-8e143dc3114a",
+    "raw_source_file": "childrens_heart_foundation_org__its_my_heart.md",
+    "source_section": "glossary_of_terms",
+    "entry_method": "scraped",
+    "search_keywords": [],
+    "priority": 2
+  },
+  {
+    "term": "Comorbidity",
+    "slug": "comorbidity",
+    "aliases": [],
+    "categories": [
+      "General Medical Terms"
+    ],
+    "short_definition": "When two or more disorders or illnesses happen in the same person, either at the same time or after each other.",
+    "full_definition": "When two or more disorders or illnesses happen in the same person, either at the same time or after each other. Comorbidities can worsen the first illness.",
+    "source_name": "Mended Little Hearts",
+    "source_url": "https://mendedhearts.org/wp-content/uploads/2025/02/MLHG_2015-2025.pdf",
+    "raw_source_file": "mended_hearts_org__mended_little_heartguide__local_pdfs.md",
+    "source_section": "glossary_common_chd_terms_and_abbreviations",
+    "entry_method": "scraped",
+    "search_keywords": [],
+    "priority": 2
+  },
+  {
+    "term": "Congenital Anomaly",
+    "slug": "congenital-anomaly",
+    "aliases": [],
+    "categories": [
+      "General Medical Terms"
+    ],
+    "short_definition": "An abnormality present at birth.",
+    "full_definition": "An abnormality present at birth.",
+    "source_name": "Children's Heart Foundation",
+    "source_url": "https://www.childrensheartfoundation.org/file_download/afc69f23-39fb-40e5-93f3-8e143dc3114a",
+    "raw_source_file": "childrens_heart_foundation_org__its_my_heart.md",
+    "source_section": "glossary_of_terms",
+    "entry_method": "scraped",
+    "search_keywords": [],
+    "priority": 2
+  },
+  {
+    "term": "Congenital Heart Defect",
+    "slug": "congenital-heart-defect",
+    "aliases": [],
+    "categories": [
+      "Conditions",
+      "Tests & Imaging"
+    ],
+    "short_definition": "Malformation of the heart or of its major blood vessels present at birth.",
+    "full_definition": "Malformation of the heart or of its major blood vessels present at birth.",
+    "source_name": "Children's Heart Foundation",
+    "source_url": "https://www.childrensheartfoundation.org/file_download/afc69f23-39fb-40e5-93f3-8e143dc3114a",
+    "raw_source_file": "childrens_heart_foundation_org__its_my_heart.md",
+    "source_section": "glossary_of_terms",
+    "entry_method": "scraped",
+    "search_keywords": [],
+    "priority": 2
+  },
+  {
+    "term": "Congestive Heart Failure",
+    "slug": "congestive-heart-failure",
+    "aliases": [],
+    "categories": [
+      "Conditions",
+      "Procedures & Surgeries",
+      "Medications"
+    ],
+    "short_definition": "Heart failure is a condition in which the heart is unable to pump the amount of needed blood to the body.",
+    "full_definition": "Heart failure is a condition in which the heart is unable to pump the amount of needed blood to the body. This results from any anatomic or chemical abnormality that leads to congestion in the body and/or lung tissues. Congestive heart failure usually develops gradually over several years, although it can be acute (short and severe). It can be treated by drugs and/or, in some cases, by surgery.",
+    "source_name": "Children's Heart Foundation",
+    "source_url": "https://www.childrensheartfoundation.org/file_download/afc69f23-39fb-40e5-93f3-8e143dc3114a",
+    "raw_source_file": "childrens_heart_foundation_org__its_my_heart.md",
+    "source_section": "glossary_of_terms",
+    "entry_method": "scraped",
+    "search_keywords": [],
+    "priority": 2
+  },
+  {
+    "term": "Coronary Arteries",
+    "slug": "coronary-arteries",
+    "aliases": [],
+    "categories": [
+      "Anatomy"
+    ],
+    "short_definition": "The two arteries that arise from the aorta, then arch down over the top of the heart and branch out to provide blood to the working heart muscle.",
+    "full_definition": "The two arteries that arise from the aorta, then arch down over the top of the heart and branch out to provide blood to the working heart muscle.",
+    "source_name": "Children's Heart Foundation",
+    "source_url": "https://www.childrensheartfoundation.org/file_download/afc69f23-39fb-40e5-93f3-8e143dc3114a",
+    "raw_source_file": "childrens_heart_foundation_org__its_my_heart.md",
+    "source_section": "glossary_of_terms",
+    "entry_method": "scraped",
+    "search_keywords": [],
+    "priority": 2
+  },
+  {
+    "term": "CXR",
+    "slug": "cxr",
+    "aliases": [],
+    "categories": [
+      "Tests & Imaging"
+    ],
+    "short_definition": "Chest x-ray, a test where a picture is taken of the heart, lungs and blood vessels in the chest",
+    "full_definition": "Chest x-ray, a test where a picture is taken of the heart, lungs and blood vessels in the chest",
+    "source_name": "Mended Little Hearts",
+    "source_url": "https://mendedhearts.org/wp-content/uploads/2025/02/MLHG_2015-2025.pdf",
+    "raw_source_file": "mended_hearts_org__mended_little_heartguide__local_pdfs.md",
+    "source_section": "glossary_common_chd_terms_and_abbreviations",
+    "entry_method": "scraped",
+    "search_keywords": [],
+    "priority": 2
+  },
+  {
+    "term": "Cyanosis",
+    "slug": "cyanosis",
+    "aliases": [],
+    "categories": [
+      "Conditions",
+      "Devices & Equipment",
+      "Symptoms & Monitoring"
+    ],
+    "short_definition": "Blueness of skin caused by insufficient oxygen in the blood.",
+    "full_definition": "Blueness of skin caused by insufficient oxygen in the blood. When hemoglobin is not carrying oxygen, it is dark burgundy and is called “reduced hemoglobin.” The blueness of the skin occurs when critical amounts of reduced hemoglobin are present.",
+    "source_name": "Children's Heart Foundation",
+    "source_url": "https://www.childrensheartfoundation.org/file_download/afc69f23-39fb-40e5-93f3-8e143dc3114a",
+    "raw_source_file": "childrens_heart_foundation_org__its_my_heart.md",
+    "source_section": "glossary_of_terms",
+    "entry_method": "scraped",
+    "search_keywords": [],
+    "priority": 2
+  },
+  {
+    "term": "D-TGA",
+    "slug": "d-tga",
+    "aliases": [],
+    "categories": [
+      "Conditions",
+      "Tests & Imaging",
+      "Anatomy"
+    ],
+    "short_definition": "Dextro transposition of great arteries, the aorta and pulmonary artery are connected to the wrong chambers of the heart — the aorta leaves the right ventricle and the pulmonary artery leaves the left",
+    "full_definition": "Dextro transposition of great arteries, the aorta and pulmonary artery are connected to the wrong chambers of the heart — the aorta leaves the right ventricle and the pulmonary artery leaves the left",
+    "source_name": "Mended Little Hearts",
+    "source_url": "https://mendedhearts.org/wp-content/uploads/2025/02/MLHG_2015-2025.pdf",
+    "raw_source_file": "mended_hearts_org__mended_little_heartguide__local_pdfs.md",
+    "source_section": "glossary_common_chd_terms_and_abbreviations",
+    "entry_method": "scraped",
+    "search_keywords": [],
+    "priority": 2
+  },
+  {
+    "term": "Dextrocardia",
+    "slug": "dextrocardia",
+    "aliases": [],
+    "categories": [
+      "Conditions",
+      "Tests & Imaging"
+    ],
+    "short_definition": "Abnormal position of the heart within the chest.",
+    "full_definition": "Abnormal position of the heart within the chest. The heart normally is in the left chest. When dextrocardia is present, the heart is on the right side. This occurs frequently when a congenital heart defect is present.",
+    "source_name": "Children's Heart Foundation",
+    "source_url": "https://www.childrensheartfoundation.org/file_download/afc69f23-39fb-40e5-93f3-8e143dc3114a",
+    "raw_source_file": "childrens_heart_foundation_org__its_my_heart.md",
+    "source_section": "glossary_of_terms",
+    "entry_method": "scraped",
+    "search_keywords": [],
+    "priority": 2
+  },
+  {
+    "term": "Diastolic Blood Pressure",
+    "slug": "diastolic-blood-pressure",
+    "aliases": [],
+    "categories": [
+      "Symptoms & Monitoring"
+    ],
+    "short_definition": "The blood pressure inside the arteries when the heart muscle is relaxed.",
+    "full_definition": "The blood pressure inside the arteries when the heart muscle is relaxed.",
+    "source_name": "Children's Heart Foundation",
+    "source_url": "https://www.childrensheartfoundation.org/file_download/afc69f23-39fb-40e5-93f3-8e143dc3114a",
+    "raw_source_file": "childrens_heart_foundation_org__its_my_heart.md",
+    "source_section": "glossary_of_terms",
+    "entry_method": "scraped",
+    "search_keywords": [],
+    "priority": 2
+  },
+  {
+    "term": "Digoxin (Digitalis)",
+    "slug": "digoxin-digitalis",
+    "aliases": [],
+    "categories": [
+      "Conditions",
+      "Tests & Imaging",
+      "Medications"
+    ],
+    "short_definition": "A drug that causes the heart muscle to pump more effectively, thereby improving the circulation of the blood, and promoting the normal elimination of excess fluid.",
+    "full_definition": "A drug that causes the heart muscle to pump more effectively, thereby improving the circulation of the blood, and promoting the normal elimination of excess fluid. This drug is often used to treat heart failure. It is also used for certain arrhythmias.",
+    "source_name": "Children's Heart Foundation",
+    "source_url": "https://www.childrensheartfoundation.org/file_download/afc69f23-39fb-40e5-93f3-8e143dc3114a",
+    "raw_source_file": "childrens_heart_foundation_org__its_my_heart.md",
+    "source_section": "glossary_of_terms",
+    "entry_method": "scraped",
+    "search_keywords": [],
+    "priority": 2
+  },
+  {
+    "term": "Diuretic",
+    "slug": "diuretic",
+    "aliases": [],
+    "categories": [
+      "Conditions",
+      "Medications"
+    ],
+    "short_definition": "A medicine that promotes the excretion of urine.",
+    "full_definition": "A medicine that promotes the excretion of urine. These drugs are often used to treat conditions involving excess body fluid, hypertension and congestive heart failure.",
+    "source_name": "Children's Heart Foundation",
+    "source_url": "https://www.childrensheartfoundation.org/file_download/afc69f23-39fb-40e5-93f3-8e143dc3114a",
+    "raw_source_file": "childrens_heart_foundation_org__its_my_heart.md",
+    "source_section": "glossary_of_terms",
+    "entry_method": "scraped",
+    "search_keywords": [],
+    "priority": 2
+  },
+  {
+    "term": "Dysrhythmia (Arrhythmia)",
+    "slug": "dysrhythmia-arrhythmia",
+    "aliases": [],
+    "categories": [
+      "Conditions"
+    ],
+    "short_definition": "An abnormal rhythm of the heart.",
+    "full_definition": "An abnormal rhythm of the heart.",
+    "source_name": "Children's Heart Foundation",
+    "source_url": "https://www.childrensheartfoundation.org/file_download/afc69f23-39fb-40e5-93f3-8e143dc3114a",
+    "raw_source_file": "childrens_heart_foundation_org__its_my_heart.md",
+    "source_section": "glossary_of_terms",
+    "entry_method": "scraped",
+    "search_keywords": [],
+    "priority": 2
+  },
+  {
+    "term": "ECG or EKG",
+    "slug": "ecg-or-ekg",
+    "aliases": [
+      "ECG",
+      "EKG"
+    ],
+    "categories": [
+      "Tests & Imaging"
+    ],
+    "short_definition": "Electrocardiogram, a test where movement in electrical charges across the heart are recorded",
+    "full_definition": "Electrocardiogram, a test where movement in electrical charges across the heart are recorded",
+    "source_name": "Mended Little Hearts",
+    "source_url": "https://mendedhearts.org/wp-content/uploads/2025/02/MLHG_2015-2025.pdf",
+    "raw_source_file": "mended_hearts_org__mended_little_heartguide__local_pdfs.md",
+    "source_section": "glossary_common_chd_terms_and_abbreviations",
+    "entry_method": "scraped",
+    "search_keywords": [],
+    "priority": 2
+  },
+  {
+    "term": "ECHO",
+    "slug": "echo",
+    "aliases": [],
+    "categories": [
+      "Tests & Imaging"
+    ],
+    "short_definition": "Echocardiography, a diagnostic tool that uses Doppler techniques to evaluate blood flow patterns and pressures",
+    "full_definition": "Echocardiography, a diagnostic tool that uses Doppler techniques to evaluate blood flow patterns and pressures",
+    "source_name": "Mended Little Hearts",
+    "source_url": "https://mendedhearts.org/wp-content/uploads/2025/02/MLHG_2015-2025.pdf",
+    "raw_source_file": "mended_hearts_org__mended_little_heartguide__local_pdfs.md",
+    "source_section": "glossary_common_chd_terms_and_abbreviations",
+    "entry_method": "scraped",
+    "search_keywords": [],
+    "priority": 2
+  },
+  {
+    "term": "Echocardiogram",
+    "slug": "echocardiogram",
+    "aliases": [
+      "echo"
+    ],
+    "categories": [
+      "Tests & Imaging",
+      "Devices & Equipment"
+    ],
+    "short_definition": "A sophisticated ultrasound machine that takes two-dimensional pictures of the heart to evaluate how it’s structured and how it’s functioning.",
+    "full_definition": "An echocardiogram (often called an “echo” by families) is a very useful tool in the diagnosis and management of CHD. Because echo technology keeps improving, medical professionals don’t need to use invasive tests as often. The echocardiogram is essentially a sophisticated ultrasound machine (like the ultrasound used on pregnant moms). A gel is put onto the child’s skin and then a probe is placed on top of the skin and moved around so that pictures of the heart can be seen on a computer monitor. This test is not painful, but sometimes children can become uncomfortable, especially when the probe is placed on the neck area. Small children may become restless during the test. It can help to play a video or to read to them to keep them still during the test. In some cases, children are given medication to sedate them before an echo (called a “sedated echo”) so that they remain very still and allow doctors to get the clearest possible picture of the heart. Echocardiograms do not require any radiation. The echocardiogram takes two-dimensional pictures of the heart to evaluate how it’s structured and how it’s functioning. Medical professionals can also look at pressures in various parts of the heart and the flow of blood as it moves through the heart. This helps them figure out what the best treatment is for your child. This test is excellent for checking to see how patients are doing before and after surgery and has become an essential tool for cardiologists in both the diagnosis and management of CHD. Furthermore, improvements in this machine have led to the ability to take three-dimensional pictures that begin to assist with certain CHD procedures.",
+    "source_name": "Mended Little Hearts",
+    "source_url": "https://mendedhearts.org/wp-content/uploads/2025/02/MLHG_2015-2025.pdf",
+    "raw_source_file": "mended_hearts_org__mended_little_heartguide__local_pdfs.md",
+    "source_section": "common_tests_and_procedures",
+    "entry_method": "manual",
+    "search_keywords": [],
+    "priority": 2
+  },
+  {
+    "term": "Echocardiography",
+    "slug": "echocardiography",
+    "aliases": [],
+    "categories": [
+      "Tests & Imaging"
+    ],
+    "short_definition": "A diagnostic method in which pulses of high-frequency sound, called ultrasound, are transmitted into the body and the echoes returning from the heart and other structures are made into an electronic picture.",
+    "full_definition": "A diagnostic method in which pulses of high-frequency sound, called ultrasound, are transmitted into the body and the echoes returning from the heart and other structures are made into an electronic picture. These pictures are then studied for diagnostic purposes.",
+    "source_name": "Children's Heart Foundation",
+    "source_url": "https://www.childrensheartfoundation.org/file_download/afc69f23-39fb-40e5-93f3-8e143dc3114a",
+    "raw_source_file": "childrens_heart_foundation_org__its_my_heart.md",
+    "source_section": "glossary_of_terms",
+    "entry_method": "scraped",
+    "search_keywords": [],
+    "priority": 2
+  },
+  {
+    "term": "ECMO",
+    "slug": "ecmo",
+    "aliases": [],
+    "categories": [
+      "Devices & Equipment",
+      "Symptoms & Monitoring"
+    ],
+    "short_definition": "Extracorporeal membrane oxygenation, a technique that provides respiratory support.",
+    "full_definition": "Extracorporeal membrane oxygenation, a technique that provides respiratory support. Blood is circulated through an artificial lung made up of two compartments separated by a permeable membrane, with the blood on one side and the ventilating gas on the other.",
+    "source_name": "Mended Little Hearts",
+    "source_url": "https://mendedhearts.org/wp-content/uploads/2025/02/MLHG_2015-2025.pdf",
+    "raw_source_file": "mended_hearts_org__mended_little_heartguide__local_pdfs.md",
+    "source_section": "glossary_common_chd_terms_and_abbreviations",
+    "entry_method": "scraped",
+    "search_keywords": [],
+    "priority": 2
+  },
+  {
+    "term": "Edema",
+    "slug": "edema",
+    "aliases": [],
+    "categories": [
+      "Conditions",
+      "Procedures & Surgeries",
+      "Tests & Imaging",
+      "Devices & Equipment",
+      "Anatomy",
+      "Symptoms & Monitoring"
+    ],
+    "short_definition": "Abnormally large amounts of fluid in the tissues of the body.",
+    "full_definition": "Abnormally large amounts of fluid in the tissues of the body. Eisenmenger’s Syndrome: A condition in which a large congenital shunting defect is complicated by a pulmonary hypertension, or high blood pressure in the blood vessels of the lungs. A shunting defect is an abnormal opening between the heart chambers, called a septal defect, or between the great arteries, such as patent ductus arteriosus. Some oxygen-poor blood gets pumped to the body and results in cyanosis of the lips, fingernails, and toenails.",
+    "source_name": "Children's Heart Foundation",
+    "source_url": "https://www.childrensheartfoundation.org/file_download/afc69f23-39fb-40e5-93f3-8e143dc3114a",
+    "raw_source_file": "childrens_heart_foundation_org__its_my_heart.md",
+    "source_section": "glossary_of_terms",
+    "entry_method": "scraped",
+    "search_keywords": [],
+    "priority": 2
+  },
+  {
+    "term": "Electrocardiogram",
+    "slug": "electrocardiogram",
+    "aliases": [
+      "ECG",
+      "ECG or EKG",
+      "EKG"
+    ],
+    "categories": [
+      "Tests & Imaging"
+    ],
+    "short_definition": "A common test that measures the electrical activity of the heart to check for abnormal heart rhythms and to see whether all chambers of the heart are beating together.",
+    "full_definition": "An electrocardiogram — often referred to as an EKG or an ECG — is specifically designed to look at the electrical activity of the heart. It was one of the first tests ever invented to monitor patients’ hearts. For children with CHD, cardiologists use this test to check for abnormal heart rhythms and to see whether all chambers of the heart are beating together. Like pulse oximetry, this test is painless. It involves placing wires with clips onto the child with sticky, round pads. Nothing goes into the skin or hurts the child. The heart rhythm is recorded for about 10 seconds. After recording the rhythm, the pads are removed. Sometimes, some adhesive stays on the child’s skin; baby oil may be helpful in removing it. Children with severe CHD may be sent home for periods of time with electrocardiogram monitors that can measure the electrical activity of the heart during normal daily activities. A Holter monitor, for example, is worn for 24 hours. This can give physicians a better view of the heart rhythm during various parts of the day. For larger children, these monitors can be placed in a backpack to make them easier for the child to carry around. Another type of monitor children may be sent home with is an event monitor, which is similar to a Holter monitor but requires parents to recognize and record when their child has symptoms of an irregular rhythm.",
+    "source_name": "Mended Little Hearts",
+    "source_url": "https://mendedhearts.org/wp-content/uploads/2025/02/MLHG_2015-2025.pdf",
+    "raw_source_file": "mended_hearts_org__mended_little_heartguide__local_pdfs.md",
+    "source_section": "common_tests_and_procedures",
+    "entry_method": "manual",
+    "search_keywords": [],
+    "priority": 2
+  },
+  {
+    "term": "Endocardial Cushion Defect",
+    "slug": "endocardial-cushion-defect",
+    "aliases": [],
+    "categories": [
+      "Conditions",
+      "Tests & Imaging",
+      "Anatomy"
+    ],
+    "short_definition": "A complex congenital heart malformation involving the septum, or wall, between the upper chambers of the heart, called the atria, and the septum, or wall, between the lower chambers of the heart, called the ventricles.",
+    "full_definition": "A complex congenital heart malformation involving the septum, or wall, between the upper chambers of the heart, called the atria, and the septum, or wall, between the lower chambers of the heart, called the ventricles.",
+    "source_name": "Children's Heart Foundation",
+    "source_url": "https://www.childrensheartfoundation.org/file_download/afc69f23-39fb-40e5-93f3-8e143dc3114a",
+    "raw_source_file": "childrens_heart_foundation_org__its_my_heart.md",
+    "source_section": "glossary_of_terms",
+    "entry_method": "scraped",
+    "search_keywords": [],
+    "priority": 2
+  },
+  {
+    "term": "Enlarged Heart",
+    "slug": "enlarged-heart",
+    "aliases": [],
+    "categories": [
+      "Conditions",
+      "Tests & Imaging"
+    ],
+    "short_definition": "A state in which the heart is larger than normal, most often related to a birth defect or underlying disease.",
+    "full_definition": "A state in which the heart is larger than normal, most often related to a birth defect or underlying disease. Rarely may represent a normal variant.",
+    "source_name": "Children's Heart Foundation",
+    "source_url": "https://www.childrensheartfoundation.org/file_download/afc69f23-39fb-40e5-93f3-8e143dc3114a",
+    "raw_source_file": "childrens_heart_foundation_org__its_my_heart.md",
+    "source_section": "glossary_of_terms",
+    "entry_method": "scraped",
+    "search_keywords": [],
+    "priority": 2
+  },
+  {
+    "term": "Extra Beats/Skipped Beats",
+    "slug": "extra-beats-skipped-beats",
+    "aliases": [],
+    "categories": [
+      "General Medical Terms"
+    ],
+    "short_definition": "Single or multiple irregular beats, or palpitations, usually felt as a skip or momentary cessation of the heartbeat.",
+    "full_definition": "Single or multiple irregular beats, or palpitations, usually felt as a skip or momentary cessation of the heartbeat.",
+    "source_name": "Children's Heart Foundation",
+    "source_url": "https://www.childrensheartfoundation.org/file_download/afc69f23-39fb-40e5-93f3-8e143dc3114a",
+    "raw_source_file": "childrens_heart_foundation_org__its_my_heart.md",
+    "source_section": "glossary_of_terms",
+    "entry_method": "scraped",
+    "search_keywords": [],
+    "priority": 2
+  },
+  {
+    "term": "Fenestration",
+    "slug": "fenestration",
+    "aliases": [],
+    "categories": [
+      "Procedures & Surgeries"
+    ],
+    "short_definition": "Surgical creation of an opening, sometimes used in Fontans",
+    "full_definition": "Surgical creation of an opening, sometimes used in Fontans",
+    "source_name": "Mended Little Hearts",
+    "source_url": "https://mendedhearts.org/wp-content/uploads/2025/02/MLHG_2015-2025.pdf",
+    "raw_source_file": "mended_hearts_org__mended_little_heartguide__local_pdfs.md",
+    "source_section": "glossary_common_chd_terms_and_abbreviations",
+    "entry_method": "scraped",
+    "search_keywords": [],
+    "priority": 2
+  },
+  {
+    "term": "Fetal Echo",
+    "slug": "fetal-echo",
+    "aliases": [],
+    "categories": [
+      "Tests & Imaging",
+      "Devices & Equipment"
+    ],
+    "short_definition": "Fetal echocardiogram (echo) is an echo performed on a pregnant mother to diagnose or monitor CHD in a baby before birth",
+    "full_definition": "Fetal echocardiogram (echo) is an echo performed on a pregnant mother to diagnose or monitor CHD in a baby before birth",
+    "source_name": "Mended Little Hearts",
+    "source_url": "https://mendedhearts.org/wp-content/uploads/2025/02/MLHG_2015-2025.pdf",
+    "raw_source_file": "mended_hearts_org__mended_little_heartguide__local_pdfs.md",
+    "source_section": "glossary_common_chd_terms_and_abbreviations",
+    "entry_method": "scraped",
+    "search_keywords": [],
+    "priority": 2
+  },
+  {
+    "term": "Fetal Echocardiogram",
+    "slug": "fetal-echocardiogram",
+    "aliases": [
+      "fetal echo"
+    ],
+    "categories": [
+      "Tests & Imaging",
+      "Devices & Equipment"
+    ],
+    "short_definition": "A fetal echo is an ultrasound test that uses sound waves to create an image of your baby’s heart to see how it has formed and how it is working.",
+    "full_definition": "A fetal echo is an ultrasound test that uses sound waves to create an image of your baby’s heart to see how it has formed and how it is working. It can also show blood flow through the heart. This test is typically conducted around 20 weeks into pregnancy and may be used to diagnose CHD, to confirm a diagnosis that was made during an obstetrical ultrasound and get more information about your baby’s heart. If your family is at high risk for congenital heart disease, or if you already have one child with CHD, a fetal echo may be used to determine if there is a heart defect in your baby. A fetal echocardiogram is usually performed by an ultrasound technician but may also be conducted by a fetal cardiologist or perinatologist (maternal fetal medicine specialist). It is painless and does not involve radiation, so it cannot harm you or your baby. The technician will place a transducer, like a wand, with gel on it onto your belly. The gel helps transmit the sound waves (you won’t hear them because they’re too high pitched for human ears to detect). The probe will be moved around to get pictures of your baby’s heart. Sometimes, it may be left in one location for a few minutes to get an image. The images are usually shown on a screen, but unless you’re trained to read echoes, it is very difficult to figure out what you are looking at. Some technicians will show you the valves, atria, ventricles and other parts of your baby’s heart but they typically cannot tell you anything about your son or daughter’s CHD. You’ll get that information after a cardiologist has reviewed the results.",
+    "source_name": "Mended Little Hearts",
+    "source_url": "https://mendedhearts.org/wp-content/uploads/2025/02/MLHG_2015-2025.pdf",
+    "raw_source_file": "mended_hearts_org__mended_little_heartguide__local_pdfs.md",
+    "source_section": "common_prenatal_tests_and_procedures",
+    "entry_method": "manual",
+    "search_keywords": [],
+    "priority": 2
+  },
+  {
+    "term": "Fluoroscope",
+    "slug": "fluoroscope",
+    "aliases": [],
+    "categories": [
+      "Tests & Imaging"
+    ],
+    "short_definition": "An instrument for observing the internal body organs at work.",
+    "full_definition": "An instrument for observing the internal body organs at work. X-rays are passed through the body onto a fluorescent screen, where the shadows of the beating heart and other organs can be seen and studied.",
+    "source_name": "Children's Heart Foundation",
+    "source_url": "https://www.childrensheartfoundation.org/file_download/afc69f23-39fb-40e5-93f3-8e143dc3114a",
+    "raw_source_file": "childrens_heart_foundation_org__its_my_heart.md",
+    "source_section": "glossary_of_terms",
+    "entry_method": "scraped",
+    "search_keywords": [],
+    "priority": 2
+  },
+  {
+    "term": "Fontan",
+    "slug": "fontan",
+    "aliases": [],
+    "categories": [
+      "Conditions",
+      "Procedures & Surgeries",
+      "Tests & Imaging",
+      "Devices & Equipment",
+      "Symptoms & Monitoring"
+    ],
+    "short_definition": "A combined surgical procedure for complex congenital heart defects that redirects blood flow to bypass the right side of the heart and send oxygen-poor blood directly to the lungs",
+    "full_definition": "A combined surgical procedure for complex congenital heart defects that redirects blood flow to bypass the right side of the heart and send oxygen-poor blood directly to the lungs",
+    "source_name": "Mended Little Hearts",
+    "source_url": "https://mendedhearts.org/wp-content/uploads/2025/02/MLHG_2015-2025.pdf",
+    "raw_source_file": "mended_hearts_org__mended_little_heartguide__local_pdfs.md",
+    "source_section": "glossary_common_chd_terms_and_abbreviations",
+    "entry_method": "scraped",
+    "search_keywords": [],
+    "priority": 2
+  },
+  {
+    "term": "Foramen Ovale",
+    "slug": "foramen-ovale",
+    "aliases": [],
+    "categories": [
+      "General Medical Terms"
+    ],
+    "short_definition": "A hole between the left and right upper chambers of the heart that normally closes after birth.",
+    "full_definition": "A hole between the left and right upper chambers of the heart that normally closes after birth.",
+    "source_name": "Children's Heart Foundation",
+    "source_url": "https://www.childrensheartfoundation.org/file_download/afc69f23-39fb-40e5-93f3-8e143dc3114a",
+    "raw_source_file": "childrens_heart_foundation_org__its_my_heart.md",
+    "source_section": "glossary_of_terms",
+    "entry_method": "scraped",
+    "search_keywords": [],
+    "priority": 2
+  },
+  {
+    "term": "FTT",
+    "slug": "ftt",
+    "aliases": [],
+    "categories": [
+      "Symptoms & Monitoring"
+    ],
+    "short_definition": "Failure to thrive, meaning the child has inappropriate weight loss or insufficient weight gain",
+    "full_definition": "Failure to thrive, meaning the child has inappropriate weight loss or insufficient weight gain",
+    "source_name": "Mended Little Hearts",
+    "source_url": "https://mendedhearts.org/wp-content/uploads/2025/02/MLHG_2015-2025.pdf",
+    "raw_source_file": "mended_hearts_org__mended_little_heartguide__local_pdfs.md",
+    "source_section": "glossary_common_chd_terms_and_abbreviations",
+    "entry_method": "scraped",
+    "search_keywords": [],
+    "priority": 2
+  },
+  {
+    "term": "Glenn or Bidirectional Glenn Shunt",
+    "slug": "glenn-or-bidirectional-glenn-shunt",
+    "aliases": [
+      "Bidirectional Glenn Shunt",
+      "Glenn"
+    ],
+    "categories": [
+      "Procedures & Surgeries",
+      "Tests & Imaging",
+      "Devices & Equipment",
+      "Anatomy",
+      "Symptoms & Monitoring"
+    ],
+    "short_definition": "A surgical procedure in which a large vein (the superior vena cava) is connected to the right pulmonary artery so that blood can bypass the heart’s right chambers and be taken directly to the lungs",
+    "full_definition": "A surgical procedure in which a large vein (the superior vena cava) is connected to the right pulmonary artery so that blood can bypass the heart’s right chambers and be taken directly to the lungs for oxygenation",
+    "source_name": "Mended Little Hearts",
+    "source_url": "https://mendedhearts.org/wp-content/uploads/2025/02/MLHG_2015-2025.pdf",
+    "raw_source_file": "mended_hearts_org__mended_little_heartguide__local_pdfs.md",
+    "source_section": "glossary_common_chd_terms_and_abbreviations",
+    "entry_method": "scraped",
+    "search_keywords": [],
+    "priority": 2
+  },
+  {
+    "term": "Heart Attack",
+    "slug": "heart-attack",
+    "aliases": [],
+    "categories": [
+      "Tests & Imaging",
+      "Devices & Equipment",
+      "Symptoms & Monitoring"
+    ],
+    "short_definition": "The death of a portion of heart muscle, which may result in disability or death of the individual, depending on the extent of muscle damage.",
+    "full_definition": "The death of a portion of heart muscle, which may result in disability or death of the individual, depending on the extent of muscle damage. A heart attack occurs when an obstruction in one of the coronary arteries prevents an adequate oxygen supply to the heart.",
+    "source_name": "Children's Heart Foundation",
+    "source_url": "https://www.childrensheartfoundation.org/file_download/afc69f23-39fb-40e5-93f3-8e143dc3114a",
+    "raw_source_file": "childrens_heart_foundation_org__its_my_heart.md",
+    "source_section": "glossary_of_terms",
+    "entry_method": "scraped",
+    "search_keywords": [],
+    "priority": 2
+  },
+  {
+    "term": "Heart Block",
+    "slug": "heart-block",
+    "aliases": [],
+    "categories": [
+      "Tests & Imaging",
+      "Devices & Equipment"
+    ],
+    "short_definition": "A condition in which the electrical impulse that travels through the heart’s specialized conduction system to trigger the events of the heartbeat is slowed or blocked along its pathway.",
+    "full_definition": "A condition in which the electrical impulse that travels through the heart’s specialized conduction system to trigger the events of the heartbeat is slowed or blocked along its pathway. This can result in a dissociation of the rhythms of the upper and lower heart chambers, and is the major disorder for which artificial pacemakers are used.",
+    "source_name": "Children's Heart Foundation",
+    "source_url": "https://www.childrensheartfoundation.org/file_download/afc69f23-39fb-40e5-93f3-8e143dc3114a",
+    "raw_source_file": "childrens_heart_foundation_org__its_my_heart.md",
+    "source_section": "glossary_of_terms",
+    "entry_method": "scraped",
+    "search_keywords": [],
+    "priority": 2
+  },
+  {
+    "term": "Heart Disease",
+    "slug": "heart-disease",
+    "aliases": [],
+    "categories": [
+      "Tests & Imaging"
+    ],
+    "short_definition": "A general term used to mean ailments of the heart or blood vessels related to structure or function.",
+    "full_definition": "A general term used to mean ailments of the heart or blood vessels related to structure or function.",
+    "source_name": "Children's Heart Foundation",
+    "source_url": "https://www.childrensheartfoundation.org/file_download/afc69f23-39fb-40e5-93f3-8e143dc3114a",
+    "raw_source_file": "childrens_heart_foundation_org__its_my_heart.md",
+    "source_section": "glossary_of_terms",
+    "entry_method": "scraped",
+    "search_keywords": [],
+    "priority": 2
+  },
+  {
+    "term": "Heart-Lung Machine",
+    "slug": "heart-lung-machine",
+    "aliases": [],
+    "categories": [
+      "Procedures & Surgeries",
+      "Devices & Equipment"
+    ],
+    "short_definition": "A special instrument used to provide circulation to the body during open-heart surgery.",
+    "full_definition": "A special instrument used to provide circulation to the body during open-heart surgery.",
+    "source_name": "Children's Heart Foundation",
+    "source_url": "https://www.childrensheartfoundation.org/file_download/afc69f23-39fb-40e5-93f3-8e143dc3114a",
+    "raw_source_file": "childrens_heart_foundation_org__its_my_heart.md",
+    "source_section": "glossary_of_terms",
+    "entry_method": "scraped",
+    "search_keywords": [],
+    "priority": 2
+  },
+  {
+    "term": "Heparin",
+    "slug": "heparin",
+    "aliases": [],
+    "categories": [
+      "Tests & Imaging",
+      "Medications"
+    ],
+    "short_definition": "A type of anticoagulant that is given by injection.",
+    "full_definition": "A type of anticoagulant that is given by injection.",
+    "source_name": "Children's Heart Foundation",
+    "source_url": "https://www.childrensheartfoundation.org/file_download/afc69f23-39fb-40e5-93f3-8e143dc3114a",
+    "raw_source_file": "childrens_heart_foundation_org__its_my_heart.md",
+    "source_section": "glossary_of_terms",
+    "entry_method": "scraped",
+    "search_keywords": [],
+    "priority": 2
+  },
+  {
+    "term": "High Blood Pressure",
+    "slug": "high-blood-pressure",
+    "aliases": [],
+    "categories": [
+      "Symptoms & Monitoring"
+    ],
+    "short_definition": "An unstable or persistent elevation of blood pressure above the normal range.",
+    "full_definition": "An unstable or persistent elevation of blood pressure above the normal range.",
+    "source_name": "Children's Heart Foundation",
+    "source_url": "https://www.childrensheartfoundation.org/file_download/afc69f23-39fb-40e5-93f3-8e143dc3114a",
+    "raw_source_file": "childrens_heart_foundation_org__its_my_heart.md",
+    "source_section": "glossary_of_terms",
+    "entry_method": "scraped",
+    "search_keywords": [],
+    "priority": 2
+  },
+  {
+    "term": "HLHS",
+    "slug": "hlhs",
+    "aliases": [],
+    "categories": [
+      "Conditions",
+      "Tests & Imaging",
+      "Anatomy"
+    ],
+    "short_definition": "Hypoplastic left heart syndrome, characterized by a very small and non-functioning left ventricle and problems with the mitral valve (absent or non-functioning).",
+    "full_definition": "Hypoplastic left heart syndrome, characterized by a very small and non-functioning left ventricle and problems with the mitral valve (absent or non-functioning). ",
+    "source_name": "Mended Little Hearts",
+    "source_url": "https://mendedhearts.org/wp-content/uploads/2025/02/MLHG_2015-2025.pdf",
+    "raw_source_file": "mended_hearts_org__mended_little_heartguide__local_pdfs.md",
+    "source_section": "glossary_common_chd_terms_and_abbreviations",
+    "entry_method": "scraped",
+    "search_keywords": [],
+    "priority": 2
+  },
+  {
+    "term": "Holter Monitoring",
+    "slug": "holter-monitoring",
+    "aliases": [],
+    "categories": [
+      "Tests & Imaging",
+      "Devices & Equipment"
+    ],
+    "short_definition": "A process by which the ECG can be tape-recorded for 14 hours.",
+    "full_definition": "A process by which the ECG can be tape-recorded for 14 hours. The patient wears a small tape recorder connected to electrocardiographic leads placed on the chest for 24 hours. A written diary is kept during that period to record symptoms.",
+    "source_name": "Children's Heart Foundation",
+    "source_url": "https://www.childrensheartfoundation.org/file_download/afc69f23-39fb-40e5-93f3-8e143dc3114a",
+    "raw_source_file": "childrens_heart_foundation_org__its_my_heart.md",
+    "source_section": "glossary_of_terms",
+    "entry_method": "scraped",
+    "search_keywords": [],
+    "priority": 2
+  },
+  {
+    "term": "HRHS",
+    "slug": "hrhs",
+    "aliases": [],
+    "categories": [
+      "Conditions",
+      "Tests & Imaging",
+      "Anatomy"
+    ],
+    "short_definition": "Hypoplastic right heart syndrome, characterized by a very small and non-functioning right ventricle and problems with the tricuspid valve (absent or non-functioning)",
+    "full_definition": "Hypoplastic right heart syndrome, characterized by a very small and non-functioning right ventricle and problems with the tricuspid valve (absent or non-functioning)",
+    "source_name": "Mended Little Hearts",
+    "source_url": "https://mendedhearts.org/wp-content/uploads/2025/02/MLHG_2015-2025.pdf",
+    "raw_source_file": "mended_hearts_org__mended_little_heartguide__local_pdfs.md",
+    "source_section": "glossary_common_chd_terms_and_abbreviations",
+    "entry_method": "scraped",
+    "search_keywords": [],
+    "priority": 2
+  },
+  {
+    "term": "HTN",
+    "slug": "htn",
+    "aliases": [],
+    "categories": [
+      "Conditions",
+      "Symptoms & Monitoring"
+    ],
+    "short_definition": "Hypertension, high blood pressure in the vessels that carry blood from the heart to the body",
+    "full_definition": "Hypertension, high blood pressure in the vessels that carry blood from the heart to the body",
+    "source_name": "Mended Little Hearts",
+    "source_url": "https://mendedhearts.org/wp-content/uploads/2025/02/MLHG_2015-2025.pdf",
+    "raw_source_file": "mended_hearts_org__mended_little_heartguide__local_pdfs.md",
+    "source_section": "glossary_common_chd_terms_and_abbreviations",
+    "entry_method": "scraped",
+    "search_keywords": [],
+    "priority": 2
+  },
+  {
+    "term": "Hypertension",
+    "slug": "hypertension",
+    "aliases": [],
+    "categories": [
+      "Conditions",
+      "Symptoms & Monitoring"
+    ],
+    "short_definition": "Commonly called high blood pressure.",
+    "full_definition": "Commonly called high blood pressure. It is blood pressure above the normal range.",
+    "source_name": "Children's Heart Foundation",
+    "source_url": "https://www.childrensheartfoundation.org/file_download/afc69f23-39fb-40e5-93f3-8e143dc3114a",
+    "raw_source_file": "childrens_heart_foundation_org__its_my_heart.md",
+    "source_section": "glossary_of_terms",
+    "entry_method": "scraped",
+    "search_keywords": [],
+    "priority": 2
+  },
+  {
+    "term": "Hypertrophy",
+    "slug": "hypertrophy",
+    "aliases": [],
+    "categories": [
+      "General Medical Terms"
+    ],
+    "short_definition": "Enlargement of a tissue or organ due to increase in the size of its cells.",
+    "full_definition": "Enlargement of a tissue or organ due to increase in the size of its cells. This may result from a demand for increased work.",
+    "source_name": "Children's Heart Foundation",
+    "source_url": "https://www.childrensheartfoundation.org/file_download/afc69f23-39fb-40e5-93f3-8e143dc3114a",
+    "raw_source_file": "childrens_heart_foundation_org__its_my_heart.md",
+    "source_section": "glossary_of_terms",
+    "entry_method": "scraped",
+    "search_keywords": [],
+    "priority": 2
+  },
+  {
+    "term": "Hypoplastic",
+    "slug": "hypoplastic",
+    "aliases": [],
+    "categories": [
+      "Conditions"
+    ],
+    "short_definition": "When an organ does not completely develop or stops developing.",
+    "full_definition": "When an organ does not completely develop or stops developing.",
+    "source_name": "Mended Little Hearts",
+    "source_url": "https://mendedhearts.org/wp-content/uploads/2025/02/MLHG_2015-2025.pdf",
+    "raw_source_file": "mended_hearts_org__mended_little_heartguide__local_pdfs.md",
+    "source_section": "glossary_common_chd_terms_and_abbreviations",
+    "entry_method": "scraped",
+    "search_keywords": [],
+    "priority": 2
+  },
+  {
+    "term": "Hypotension",
+    "slug": "hypotension",
+    "aliases": [
+      "low blood pressure"
+    ],
+    "categories": [
+      "Symptoms & Monitoring"
+    ],
+    "short_definition": "Blood pressure below the normal range.",
+    "full_definition": "Blood pressure below the normal range. Most commonly used to describe an acute fall in blood pressure as occurs in shock syncope (fainting). It is often called low blood pressure.",
+    "source_name": "Children's Heart Foundation",
+    "source_url": "https://www.childrensheartfoundation.org/file_download/afc69f23-39fb-40e5-93f3-8e143dc3114a",
+    "raw_source_file": "childrens_heart_foundation_org__its_my_heart.md",
+    "source_section": "glossary_of_terms",
+    "entry_method": "scraped",
+    "search_keywords": [],
+    "priority": 2
+  },
+  {
+    "term": "Hypoxia",
+    "slug": "hypoxia",
+    "aliases": [],
+    "categories": [
+      "Devices & Equipment",
+      "Symptoms & Monitoring"
+    ],
+    "short_definition": "Less than normal content of oxygen in the organs and tissues of the body.",
+    "full_definition": "Less than normal content of oxygen in the organs and tissues of the body. At very high altitudes, healthy people experience hypoxia because of the decreased amount of oxygen in the air.",
+    "source_name": "Children's Heart Foundation",
+    "source_url": "https://www.childrensheartfoundation.org/file_download/afc69f23-39fb-40e5-93f3-8e143dc3114a",
+    "raw_source_file": "childrens_heart_foundation_org__its_my_heart.md",
+    "source_section": "glossary_of_terms",
+    "entry_method": "scraped",
+    "search_keywords": [],
+    "priority": 2
+  },
+  {
+    "term": "IAA",
+    "slug": "iaa",
+    "aliases": [],
+    "categories": [
+      "Conditions",
+      "Anatomy"
+    ],
+    "short_definition": "Interrupted aortic arch, in which the aortic arch is divided or interrupted and a hole in the muscle wall between the two ventricles (VSD)",
+    "full_definition": "Interrupted aortic arch, in which the aortic arch is divided or interrupted and a hole in the muscle wall between the two ventricles (VSD)",
+    "source_name": "Mended Little Hearts",
+    "source_url": "https://mendedhearts.org/wp-content/uploads/2025/02/MLHG_2015-2025.pdf",
+    "raw_source_file": "mended_hearts_org__mended_little_heartguide__local_pdfs.md",
+    "source_section": "glossary_common_chd_terms_and_abbreviations",
+    "entry_method": "scraped",
+    "search_keywords": [],
+    "priority": 2
+  },
+  {
+    "term": "Ischemia",
+    "slug": "ischemia",
+    "aliases": [],
+    "categories": [
+      "General Medical Terms"
+    ],
+    "short_definition": "Lack of blood supply to an organ or tissue",
+    "full_definition": "Lack of blood supply to an organ or tissue",
+    "source_name": "Mended Little Hearts",
+    "source_url": "https://mendedhearts.org/wp-content/uploads/2025/02/MLHG_2015-2025.pdf",
+    "raw_source_file": "mended_hearts_org__mended_little_heartguide__local_pdfs.md",
+    "source_section": "glossary_common_chd_terms_and_abbreviations",
+    "entry_method": "scraped",
+    "search_keywords": [],
+    "priority": 2
+  },
+  {
+    "term": "Isoproterenol",
+    "slug": "isoproterenol",
+    "aliases": [],
+    "categories": [
+      "Medications"
+    ],
+    "short_definition": "A drug that can be used as a cardiac stimulant to treat an abnormally slow heartbeat and to increase the strength of the heart’s pumping.",
+    "full_definition": "A drug that can be used as a cardiac stimulant to treat an abnormally slow heartbeat and to increase the strength of the heart’s pumping.",
+    "source_name": "Children's Heart Foundation",
+    "source_url": "https://www.childrensheartfoundation.org/file_download/afc69f23-39fb-40e5-93f3-8e143dc3114a",
+    "raw_source_file": "childrens_heart_foundation_org__its_my_heart.md",
+    "source_section": "glossary_of_terms",
+    "entry_method": "scraped",
+    "search_keywords": [],
+    "priority": 2
+  },
+  {
+    "term": "Jantene Operation",
+    "slug": "jantene-operation",
+    "aliases": [],
+    "categories": [
+      "Procedures & Surgeries"
+    ],
+    "short_definition": "A type of arterial switch surgical procedure",
+    "full_definition": "A type of arterial switch surgical procedure",
+    "source_name": "Mended Little Hearts",
+    "source_url": "https://mendedhearts.org/wp-content/uploads/2025/02/MLHG_2015-2025.pdf",
+    "raw_source_file": "mended_hearts_org__mended_little_heartguide__local_pdfs.md",
+    "source_section": "glossary_common_chd_terms_and_abbreviations",
+    "entry_method": "scraped",
+    "search_keywords": [],
+    "priority": 2
+  },
+  {
+    "term": "L-TGA",
+    "slug": "l-tga",
+    "aliases": [],
+    "categories": [
+      "Conditions",
+      "Procedures & Surgeries",
+      "Anatomy"
+    ],
+    "short_definition": "A condition in which the ventricles are on the opposite side of the heart compared to a normal heart, and the pulmonary artery and aorta are also switched",
+    "full_definition": "A condition in which the ventricles are on the opposite side of the heart compared to a normal heart, and the pulmonary artery and aorta are also switched",
+    "source_name": "Mended Little Hearts",
+    "source_url": "https://mendedhearts.org/wp-content/uploads/2025/02/MLHG_2015-2025.pdf",
+    "raw_source_file": "mended_hearts_org__mended_little_heartguide__local_pdfs.md",
+    "source_section": "glossary_common_chd_terms_and_abbreviations",
+    "entry_method": "scraped",
+    "search_keywords": [],
+    "priority": 2
+  },
+  {
+    "term": "LA",
+    "slug": "la",
+    "aliases": [],
+    "categories": [
+      "Anatomy"
+    ],
+    "short_definition": "Left atrium, the left of the two top chambers of the heart",
+    "full_definition": "Left atrium, the left of the two top chambers of the heart",
+    "source_name": "Mended Little Hearts",
+    "source_url": "https://mendedhearts.org/wp-content/uploads/2025/02/MLHG_2015-2025.pdf",
+    "raw_source_file": "mended_hearts_org__mended_little_heartguide__local_pdfs.md",
+    "source_section": "glossary_common_chd_terms_and_abbreviations",
+    "entry_method": "scraped",
+    "search_keywords": [],
+    "priority": 2
+  },
+  {
+    "term": "Lanoxin",
+    "slug": "lanoxin",
+    "aliases": [],
+    "categories": [
+      "Medications"
+    ],
+    "short_definition": "See Digoxin.",
+    "full_definition": "See Digoxin.",
+    "source_name": "Children's Heart Foundation",
+    "source_url": "https://www.childrensheartfoundation.org/file_download/afc69f23-39fb-40e5-93f3-8e143dc3114a",
+    "raw_source_file": "childrens_heart_foundation_org__its_my_heart.md",
+    "source_section": "glossary_of_terms",
+    "entry_method": "scraped",
+    "search_keywords": [],
+    "priority": 2
+  },
+  {
+    "term": "MI",
+    "slug": "mi",
+    "aliases": [],
+    "categories": [
+      "Tests & Imaging",
+      "Devices & Equipment",
+      "Symptoms & Monitoring"
+    ],
+    "short_definition": "Myocardial infarction, a heart muscle that dies due to lack of oxygen, usually called a heart attack when it occurs in an adult",
+    "full_definition": "Myocardial infarction, a heart muscle that dies due to lack of oxygen, usually called a heart attack when it occurs in an adult",
+    "source_name": "Mended Little Hearts",
+    "source_url": "https://mendedhearts.org/wp-content/uploads/2025/02/MLHG_2015-2025.pdf",
+    "raw_source_file": "mended_hearts_org__mended_little_heartguide__local_pdfs.md",
+    "source_section": "glossary_common_chd_terms_and_abbreviations",
+    "entry_method": "scraped",
+    "search_keywords": [],
+    "priority": 2
+  },
+  {
+    "term": "Mitral Valve",
+    "slug": "mitral-valve",
+    "aliases": [],
+    "categories": [
+      "Anatomy"
+    ],
+    "short_definition": "A valve of two leaflets between the left atrium and left ventricle",
+    "full_definition": "A valve of two leaflets between the left atrium and left ventricle",
+    "source_name": "Mended Little Hearts",
+    "source_url": "https://mendedhearts.org/wp-content/uploads/2025/02/MLHG_2015-2025.pdf",
+    "raw_source_file": "mended_hearts_org__mended_little_heartguide__local_pdfs.md",
+    "source_section": "glossary_common_chd_terms_and_abbreviations",
+    "entry_method": "scraped",
+    "search_keywords": [],
+    "priority": 2
+  },
+  {
+    "term": "Mitral Valve Stenosis",
+    "slug": "mitral-valve-stenosis",
+    "aliases": [],
+    "categories": [
+      "Conditions",
+      "Tests & Imaging",
+      "Anatomy"
+    ],
+    "short_definition": "A narrowing of the mitral valve situated between the upper and lower chambers on the left side of the heart.",
+    "full_definition": "A narrowing of the mitral valve situated between the upper and lower chambers on the left side of the heart. Sometimes the result of a congenital heart defect.",
+    "source_name": "Children's Heart Foundation",
+    "source_url": "https://www.childrensheartfoundation.org/file_download/afc69f23-39fb-40e5-93f3-8e143dc3114a",
+    "raw_source_file": "childrens_heart_foundation_org__its_my_heart.md",
+    "source_section": "glossary_of_terms",
+    "entry_method": "scraped",
+    "search_keywords": [],
+    "priority": 2
+  },
+  {
+    "term": "MPA",
+    "slug": "mpa",
+    "aliases": [],
+    "categories": [
+      "Devices & Equipment",
+      "Anatomy",
+      "Symptoms & Monitoring"
+    ],
+    "short_definition": "Main pulmonary artery, one of the two main vessels that carries un-oxygenated blood from the heart to the lungs",
+    "full_definition": "Main pulmonary artery, one of the two main vessels that carries un-oxygenated blood from the heart to the lungs",
+    "source_name": "Mended Little Hearts",
+    "source_url": "https://mendedhearts.org/wp-content/uploads/2025/02/MLHG_2015-2025.pdf",
+    "raw_source_file": "mended_hearts_org__mended_little_heartguide__local_pdfs.md",
+    "source_section": "glossary_common_chd_terms_and_abbreviations",
+    "entry_method": "scraped",
+    "search_keywords": [],
+    "priority": 2
+  },
+  {
+    "term": "MRI/CT Scans",
+    "slug": "mri_ct_scans",
+    "aliases": [
+      "MRI",
+      "CT",
+      "MRI/CT"
+    ],
+    "categories": [
+      "Tests & Imaging",
+      "Devices & Equipment"
+    ],
+    "short_definition": "Two tests that provide detailed images of how the heart is structured and functioning.",
+    "full_definition": "MRI and CT scans are two other tests that help medical professionals get a good look at parts of the heart. MRI scans are being used more and more often because they involve no radiation and can provide significant amounts of information about how the heart is structured and functioning. MRIs can be very useful for looking at things that echocardiography cannot see as well, but MRI scans take a fairly long time and do require anesthesia for young children, so they’re only used when necessary. During an MRI, the child is put into what looks like a big tube in a machine which then sends detailed images of the child’s heart to a monitor where they can be viewed by medical professionals. CT scans are similar to MRIs but are much quicker. They do require the use of radiation, but newer CT techniques have significantly reduced the amount of radiation used. This test has become a good option for viewing heart structures that echocardiography sometimes struggles with.",
+    "source_name": "Mended Little Hearts",
+    "source_url": "https://mendedhearts.org/wp-content/uploads/2025/02/MLHG_2015-2025.pdf",
+    "raw_source_file": "mended_hearts_org__mended_little_heartguide__local_pdfs.md",
+    "source_section": "common_tests_and_procedures",
+    "entry_method": "manual",
+    "search_keywords": [],
+    "priority": 2
+  },
+  {
+    "term": "Murmur",
+    "slug": "murmur",
+    "aliases": [],
+    "categories": [
+      "Symptoms & Monitoring"
+    ],
+    "short_definition": "An extra heart sound that may be heard between normal heart sounds.",
+    "full_definition": "An extra heart sound that may be heard between normal heart sounds. Murmurs may be normal or abnormal. They are caused by increased turbulence of the blood as it moves through the heart, much like water flowing over rocks in a stream.",
+    "source_name": "Mended Little Hearts",
+    "source_url": "https://mendedhearts.org/wp-content/uploads/2025/02/MLHG_2015-2025.pdf",
+    "raw_source_file": "mended_hearts_org__mended_little_heartguide__local_pdfs.md",
+    "source_section": "glossary_common_chd_terms_and_abbreviations",
+    "entry_method": "scraped",
+    "search_keywords": [],
+    "priority": 2
+  },
+  {
+    "term": "Myocarditis",
+    "slug": "myocarditis",
+    "aliases": [],
+    "categories": [
+      "Tests & Imaging"
+    ],
+    "short_definition": "An inflammation of the heart muscle, usually caused by a virus or bacteria",
+    "full_definition": "An inflammation of the heart muscle, usually caused by a virus or bacteria",
+    "source_name": "Mended Little Hearts",
+    "source_url": "https://mendedhearts.org/wp-content/uploads/2025/02/MLHG_2015-2025.pdf",
+    "raw_source_file": "mended_hearts_org__mended_little_heartguide__local_pdfs.md",
+    "source_section": "glossary_common_chd_terms_and_abbreviations",
+    "entry_method": "scraped",
+    "search_keywords": [],
+    "priority": 2
+  },
+  {
+    "term": "Non-invasive",
+    "slug": "non-invasive",
+    "aliases": [],
+    "categories": [
+      "Tests & Imaging"
+    ],
+    "short_definition": "This term typically describes tests that are performed on babies, children with CHD or pregnant mothers.",
+    "full_definition": "This term typically describes tests that are performed on babies, children with CHD or pregnant mothers. Non-invasive means that nothing goes into the skin. A pulse oximetry test, for example, is non-invasive.",
+    "source_name": "Mended Little Hearts",
+    "source_url": "https://mendedhearts.org/wp-content/uploads/2025/02/MLHG_2015-2025.pdf",
+    "raw_source_file": "mended_hearts_org__mended_little_heartguide__local_pdfs.md",
+    "source_section": "glossary_common_chd_terms_and_abbreviations",
+    "entry_method": "scraped",
+    "search_keywords": [],
+    "priority": 2
+  },
+  {
+    "term": "Non-Stress Test",
+    "slug": "non-stress-test",
+    "aliases": [
+      "fetal non-stress test"
+    ],
+    "categories": [
+      "Tests & Imaging"
+    ],
+    "short_definition": "A test done by the obstetrician that monitors a baby’s heart rate and allows doctors to see whether your baby’s heart rate pattern is normal and varying with movements.",
+    "full_definition": "A fetal non-stress test is a test done by the obstetrician that monitors a baby’s heart rate and allows doctors to see whether your baby’s heart rate pattern is normal and varying with movements. This information helps the doctor determine whether there are any problems that need to be addressed. This test is usually done once or twice a week after 26 weeks of pregnancy. It is non-invasive and there are no risks. You will be on a reclining chair or bed and belts/bands will be placed across your belly. These have monitors attached that record information. You may be asked to press a button when your baby moves. It takes around 20 minutes but may take longer if your baby isn’t moving much. You might hear your baby’s heart rate and it may speed up and slow down several times during the test.",
+    "source_name": "Mended Little Hearts",
+    "source_url": "https://mendedhearts.org/wp-content/uploads/2025/02/MLHG_2015-2025.pdf",
+    "raw_source_file": "mended_hearts_org__mended_little_heartguide__local_pdfs.md",
+    "source_section": "common_prenatal_tests_and_procedures",
+    "entry_method": "manual",
+    "search_keywords": [],
+    "priority": 2
+  },
+  {
+    "term": "Norwood Procedure",
+    "slug": "norwood-procedure",
+    "aliases": [],
+    "categories": [
+      "Conditions",
+      "Procedures & Surgeries",
+      "Tests & Imaging",
+      "Anatomy"
+    ],
+    "short_definition": "The first of a series of open-heart surgeries that are typically used for single-ventricle defects.",
+    "full_definition": "The first of a series of open-heart surgeries that are typically used for single-ventricle defects. It reroutes blood flow around defective areas of the heart by creating new pathways for blood circulation to and from the lungs.",
+    "source_name": "Mended Little Hearts",
+    "source_url": "https://mendedhearts.org/wp-content/uploads/2025/02/MLHG_2015-2025.pdf",
+    "raw_source_file": "mended_hearts_org__mended_little_heartguide__local_pdfs.md",
+    "source_section": "glossary_common_chd_terms_and_abbreviations",
+    "entry_method": "scraped",
+    "search_keywords": [],
+    "priority": 2
+  },
+  {
+    "term": "OHS",
+    "slug": "ohs",
+    "aliases": [],
+    "categories": [
+      "Procedures & Surgeries",
+      "Devices & Equipment"
+    ],
+    "short_definition": "Open-heart surgery, surgery performed on the open heart while the blood flow is diverted through the heart-lung machine",
+    "full_definition": "Open-heart surgery, surgery performed on the open heart while the blood flow is diverted through the heart-lung machine",
+    "source_name": "Mended Little Hearts",
+    "source_url": "https://mendedhearts.org/wp-content/uploads/2025/02/MLHG_2015-2025.pdf",
+    "raw_source_file": "mended_hearts_org__mended_little_heartguide__local_pdfs.md",
+    "source_section": "glossary_common_chd_terms_and_abbreviations",
+    "entry_method": "scraped",
+    "search_keywords": [],
+    "priority": 2
+  },
+  {
+    "term": "Open-Heart Surgery",
+    "slug": "open-heart-surgery",
+    "aliases": [],
+    "categories": [
+      "Procedures & Surgeries",
+      "Devices & Equipment"
+    ],
+    "short_definition": "Surgery performed inside the heart with the aid of a heart-lung machine.",
+    "full_definition": "Surgery performed inside the heart with the aid of a heart-lung machine.",
+    "source_name": "Children's Heart Foundation",
+    "source_url": "https://www.childrensheartfoundation.org/file_download/afc69f23-39fb-40e5-93f3-8e143dc3114a",
+    "raw_source_file": "childrens_heart_foundation_org__its_my_heart.md",
+    "source_section": "glossary_of_terms",
+    "entry_method": "scraped",
+    "search_keywords": [],
+    "priority": 2
+  },
+  {
+    "term": "Organic Heart Disease",
+    "slug": "organic-heart-disease",
+    "aliases": [],
+    "categories": [
+      "Tests & Imaging"
+    ],
+    "short_definition": "A structural abnormality of the heart or great vessels.",
+    "full_definition": "A structural abnormality of the heart or great vessels.",
+    "source_name": "Children's Heart Foundation",
+    "source_url": "https://www.childrensheartfoundation.org/file_download/afc69f23-39fb-40e5-93f3-8e143dc3114a",
+    "raw_source_file": "childrens_heart_foundation_org__its_my_heart.md",
+    "source_section": "glossary_of_terms",
+    "entry_method": "scraped",
+    "search_keywords": [],
+    "priority": 2
+  },
+  {
+    "term": "PA",
+    "slug": "pa",
+    "aliases": [],
+    "categories": [
+      "Devices & Equipment",
+      "Anatomy",
+      "Symptoms & Monitoring"
+    ],
+    "short_definition": "Pulmonary artery, a vessel that carries un- oxygenated blood from the heart to the lungs",
+    "full_definition": "Pulmonary artery, a vessel that carries un- oxygenated blood from the heart to the lungs",
+    "source_name": "Mended Little Hearts",
+    "source_url": "https://mendedhearts.org/wp-content/uploads/2025/02/MLHG_2015-2025.pdf",
+    "raw_source_file": "mended_hearts_org__mended_little_heartguide__local_pdfs.md",
+    "source_section": "glossary_common_chd_terms_and_abbreviations",
+    "entry_method": "scraped",
+    "search_keywords": [],
+    "priority": 2
+  },
+  {
+    "term": "Pa02",
+    "slug": "pa02",
+    "aliases": [],
+    "categories": [
+      "Devices & Equipment",
+      "Symptoms & Monitoring"
+    ],
+    "short_definition": "Partial pressure of oxygen, a measure of oxygen in arterial blood",
+    "full_definition": "Partial pressure of oxygen, a measure of oxygen in arterial blood",
+    "source_name": "Mended Little Hearts",
+    "source_url": "https://mendedhearts.org/wp-content/uploads/2025/02/MLHG_2015-2025.pdf",
+    "raw_source_file": "mended_hearts_org__mended_little_heartguide__local_pdfs.md",
+    "source_section": "glossary_common_chd_terms_and_abbreviations",
+    "entry_method": "scraped",
+    "search_keywords": [],
+    "priority": 2
+  },
+  {
+    "term": "Pacemaker",
+    "slug": "pacemaker",
+    "aliases": [
+      "the sinoatrial node, or SA node"
+    ],
+    "categories": [
+      "Conditions",
+      "Tests & Imaging",
+      "Devices & Equipment",
+      "Anatomy"
+    ],
+    "short_definition": "A small mass of specialized cells in the right atrium of the heart, which gives rise to the electrical impulses that initiate contractions of the heart.",
+    "full_definition": "A small mass of specialized cells in the right atrium of the heart, which gives rise to the electrical impulses that initiate contractions of the heart. Also called the sinoatrial node, or SA node. Under certain circumstances (normal or abnormal), other cardiac tissues may assume the pacemaker role by initiating electrical impulses to stimulate contraction. The term “artificial pacemaker” is applied to an electrical device, which substitutes for a defective natural pacemaker to control the beating of the heart by a series of rhythmic electrical discharges. If the electrodes that deliver the discharges to the heart are placed on the outside of the chest, it is called an “external pacemaker.” If they are placed within the chest wall, it is called an “internal pacemaker.”",
+    "source_name": "Children's Heart Foundation",
+    "source_url": "https://www.childrensheartfoundation.org/file_download/afc69f23-39fb-40e5-93f3-8e143dc3114a",
+    "raw_source_file": "childrens_heart_foundation_org__its_my_heart.md",
+    "source_section": "glossary_of_terms",
+    "entry_method": "scraped",
+    "search_keywords": [],
+    "priority": 2
+  },
+  {
+    "term": "Palliative Care",
+    "slug": "palliative-care",
+    "aliases": [],
+    "categories": [
+      "General Medical Terms"
+    ],
+    "short_definition": "Treating symptoms without curing the underlying cause. ",
+    "full_definition": "Treating symptoms without curing the underlying cause.",
+    "source_name": "Mended Little Hearts",
+    "source_url": "https://mendedhearts.org/wp-content/uploads/2025/02/MLHG_2015-2025.pdf",
+    "raw_source_file": "mended_hearts_org__mended_little_heartguide__local_pdfs.md",
+    "source_section": "glossary_common_chd_terms_and_abbreviations",
+    "entry_method": "scraped",
+    "search_keywords": [],
+    "priority": 2
+  },
+  {
+    "term": "Palpitations",
+    "slug": "palpitations",
+    "aliases": [],
+    "categories": [
+      "General Medical Terms"
+    ],
+    "short_definition": "A single or multiple irregular beat usually felt as a skip or momentary cessation of the heartbeat.",
+    "full_definition": "A single or multiple irregular beat usually felt as a skip or momentary cessation of the heartbeat.",
+    "source_name": "Children's Heart Foundation",
+    "source_url": "https://www.childrensheartfoundation.org/file_download/afc69f23-39fb-40e5-93f3-8e143dc3114a",
+    "raw_source_file": "childrens_heart_foundation_org__its_my_heart.md",
+    "source_section": "glossary_of_terms",
+    "entry_method": "scraped",
+    "search_keywords": [],
+    "priority": 2
+  },
+  {
+    "term": "PAPVR",
+    "slug": "papvr",
+    "aliases": [],
+    "categories": [
+      "Anatomy"
+    ],
+    "short_definition": "Partial anomalous pulmonary venous return, where one or more of the pulmonary veins carries blood from the lung to the right side of the heart instead of the left atrium",
+    "full_definition": "Partial anomalous pulmonary venous return, where one or more of the pulmonary veins carries blood from the lung to the right side of the heart instead of the left atrium",
+    "source_name": "Mended Little Hearts",
+    "source_url": "https://mendedhearts.org/wp-content/uploads/2025/02/MLHG_2015-2025.pdf",
+    "raw_source_file": "mended_hearts_org__mended_little_heartguide__local_pdfs.md",
+    "source_section": "glossary_common_chd_terms_and_abbreviations",
+    "entry_method": "scraped",
+    "search_keywords": [],
+    "priority": 2
+  },
+  {
+    "term": "Patent Ductus Arteriosus",
+    "slug": "patent-ductus-arteriosus",
+    "aliases": [],
+    "categories": [
+      "Conditions",
+      "Tests & Imaging",
+      "Devices & Equipment",
+      "Anatomy"
+    ],
+    "short_definition": "A congenital heart defect in which a small duct, or tube, between the artery leaving the left side of the heart, the aorta, and the artery leaving the right side of the heart, the pulmonary",
+    "full_definition": "A congenital heart defect in which a small duct, or tube, between the artery leaving the left side of the heart, the aorta, and the artery leaving the right side of the heart, the pulmonary artery, which normally closes soon after birth, remains open. As a result of its failure to close, blood from the left side of the heart is also pumped into the pulmonary artery and thereby into the lungs. This defect is sometimes called simply patent, or open, ductus.",
+    "source_name": "Children's Heart Foundation",
+    "source_url": "https://www.childrensheartfoundation.org/file_download/afc69f23-39fb-40e5-93f3-8e143dc3114a",
+    "raw_source_file": "childrens_heart_foundation_org__its_my_heart.md",
+    "source_section": "glossary_of_terms",
+    "entry_method": "scraped",
+    "search_keywords": [],
+    "priority": 2
+  },
+  {
+    "term": "Patent Foramen Ovale",
+    "slug": "patent-foramen-ovale",
+    "aliases": [],
+    "categories": [
+      "General Medical Terms"
+    ],
+    "short_definition": "An oval hole, called the foramen ovale, between the left and right upper chambers of the heart, which normally closes shortly after birth, remains open.",
+    "full_definition": "An oval hole, called the foramen ovale, between the left and right upper chambers of the heart, which normally closes shortly after birth, remains open.",
+    "source_name": "Children's Heart Foundation",
+    "source_url": "https://www.childrensheartfoundation.org/file_download/afc69f23-39fb-40e5-93f3-8e143dc3114a",
+    "raw_source_file": "childrens_heart_foundation_org__its_my_heart.md",
+    "source_section": "glossary_of_terms",
+    "entry_method": "scraped",
+    "search_keywords": [],
+    "priority": 2
+  },
+  {
+    "term": "PDA",
+    "slug": "pda",
+    "aliases": [],
+    "categories": [
+      "Tests & Imaging",
+      "Anatomy"
+    ],
+    "short_definition": "Patent ductus arteriousus, in which the small vessel in the fetal anatomy that connects the aorta to the pulmonary artery remains open.",
+    "full_definition": "Patent ductus arteriousus, in which the small vessel in the fetal anatomy that connects the aorta to the pulmonary artery remains open. It should close soon after birth.",
+    "source_name": "Mended Little Hearts",
+    "source_url": "https://mendedhearts.org/wp-content/uploads/2025/02/MLHG_2015-2025.pdf",
+    "raw_source_file": "mended_hearts_org__mended_little_heartguide__local_pdfs.md",
+    "source_section": "glossary_common_chd_terms_and_abbreviations",
+    "entry_method": "scraped",
+    "search_keywords": [],
+    "priority": 2
+  },
+  {
+    "term": "Pericarditis",
+    "slug": "pericarditis",
+    "aliases": [],
+    "categories": [
+      "General Medical Terms"
+    ],
+    "short_definition": "Inflammation of the membrane sac, the pericardium, which surrounds the heart.",
+    "full_definition": "Inflammation of the membrane sac, the pericardium, which surrounds the heart.",
+    "source_name": "Children's Heart Foundation",
+    "source_url": "https://www.childrensheartfoundation.org/file_download/afc69f23-39fb-40e5-93f3-8e143dc3114a",
+    "raw_source_file": "childrens_heart_foundation_org__its_my_heart.md",
+    "source_section": "glossary_of_terms",
+    "entry_method": "scraped",
+    "search_keywords": [],
+    "priority": 2
+  },
+  {
+    "term": "Pericardium",
+    "slug": "pericardium",
+    "aliases": [],
+    "categories": [
+      "General Medical Terms"
+    ],
+    "short_definition": "A closed tissue sac surrounding the heart and vessels close to the heart.",
+    "full_definition": "A closed tissue sac surrounding the heart and vessels close to the heart. The space inside the sac, the pericardial cavity, normally contains a fluid, which provides for smooth movements of the heart as it beats.",
+    "source_name": "Children's Heart Foundation",
+    "source_url": "https://www.childrensheartfoundation.org/file_download/afc69f23-39fb-40e5-93f3-8e143dc3114a",
+    "raw_source_file": "childrens_heart_foundation_org__its_my_heart.md",
+    "source_section": "glossary_of_terms",
+    "entry_method": "scraped",
+    "search_keywords": [],
+    "priority": 2
+  },
+  {
+    "term": "Persistent Truncus Arteriosus",
+    "slug": "persistent-truncus-arteriosus",
+    "aliases": [],
+    "categories": [
+      "Conditions",
+      "Tests & Imaging",
+      "Anatomy"
+    ],
+    "short_definition": "A congenital cardiac defect, characterized by a single arterial trunk arising from the heart receiving blood from both pumping chambers, the ventricles, and the pulmonary artery.",
+    "full_definition": "A congenital cardiac defect, characterized by a single arterial trunk arising from the heart receiving blood from both pumping chambers, the ventricles, and the pulmonary artery.",
+    "source_name": "Children's Heart Foundation",
+    "source_url": "https://www.childrensheartfoundation.org/file_download/afc69f23-39fb-40e5-93f3-8e143dc3114a",
+    "raw_source_file": "childrens_heart_foundation_org__its_my_heart.md",
+    "source_section": "glossary_of_terms",
+    "entry_method": "scraped",
+    "search_keywords": [],
+    "priority": 2
+  },
+  {
+    "term": "PFO",
+    "slug": "pfo",
+    "aliases": [],
+    "categories": [
+      "Anatomy"
+    ],
+    "short_definition": "Patent foramen ovalae, an opening that allows blood to go back and forth between the right and left atrium that normally closes soon after birth",
+    "full_definition": "Patent foramen ovalae, an opening that allows blood to go back and forth between the right and left atrium that normally closes soon after birth",
+    "source_name": "Mended Little Hearts",
+    "source_url": "https://mendedhearts.org/wp-content/uploads/2025/02/MLHG_2015-2025.pdf",
+    "raw_source_file": "mended_hearts_org__mended_little_heartguide__local_pdfs.md",
+    "source_section": "glossary_common_chd_terms_and_abbreviations",
+    "entry_method": "scraped",
+    "search_keywords": [],
+    "priority": 2
+  },
+  {
+    "term": "PGE1",
+    "slug": "pge1",
+    "aliases": [],
+    "categories": [
+      "Tests & Imaging",
+      "Medications",
+      "Anatomy"
+    ],
+    "short_definition": "Prostaglandin E1, medication administered to maintain the patency (openness) of the ductus arteriosus (a blood vessel connecting the pulmonary artery to the proximal descending aorta)",
+    "full_definition": "Prostaglandin E1, medication administered to maintain the patency (openness) of the ductus arteriosus (a blood vessel connecting the pulmonary artery to the proximal descending aorta)",
+    "source_name": "Mended Little Hearts",
+    "source_url": "https://mendedhearts.org/wp-content/uploads/2025/02/MLHG_2015-2025.pdf",
+    "raw_source_file": "mended_hearts_org__mended_little_heartguide__local_pdfs.md",
+    "source_section": "glossary_common_chd_terms_and_abbreviations",
+    "entry_method": "scraped",
+    "search_keywords": [],
+    "priority": 2
+  },
+  {
+    "term": "Prostaglandins",
+    "slug": "prostaglandins",
+    "aliases": [],
+    "categories": [
+      "Medications"
+    ],
+    "short_definition": "Hormone-like substances made from fatty acids, which are found throughout the body tissues.",
+    "full_definition": "Hormone-like substances made from fatty acids, which are found throughout the body tissues. They are thought to have important roles in tissue metabolism and blood flow.",
+    "source_name": "Children's Heart Foundation",
+    "source_url": "https://www.childrensheartfoundation.org/file_download/afc69f23-39fb-40e5-93f3-8e143dc3114a",
+    "raw_source_file": "childrens_heart_foundation_org__its_my_heart.md",
+    "source_section": "glossary_of_terms",
+    "entry_method": "scraped",
+    "search_keywords": [],
+    "priority": 2
+  },
+  {
+    "term": "PS",
+    "slug": "ps",
+    "aliases": [],
+    "categories": [
+      "Conditions",
+      "Anatomy"
+    ],
+    "short_definition": "Pulmonary stenosis, a condition in which the valve and/or the area in the right ventricle where the blood goes into the pulmonary artery is blocked, possibly from narrowing",
+    "full_definition": "Pulmonary stenosis, a condition in which the valve and/or the area in the right ventricle where the blood goes into the pulmonary artery is blocked, possibly from narrowing",
+    "source_name": "Mended Little Hearts",
+    "source_url": "https://mendedhearts.org/wp-content/uploads/2025/02/MLHG_2015-2025.pdf",
+    "raw_source_file": "mended_hearts_org__mended_little_heartguide__local_pdfs.md",
+    "source_section": "glossary_common_chd_terms_and_abbreviations",
+    "entry_method": "scraped",
+    "search_keywords": [],
+    "priority": 2
+  },
+  {
+    "term": "Pulmonary",
+    "slug": "pulmonary",
+    "aliases": [],
+    "categories": [
+      "Anatomy"
+    ],
+    "short_definition": "Pertaining to the lungs.",
+    "full_definition": "Pertaining to the lungs.",
+    "source_name": "Children's Heart Foundation",
+    "source_url": "https://www.childrensheartfoundation.org/file_download/afc69f23-39fb-40e5-93f3-8e143dc3114a",
+    "raw_source_file": "childrens_heart_foundation_org__its_my_heart.md",
+    "source_section": "glossary_of_terms",
+    "entry_method": "scraped",
+    "search_keywords": [],
+    "priority": 2
+  },
+  {
+    "term": "Pulmonary Artery",
+    "slug": "pulmonary-artery",
+    "aliases": [],
+    "categories": [
+      "Devices & Equipment",
+      "Anatomy",
+      "Symptoms & Monitoring"
+    ],
+    "short_definition": "The large artery that normally conveys unoxygenated blood from the lower right chamber of the heart to the lungs.",
+    "full_definition": "The large artery that normally conveys unoxygenated blood from the lower right chamber of the heart to the lungs. This is the only artery in the body which normally carries unoxygenated blood; all others carrying oxygenated blood to the body.",
+    "source_name": "Children's Heart Foundation",
+    "source_url": "https://www.childrensheartfoundation.org/file_download/afc69f23-39fb-40e5-93f3-8e143dc3114a",
+    "raw_source_file": "childrens_heart_foundation_org__its_my_heart.md",
+    "source_section": "glossary_of_terms",
+    "entry_method": "scraped",
+    "search_keywords": [],
+    "priority": 2
+  },
+  {
+    "term": "Pulmonary Edema",
+    "slug": "pulmonary-edema",
+    "aliases": [],
+    "categories": [
+      "Anatomy"
+    ],
+    "short_definition": "Congestion of lung tissues often resulting from critical, congenital, or acquired heart or lung disease.",
+    "full_definition": "Congestion of lung tissues often resulting from critical, congenital, or acquired heart or lung disease.",
+    "source_name": "Children's Heart Foundation",
+    "source_url": "https://www.childrensheartfoundation.org/file_download/afc69f23-39fb-40e5-93f3-8e143dc3114a",
+    "raw_source_file": "childrens_heart_foundation_org__its_my_heart.md",
+    "source_section": "glossary_of_terms",
+    "entry_method": "scraped",
+    "search_keywords": [],
+    "priority": 2
+  },
+  {
+    "term": "Pulmonary Hypertension",
+    "slug": "pulmonary-hypertension",
+    "aliases": [],
+    "categories": [
+      "Conditions",
+      "Tests & Imaging",
+      "Anatomy",
+      "Symptoms & Monitoring"
+    ],
+    "short_definition": "High blood pressure, or hypertension, in the blood vessels of the lungs.",
+    "full_definition": "High blood pressure, or hypertension, in the blood vessels of the lungs. The most common causes are congenital heart defects.",
+    "source_name": "Children's Heart Foundation",
+    "source_url": "https://www.childrensheartfoundation.org/file_download/afc69f23-39fb-40e5-93f3-8e143dc3114a",
+    "raw_source_file": "childrens_heart_foundation_org__its_my_heart.md",
+    "source_section": "glossary_of_terms",
+    "entry_method": "scraped",
+    "search_keywords": [],
+    "priority": 2
+  },
+  {
+    "term": "Pulmonary Valve Stenosis",
+    "slug": "pulmonary-valve-stenosis",
+    "aliases": [],
+    "categories": [
+      "Conditions",
+      "Tests & Imaging",
+      "Anatomy"
+    ],
+    "short_definition": "A congenital heart defect in which there is a narrowing of the pulmonary valve, which is situated between the right lower chamber, or the ventricle, and the pulmonary artery.",
+    "full_definition": "A congenital heart defect in which there is a narrowing of the pulmonary valve, which is situated between the right lower chamber, or the ventricle, and the pulmonary artery.",
+    "source_name": "Children's Heart Foundation",
+    "source_url": "https://www.childrensheartfoundation.org/file_download/afc69f23-39fb-40e5-93f3-8e143dc3114a",
+    "raw_source_file": "childrens_heart_foundation_org__its_my_heart.md",
+    "source_section": "glossary_of_terms",
+    "entry_method": "scraped",
+    "search_keywords": [],
+    "priority": 2
+  },
+  {
+    "term": "Pulmonic (pulmonary) Valve",
+    "slug": "pulmonic-pulmonary-valve",
+    "aliases": [],
+    "categories": [
+      "Anatomy"
+    ],
+    "short_definition": "The heart valve between the right ventricle and pulmonary artery.",
+    "full_definition": "The heart valve between the right ventricle and pulmonary artery. It has three flaps, or cusps.",
+    "source_name": "Children's Heart Foundation",
+    "source_url": "https://www.childrensheartfoundation.org/file_download/afc69f23-39fb-40e5-93f3-8e143dc3114a",
+    "raw_source_file": "childrens_heart_foundation_org__its_my_heart.md",
+    "source_section": "glossary_of_terms",
+    "entry_method": "scraped",
+    "search_keywords": [],
+    "priority": 2
+  },
+  {
+    "term": "Pulse Oximetry",
+    "slug": "pulse-oximetry",
+    "aliases": [
+      "pulse ox"
+    ],
+    "categories": [
+      "Tests & Imaging"
+    ],
+    "short_definition": "A common test that measures how much oxygen is circulating in the blood at any given time.",
+    "full_definition": "Pulse oximetry or “pulse ox” is a common test that measures how much oxygen is circulating in the blood at any given time. Oxygen saturation for a healthy person without CHD is typically 95 to 100 percent, but this percentage is often lower in children with severe congenital heart defects. During testing, a small light-emitting monitor is usually placed on the child’s finger or toe. Pulse ox testing is painless; nothing goes into the child’s skin except for light. This test is often used in screening for critical congenital heart defects but can be also used to monitor patients with CHD, to alter treatments and to plan future procedures. It is not uncommon for some patients with CHD to be sent home with a pulse oximeter so that they can measure the amount of oxygen in their blood as part of a home-monitoring program.",
+    "source_name": "Mended Little Hearts",
+    "source_url": "https://mendedhearts.org/wp-content/uploads/2025/02/MLHG_2015-2025.pdf",
+    "raw_source_file": "mended_hearts_org__mended_little_heartguide__local_pdfs.md",
+    "source_section": "common_tests_and_procedures",
+    "entry_method": "manual",
+    "search_keywords": [],
+    "priority": 2
+  },
+  {
+    "term": "PV",
+    "slug": "pv",
+    "aliases": [],
+    "categories": [
+      "Anatomy"
+    ],
+    "short_definition": "Pulmonary valve, the valve between the right ventricle and pulmonary artery",
+    "full_definition": "Pulmonary valve, the valve between the right ventricle and pulmonary artery",
+    "source_name": "Mended Little Hearts",
+    "source_url": "https://mendedhearts.org/wp-content/uploads/2025/02/MLHG_2015-2025.pdf",
+    "raw_source_file": "mended_hearts_org__mended_little_heartguide__local_pdfs.md",
+    "source_section": "glossary_common_chd_terms_and_abbreviations",
+    "entry_method": "scraped",
+    "search_keywords": [],
+    "priority": 2
+  },
+  {
+    "term": "RA",
+    "slug": "ra",
+    "aliases": [],
+    "categories": [
+      "Anatomy"
+    ],
+    "short_definition": "Right atrium, the right of the two top chambers of the heart",
+    "full_definition": "Right atrium, the right of the two top chambers of the heart",
+    "source_name": "Mended Little Hearts",
+    "source_url": "https://mendedhearts.org/wp-content/uploads/2025/02/MLHG_2015-2025.pdf",
+    "raw_source_file": "mended_hearts_org__mended_little_heartguide__local_pdfs.md",
+    "source_section": "glossary_common_chd_terms_and_abbreviations",
+    "entry_method": "scraped",
+    "search_keywords": [],
+    "priority": 2
+  },
+  {
+    "term": "Radioisotopic Scanning",
+    "slug": "radioisotopic-scanning",
+    "aliases": [],
+    "categories": [
+      "Conditions",
+      "Tests & Imaging"
+    ],
+    "short_definition": "A diagnostic technique involving radioactive labeling of tissues and organs by the injection of radioisotopes (minimally radioactive material) into the bloodstream.",
+    "full_definition": "A diagnostic technique involving radioactive labeling of tissues and organs by the injection of radioisotopes (minimally radioactive material) into the bloodstream. The emitted radioactivity is detected by a scanner and the resulting record of the scan is used to evaluate structural defects or functions.",
+    "source_name": "Children's Heart Foundation",
+    "source_url": "https://www.childrensheartfoundation.org/file_download/afc69f23-39fb-40e5-93f3-8e143dc3114a",
+    "raw_source_file": "childrens_heart_foundation_org__its_my_heart.md",
+    "source_section": "glossary_of_terms",
+    "entry_method": "scraped",
+    "search_keywords": [],
+    "priority": 2
+  },
+  {
+    "term": "Regurgitation",
+    "slug": "regurgitation",
+    "aliases": [],
+    "categories": [
+      "Anatomy"
+    ],
+    "short_definition": "The abnormal backward flowing of blood through a valve of the heart.",
+    "full_definition": "The abnormal backward flowing of blood through a valve of the heart.",
+    "source_name": "Children's Heart Foundation",
+    "source_url": "https://www.childrensheartfoundation.org/file_download/afc69f23-39fb-40e5-93f3-8e143dc3114a",
+    "raw_source_file": "childrens_heart_foundation_org__its_my_heart.md",
+    "source_section": "glossary_of_terms",
+    "entry_method": "scraped",
+    "search_keywords": [],
+    "priority": 2
+  },
+  {
+    "term": "Rheumatic Heart Disease",
+    "slug": "rheumatic-heart-disease",
+    "aliases": [],
+    "categories": [
+      "Anatomy"
+    ],
+    "short_definition": "A complication of rheumatic fever in which damage results to all layers of the heart, particularly the valves.",
+    "full_definition": "A complication of rheumatic fever in which damage results to all layers of the heart, particularly the valves.",
+    "source_name": "Children's Heart Foundation",
+    "source_url": "https://www.childrensheartfoundation.org/file_download/afc69f23-39fb-40e5-93f3-8e143dc3114a",
+    "raw_source_file": "childrens_heart_foundation_org__its_my_heart.md",
+    "source_section": "glossary_of_terms",
+    "entry_method": "scraped",
+    "search_keywords": [],
+    "priority": 2
+  },
+  {
+    "term": "Rubella",
+    "slug": "rubella",
+    "aliases": [],
+    "categories": [
+      "General Medical Terms"
+    ],
+    "short_definition": "Commonly known as German measles.",
+    "full_definition": "Commonly known as German measles.",
+    "source_name": "Children's Heart Foundation",
+    "source_url": "https://www.childrensheartfoundation.org/file_download/afc69f23-39fb-40e5-93f3-8e143dc3114a",
+    "raw_source_file": "childrens_heart_foundation_org__its_my_heart.md",
+    "source_section": "glossary_of_terms",
+    "entry_method": "scraped",
+    "search_keywords": [],
+    "priority": 2
+  },
+  {
+    "term": "SBE",
+    "slug": "sbe",
+    "aliases": [],
+    "categories": [
+      "Tests & Imaging"
+    ],
+    "short_definition": "See Bacterial Endocarditis.",
+    "full_definition": "See Bacterial Endocarditis.",
+    "source_name": "Children's Heart Foundation",
+    "source_url": "https://www.childrensheartfoundation.org/file_download/afc69f23-39fb-40e5-93f3-8e143dc3114a",
+    "raw_source_file": "childrens_heart_foundation_org__its_my_heart.md",
+    "source_section": "glossary_of_terms",
+    "entry_method": "scraped",
+    "search_keywords": [],
+    "priority": 2
+  },
+  {
+    "term": "Septa",
+    "slug": "septa",
+    "aliases": [],
+    "categories": [
+      "Anatomy"
+    ],
+    "short_definition": "The muscular walls dividing the two chambers on the left side of the heart from the two chambers on the right.",
+    "full_definition": "The muscular walls dividing the two chambers on the left side of the heart from the two chambers on the right. The atrial septum separates the top chambers and the ventricular septum separates the bottom chambers.",
+    "source_name": "Children's Heart Foundation",
+    "source_url": "https://www.childrensheartfoundation.org/file_download/afc69f23-39fb-40e5-93f3-8e143dc3114a",
+    "raw_source_file": "childrens_heart_foundation_org__its_my_heart.md",
+    "source_section": "glossary_of_terms",
+    "entry_method": "scraped",
+    "search_keywords": [],
+    "priority": 2
+  },
+  {
+    "term": "Septum",
+    "slug": "septum",
+    "aliases": [],
+    "categories": [
+      "Anatomy"
+    ],
+    "short_definition": "A dividing wall in the heart",
+    "full_definition": "A dividing wall in the heart",
+    "source_name": "Mended Little Hearts",
+    "source_url": "https://mendedhearts.org/wp-content/uploads/2025/02/MLHG_2015-2025.pdf",
+    "raw_source_file": "mended_hearts_org__mended_little_heartguide__local_pdfs.md",
+    "source_section": "glossary_common_chd_terms_and_abbreviations",
+    "entry_method": "scraped",
+    "search_keywords": [],
+    "priority": 2
+  },
+  {
+    "term": "Shock",
+    "slug": "shock",
+    "aliases": [],
+    "categories": [
+      "Conditions",
+      "Tests & Imaging"
+    ],
+    "short_definition": "Collapse of the circulation related to a congenital heart defect or acquired heart disease or loss of blood volume.",
+    "full_definition": "Collapse of the circulation related to a congenital heart defect or acquired heart disease or loss of blood volume.",
+    "source_name": "Children's Heart Foundation",
+    "source_url": "https://www.childrensheartfoundation.org/file_download/afc69f23-39fb-40e5-93f3-8e143dc3114a",
+    "raw_source_file": "childrens_heart_foundation_org__its_my_heart.md",
+    "source_section": "glossary_of_terms",
+    "entry_method": "scraped",
+    "search_keywords": [],
+    "priority": 2
+  },
+  {
+    "term": "Shunt",
+    "slug": "shunt",
+    "aliases": [],
+    "categories": [
+      "Procedures & Surgeries"
+    ],
+    "short_definition": "A passage between two blood vessels or between the two sides of the heart, as in cases where an opening exists in the wall that normally separates them.",
+    "full_definition": "A passage between two blood vessels or between the two sides of the heart, as in cases where an opening exists in the wall that normally separates them. In surgery, a shunt is the operation of forming a passage between blood vessels to divert blood from one part of the body to another.",
+    "source_name": "Children's Heart Foundation",
+    "source_url": "https://www.childrensheartfoundation.org/file_download/afc69f23-39fb-40e5-93f3-8e143dc3114a",
+    "raw_source_file": "childrens_heart_foundation_org__its_my_heart.md",
+    "source_section": "glossary_of_terms",
+    "entry_method": "scraped",
+    "search_keywords": [],
+    "priority": 2
+  },
+  {
+    "term": "Sphygmomanometer",
+    "slug": "sphygmomanometer",
+    "aliases": [],
+    "categories": [
+      "Symptoms & Monitoring"
+    ],
+    "short_definition": "An instrument for measuring blood pressure in the arteries.",
+    "full_definition": "An instrument for measuring blood pressure in the arteries.",
+    "source_name": "Children's Heart Foundation",
+    "source_url": "https://www.childrensheartfoundation.org/file_download/afc69f23-39fb-40e5-93f3-8e143dc3114a",
+    "raw_source_file": "childrens_heart_foundation_org__its_my_heart.md",
+    "source_section": "glossary_of_terms",
+    "entry_method": "scraped",
+    "search_keywords": [],
+    "priority": 2
+  },
+  {
+    "term": "Stenosis",
+    "slug": "stenosis",
+    "aliases": [],
+    "categories": [
+      "Conditions",
+      "Tests & Imaging",
+      "Anatomy"
+    ],
+    "short_definition": "A narrowing or stricture of an opening.",
+    "full_definition": "A narrowing or stricture of an opening. Mitral stenosis, aortic stenosis, etc., means that the valve indicated has become so narrowed that it does not function normally. Also refers to narrowing of a blood vessel.",
+    "source_name": "Children's Heart Foundation",
+    "source_url": "https://www.childrensheartfoundation.org/file_download/afc69f23-39fb-40e5-93f3-8e143dc3114a",
+    "raw_source_file": "childrens_heart_foundation_org__its_my_heart.md",
+    "source_section": "glossary_of_terms",
+    "entry_method": "scraped",
+    "search_keywords": [],
+    "priority": 2
+  },
+  {
+    "term": "Stress Test",
+    "slug": "stress-test",
+    "aliases": [],
+    "categories": [
+      "Tests & Imaging",
+      "Devices & Equipment",
+      "Symptoms & Monitoring"
+    ],
+    "short_definition": "A diagnostic method used to determine the body’s response to physical stress.",
+    "full_definition": "A diagnostic method used to determine the body’s response to physical stress. Usually involves monitoring an EKG and other physiological parameters, such as breathing rate and blood pressure, while the patient is exercising – jogging on a treadmill, walking up and down a short set of stairs, or pedaling on a stationary bicycle.",
+    "source_name": "Children's Heart Foundation",
+    "source_url": "https://www.childrensheartfoundation.org/file_download/afc69f23-39fb-40e5-93f3-8e143dc3114a",
+    "raw_source_file": "childrens_heart_foundation_org__its_my_heart.md",
+    "source_section": "glossary_of_terms",
+    "entry_method": "scraped",
+    "search_keywords": [],
+    "priority": 2
+  },
+  {
+    "term": "SV",
+    "slug": "sv",
+    "aliases": [],
+    "categories": [
+      "Tests & Imaging",
+      "Anatomy"
+    ],
+    "short_definition": "Single ventricle, where there is only one functional ventricle",
+    "full_definition": "Single ventricle, where there is only one functional ventricle",
+    "source_name": "Mended Little Hearts",
+    "source_url": "https://mendedhearts.org/wp-content/uploads/2025/02/MLHG_2015-2025.pdf",
+    "raw_source_file": "mended_hearts_org__mended_little_heartguide__local_pdfs.md",
+    "source_section": "glossary_common_chd_terms_and_abbreviations",
+    "entry_method": "scraped",
+    "search_keywords": [],
+    "priority": 2
+  },
+  {
+    "term": "SVC",
+    "slug": "svc",
+    "aliases": [],
+    "categories": [
+      "Anatomy"
+    ],
+    "short_definition": "Superior vena cava, the large vein that returns blood to the heart from the head, neck and arms",
+    "full_definition": "Superior vena cava, the large vein that returns blood to the heart from the head, neck and arms",
+    "source_name": "Mended Little Hearts",
+    "source_url": "https://mendedhearts.org/wp-content/uploads/2025/02/MLHG_2015-2025.pdf",
+    "raw_source_file": "mended_hearts_org__mended_little_heartguide__local_pdfs.md",
+    "source_section": "glossary_common_chd_terms_and_abbreviations",
+    "entry_method": "scraped",
+    "search_keywords": [],
+    "priority": 2
+  },
+  {
+    "term": "Symptomatic",
+    "slug": "symptomatic",
+    "aliases": [],
+    "categories": [
+      "Tests & Imaging"
+    ],
+    "short_definition": "A person is considered symptomatic when he exhibits functional evidence of a disease or condition.",
+    "full_definition": "A person is considered symptomatic when he exhibits functional evidence of a disease or condition.",
+    "source_name": "Children's Heart Foundation",
+    "source_url": "https://www.childrensheartfoundation.org/file_download/afc69f23-39fb-40e5-93f3-8e143dc3114a",
+    "raw_source_file": "childrens_heart_foundation_org__its_my_heart.md",
+    "source_section": "glossary_of_terms",
+    "entry_method": "scraped",
+    "search_keywords": [],
+    "priority": 2
+  },
+  {
+    "term": "Systolic Blood Pressure",
+    "slug": "systolic-blood-pressure",
+    "aliases": [],
+    "categories": [
+      "Tests & Imaging",
+      "Symptoms & Monitoring"
+    ],
+    "short_definition": "Pressure inside the arteries when the heart contracts with each beat.",
+    "full_definition": "Pressure inside the arteries when the heart contracts with each beat.",
+    "source_name": "Children's Heart Foundation",
+    "source_url": "https://www.childrensheartfoundation.org/file_download/afc69f23-39fb-40e5-93f3-8e143dc3114a",
+    "raw_source_file": "childrens_heart_foundation_org__its_my_heart.md",
+    "source_section": "glossary_of_terms",
+    "entry_method": "scraped",
+    "search_keywords": [],
+    "priority": 2
+  },
+  {
+    "term": "Tachycardia",
+    "slug": "tachycardia",
+    "aliases": [],
+    "categories": [
+      "Symptoms & Monitoring"
+    ],
+    "short_definition": "Abnormally fast heart rate.",
+    "full_definition": "Abnormally fast heart rate. What is considered tachycardia varies with age.",
+    "source_name": "Children's Heart Foundation",
+    "source_url": "https://www.childrensheartfoundation.org/file_download/afc69f23-39fb-40e5-93f3-8e143dc3114a",
+    "raw_source_file": "childrens_heart_foundation_org__its_my_heart.md",
+    "source_section": "glossary_of_terms",
+    "entry_method": "scraped",
+    "search_keywords": [],
+    "priority": 2
+  },
+  {
+    "term": "TAPVR",
+    "slug": "tapvr",
+    "aliases": [],
+    "categories": [
+      "Conditions",
+      "Anatomy"
+    ],
+    "short_definition": "Total anomalous pulmonary venous return, where the pulmonary veins (which carry blood back from the lungs to the heart) don’t return blood to the heart in the normal manner",
+    "full_definition": "Total anomalous pulmonary venous return, where the pulmonary veins (which carry blood back from the lungs to the heart) don’t return blood to the heart in the normal manner",
+    "source_name": "Mended Little Hearts",
+    "source_url": "https://mendedhearts.org/wp-content/uploads/2025/02/MLHG_2015-2025.pdf",
+    "raw_source_file": "mended_hearts_org__mended_little_heartguide__local_pdfs.md",
+    "source_section": "glossary_common_chd_terms_and_abbreviations",
+    "entry_method": "scraped",
+    "search_keywords": [],
+    "priority": 2
+  },
+  {
+    "term": "Tetralogy of Fallot",
+    "slug": "tetralogy-of-fallot",
+    "aliases": [],
+    "categories": [
+      "Conditions",
+      "Tests & Imaging",
+      "Anatomy"
+    ],
+    "short_definition": "A complex congenital heart malformation consisting of: 1) an opening in the wall between the lower heart chambers (ventricular septal defect), 2) a narrowing of the pulmonary valve (stenosis) and the muscular area just beneath",
+    "full_definition": "A complex congenital heart malformation consisting of: 1) an opening in the wall between the lower heart chambers (ventricular septal defect), 2) a narrowing of the pulmonary valve (stenosis) and the muscular area just beneath it, 3) thickening (hypertrophy) of the right ventricle and 4) abnormal position of the great artery (aorta).These children are cyanotic.",
+    "source_name": "Children's Heart Foundation",
+    "source_url": "https://www.childrensheartfoundation.org/file_download/afc69f23-39fb-40e5-93f3-8e143dc3114a",
+    "raw_source_file": "childrens_heart_foundation_org__its_my_heart.md",
+    "source_section": "glossary_of_terms",
+    "entry_method": "scraped",
+    "search_keywords": [],
+    "priority": 2
+  },
+  {
+    "term": "TGA",
+    "slug": "tga",
+    "aliases": [],
+    "categories": [
+      "Conditions"
+    ],
+    "short_definition": "Transposition of the great arteries, usually is referring to D-TGA",
+    "full_definition": "Transposition of the great arteries, usually is referring to D-TGA",
+    "source_name": "Mended Little Hearts",
+    "source_url": "https://mendedhearts.org/wp-content/uploads/2025/02/MLHG_2015-2025.pdf",
+    "raw_source_file": "mended_hearts_org__mended_little_heartguide__local_pdfs.md",
+    "source_section": "glossary_common_chd_terms_and_abbreviations",
+    "entry_method": "scraped",
+    "search_keywords": [],
+    "priority": 2
+  },
+  {
+    "term": "TOF",
+    "slug": "tof",
+    "aliases": [],
+    "categories": [
+      "Conditions",
+      "Tests & Imaging",
+      "Anatomy"
+    ],
+    "short_definition": "Tetralogy of Fallot,a condition that consists of four heart defects — a large VSD, pulmonary stenosis, an enlarged aorta that sits right over the VSD, and a thickened right ventricle of the heart",
+    "full_definition": "Tetralogy of Fallot,a condition that consists of four heart defects — a large VSD, pulmonary stenosis, an enlarged aorta that sits right over the VSD, and a thickened right ventricle of the heart",
+    "source_name": "Mended Little Hearts",
+    "source_url": "https://mendedhearts.org/wp-content/uploads/2025/02/MLHG_2015-2025.pdf",
+    "raw_source_file": "mended_hearts_org__mended_little_heartguide__local_pdfs.md",
+    "source_section": "glossary_common_chd_terms_and_abbreviations",
+    "entry_method": "scraped",
+    "search_keywords": [],
+    "priority": 2
+  },
+  {
+    "term": "Transplantation, Heart",
+    "slug": "transplantation-heart",
+    "aliases": [],
+    "categories": [
+      "Tests & Imaging"
+    ],
+    "short_definition": "The replacement of a healthy heart from a recently deceased donor into the chest of a person whose own heart can no longer function adequately.",
+    "full_definition": "The replacement of a healthy heart from a recently deceased donor into the chest of a person whose own heart can no longer function adequately. The donor’s heart then replaces or assists the failing heart.",
+    "source_name": "Children's Heart Foundation",
+    "source_url": "https://www.childrensheartfoundation.org/file_download/afc69f23-39fb-40e5-93f3-8e143dc3114a",
+    "raw_source_file": "childrens_heart_foundation_org__its_my_heart.md",
+    "source_section": "glossary_of_terms",
+    "entry_method": "scraped",
+    "search_keywords": [],
+    "priority": 2
+  },
+  {
+    "term": "Transposition of the Great Vessels",
+    "slug": "transposition-of-the-great-vessels",
+    "aliases": [],
+    "categories": [
+      "Conditions",
+      "Tests & Imaging",
+      "Devices & Equipment",
+      "Anatomy",
+      "Symptoms & Monitoring"
+    ],
+    "short_definition": "A congenital heart defect in which the aorta arises from the right, rather than left, ventricle and the pulmonary artery arises from the left, rather than the right, ventricle.",
+    "full_definition": "A congenital heart defect in which the aorta arises from the right, rather than left, ventricle and the pulmonary artery arises from the left, rather than the right, ventricle. Thus the right heart pumps unoxygenated blood from the body through the aorta and back to the body, and the left heart pumps oxygenated blood from the lungs back to the lungs. Only if there is a sizeable hole between right and left chambers, called a septal defect, or a channel between the aorta and pulmonary artery, patent ductus arteriosus, will enough oxygenated blood get pumped to the body to sustain life. Babies with this condition are critically ill and cyanotic and require surgical correction in the first years of life.",
+    "source_name": "Children's Heart Foundation",
+    "source_url": "https://www.childrensheartfoundation.org/file_download/afc69f23-39fb-40e5-93f3-8e143dc3114a",
+    "raw_source_file": "childrens_heart_foundation_org__its_my_heart.md",
+    "source_section": "glossary_of_terms",
+    "entry_method": "scraped",
+    "search_keywords": [],
+    "priority": 2
+  },
+  {
+    "term": "Tricuspid Atresia",
+    "slug": "tricuspid-atresia",
+    "aliases": [],
+    "categories": [
+      "Conditions",
+      "Tests & Imaging",
+      "Anatomy"
+    ],
+    "short_definition": "A severe congenital heart defect in which the valve between the upper right chamber, the atrium, and the lower right chamber, the ventricle, failed to form.",
+    "full_definition": "A severe congenital heart defect in which the valve between the upper right chamber, the atrium, and the lower right chamber, the ventricle, failed to form. Other associated defects are required for life to persist. These children are cyanotic.",
+    "source_name": "Children's Heart Foundation",
+    "source_url": "https://www.childrensheartfoundation.org/file_download/afc69f23-39fb-40e5-93f3-8e143dc3114a",
+    "raw_source_file": "childrens_heart_foundation_org__its_my_heart.md",
+    "source_section": "glossary_of_terms",
+    "entry_method": "scraped",
+    "search_keywords": [],
+    "priority": 2
+  },
+  {
+    "term": "Tricuspid Valve",
+    "slug": "tricuspid-valve",
+    "aliases": [],
+    "categories": [
+      "Anatomy"
+    ],
+    "short_definition": "The heart valve between the right atrium and right ventricle, comprised of three flaps or cusps.",
+    "full_definition": "The heart valve between the right atrium and right ventricle, comprised of three flaps or cusps.",
+    "source_name": "Children's Heart Foundation",
+    "source_url": "https://www.childrensheartfoundation.org/file_download/afc69f23-39fb-40e5-93f3-8e143dc3114a",
+    "raw_source_file": "childrens_heart_foundation_org__its_my_heart.md",
+    "source_section": "glossary_of_terms",
+    "entry_method": "scraped",
+    "search_keywords": [],
+    "priority": 2
+  },
+  {
+    "term": "Truncus",
+    "slug": "truncus",
+    "aliases": [],
+    "categories": [
+      "Anatomy"
+    ],
+    "short_definition": "Truncus arteriosis. In the most common type the pulmonary artery and the aorta join together as a single blood vessel coming out of the right and left ventricles.",
+    "full_definition": "Truncus arteriosis. In the most common type the pulmonary artery and the aorta join together as a single blood vessel coming out of the right and left ventricles.",
+    "source_name": "Mended Little Hearts",
+    "source_url": "https://mendedhearts.org/wp-content/uploads/2025/02/MLHG_2015-2025.pdf",
+    "raw_source_file": "mended_hearts_org__mended_little_heartguide__local_pdfs.md",
+    "source_section": "glossary_common_chd_terms_and_abbreviations",
+    "entry_method": "scraped",
+    "search_keywords": [],
+    "priority": 2
+  },
+  {
+    "term": "Ultrasound",
+    "slug": "ultrasound",
+    "aliases": [],
+    "categories": [
+      "Tests & Imaging",
+      "Hospital & Care Journey"
+    ],
+    "short_definition": "High frequency sound vibrations, not audible to the human ear.",
+    "full_definition": "High frequency sound vibrations, not audible to the human ear. In a sonar-like application, ultrasound can be used by a cardiologist as a diagnostic tool, usually echocardiography.",
+    "source_name": "Children's Heart Foundation",
+    "source_url": "https://www.childrensheartfoundation.org/file_download/afc69f23-39fb-40e5-93f3-8e143dc3114a",
+    "raw_source_file": "childrens_heart_foundation_org__its_my_heart.md",
+    "source_section": "glossary_of_terms",
+    "entry_method": "scraped",
+    "search_keywords": [],
+    "priority": 2
+  },
+  {
+    "term": "Valve",
+    "slug": "valve",
+    "aliases": [],
+    "categories": [
+      "Anatomy"
+    ],
+    "short_definition": "An opening covered by membranous flaps between two chambers of the heart or between a chamber of the heart and a blood vessel.",
+    "full_definition": "An opening covered by membranous flaps between two chambers of the heart or between a chamber of the heart and a blood vessel. When it is closed, blood normally does not pass through.",
+    "source_name": "Children's Heart Foundation",
+    "source_url": "https://www.childrensheartfoundation.org/file_download/afc69f23-39fb-40e5-93f3-8e143dc3114a",
+    "raw_source_file": "childrens_heart_foundation_org__its_my_heart.md",
+    "source_section": "glossary_of_terms",
+    "entry_method": "scraped",
+    "search_keywords": [],
+    "priority": 2
+  },
+  {
+    "term": "Valve Conduit",
+    "slug": "valve-conduit",
+    "aliases": [],
+    "categories": [
+      "Anatomy"
+    ],
+    "short_definition": "An artificial tubing with an artificial valve used in some congenital heart surgeries.",
+    "full_definition": "An artificial tubing with an artificial valve used in some congenital heart surgeries.",
+    "source_name": "Children's Heart Foundation",
+    "source_url": "https://www.childrensheartfoundation.org/file_download/afc69f23-39fb-40e5-93f3-8e143dc3114a",
+    "raw_source_file": "childrens_heart_foundation_org__its_my_heart.md",
+    "source_section": "glossary_of_terms",
+    "entry_method": "scraped",
+    "search_keywords": [],
+    "priority": 2
+  },
+  {
+    "term": "Valvular Insufficiency",
+    "slug": "valvular-insufficiency",
+    "aliases": [],
+    "categories": [
+      "Anatomy"
+    ],
+    "short_definition": "Valves that close improperly and permit a backflow of blood.",
+    "full_definition": "Valves that close improperly and permit a backflow of blood. Valvular insufficiency may result from either congenital or acquired heart disease.",
+    "source_name": "Children's Heart Foundation",
+    "source_url": "https://www.childrensheartfoundation.org/file_download/afc69f23-39fb-40e5-93f3-8e143dc3114a",
+    "raw_source_file": "childrens_heart_foundation_org__its_my_heart.md",
+    "source_section": "glossary_of_terms",
+    "entry_method": "scraped",
+    "search_keywords": [],
+    "priority": 2
+  },
+  {
+    "term": "Vascular",
+    "slug": "vascular",
+    "aliases": [],
+    "categories": [
+      "General Medical Terms"
+    ],
+    "short_definition": "Pertaining to the blood vessels.",
+    "full_definition": "Pertaining to the blood vessels.",
+    "source_name": "Children's Heart Foundation",
+    "source_url": "https://www.childrensheartfoundation.org/file_download/afc69f23-39fb-40e5-93f3-8e143dc3114a",
+    "raw_source_file": "childrens_heart_foundation_org__its_my_heart.md",
+    "source_section": "glossary_of_terms",
+    "entry_method": "scraped",
+    "search_keywords": [],
+    "priority": 2
+  },
+  {
+    "term": "Vectorcardiography",
+    "slug": "vectorcardiography",
+    "aliases": [],
+    "categories": [
+      "Tests & Imaging"
+    ],
+    "short_definition": "A special type of EKG.",
+    "full_definition": "A special type of EKG.",
+    "source_name": "Children's Heart Foundation",
+    "source_url": "https://www.childrensheartfoundation.org/file_download/afc69f23-39fb-40e5-93f3-8e143dc3114a",
+    "raw_source_file": "childrens_heart_foundation_org__its_my_heart.md",
+    "source_section": "glossary_of_terms",
+    "entry_method": "scraped",
+    "search_keywords": [],
+    "priority": 2
+  },
+  {
+    "term": "Vein",
+    "slug": "vein",
+    "aliases": [],
+    "categories": [
+      "Anatomy"
+    ],
+    "short_definition": "Any one of a series of vessels of the vascular system, which carries blood from various parts of the body back to the heart.",
+    "full_definition": "Any one of a series of vessels of the vascular system, which carries blood from various parts of the body back to the heart.",
+    "source_name": "Children's Heart Foundation",
+    "source_url": "https://www.childrensheartfoundation.org/file_download/afc69f23-39fb-40e5-93f3-8e143dc3114a",
+    "raw_source_file": "childrens_heart_foundation_org__its_my_heart.md",
+    "source_section": "glossary_of_terms",
+    "entry_method": "scraped",
+    "search_keywords": [],
+    "priority": 2
+  },
+  {
+    "term": "Venous Blood",
+    "slug": "venous-blood",
+    "aliases": [],
+    "categories": [
+      "Devices & Equipment",
+      "Symptoms & Monitoring"
+    ],
+    "short_definition": "Refers to blood returning to the heart.",
+    "full_definition": "Refers to blood returning to the heart. It is unoxygenated when returning from the body and oxygenated when returning from the lungs.",
+    "source_name": "Children's Heart Foundation",
+    "source_url": "https://www.childrensheartfoundation.org/file_download/afc69f23-39fb-40e5-93f3-8e143dc3114a",
+    "raw_source_file": "childrens_heart_foundation_org__its_my_heart.md",
+    "source_section": "glossary_of_terms",
+    "entry_method": "scraped",
+    "search_keywords": [],
+    "priority": 2
+  },
+  {
+    "term": "Ventilator",
+    "slug": "ventilator",
+    "aliases": [],
+    "categories": [
+      "Devices & Equipment"
+    ],
+    "short_definition": "A machine that breathes for a patient or helps his or her breathing",
+    "full_definition": "A machine that breathes for a patient or helps his or her breathing",
+    "source_name": "Mended Little Hearts",
+    "source_url": "https://mendedhearts.org/wp-content/uploads/2025/02/MLHG_2015-2025.pdf",
+    "raw_source_file": "mended_hearts_org__mended_little_heartguide__local_pdfs.md",
+    "source_section": "glossary_common_chd_terms_and_abbreviations",
+    "entry_method": "scraped",
+    "search_keywords": [],
+    "priority": 2
+  },
+  {
+    "term": "Ventricle",
+    "slug": "ventricle",
+    "aliases": [],
+    "categories": [
+      "Devices & Equipment",
+      "Anatomy",
+      "Symptoms & Monitoring"
+    ],
+    "short_definition": "One of the two main pumping chambers of the heart.",
+    "full_definition": "One of the two main pumping chambers of the heart. The left ventricle pumps oxygenated blood through the arteries to the body. The right ventricle pumps unoxygenated blood through the pulmonary artery to the lungs. Capacity of each ventricle in an adult averages 85 cc or about 3 ounces.",
+    "source_name": "Children's Heart Foundation",
+    "source_url": "https://www.childrensheartfoundation.org/file_download/afc69f23-39fb-40e5-93f3-8e143dc3114a",
+    "raw_source_file": "childrens_heart_foundation_org__its_my_heart.md",
+    "source_section": "glossary_of_terms",
+    "entry_method": "scraped",
+    "search_keywords": [],
+    "priority": 2
+  },
+  {
+    "term": "Ventricular Septal Defect",
+    "slug": "ventricular-septal-defect",
+    "aliases": [],
+    "categories": [
+      "Conditions",
+      "Tests & Imaging",
+      "Anatomy"
+    ],
+    "short_definition": "A congenital cardiac defect in which there is an abnormal opening in the wall, or septum, that divides the right and left lower heart chambers, called the ventricles.",
+    "full_definition": "A congenital cardiac defect in which there is an abnormal opening in the wall, or septum, that divides the right and left lower heart chambers, called the ventricles.",
+    "source_name": "Children's Heart Foundation",
+    "source_url": "https://www.childrensheartfoundation.org/file_download/afc69f23-39fb-40e5-93f3-8e143dc3114a",
+    "raw_source_file": "childrens_heart_foundation_org__its_my_heart.md",
+    "source_section": "glossary_of_terms",
+    "entry_method": "scraped",
+    "search_keywords": [],
+    "priority": 2
+  },
+  {
+    "term": "VSD",
+    "slug": "vsd",
+    "aliases": [],
+    "categories": [
+      "Conditions",
+      "Tests & Imaging",
+      "Anatomy"
+    ],
+    "short_definition": "Ventricular septal defect, a hole in the muscle wall that separates the right and left ventricles. ",
+    "full_definition": "Ventricular septal defect, a hole in the muscle wall that separates the right and left ventricles. ",
+    "source_name": "Mended Little Hearts",
+    "source_url": "https://mendedhearts.org/wp-content/uploads/2025/02/MLHG_2015-2025.pdf",
+    "raw_source_file": "mended_hearts_org__mended_little_heartguide__local_pdfs.md",
+    "source_section": "glossary_common_chd_terms_and_abbreviations",
+    "entry_method": "scraped",
+    "search_keywords": [],
+    "priority": 2
+  }
+]

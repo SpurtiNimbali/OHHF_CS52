@@ -10,19 +10,14 @@ import { normalizeCategoryLabel } from '../lib/supportResourceHref'
 import { supabase, ensureAuthUserId, SupportResource } from '../lib/supabase'
 import {
   CARDEA_ALMOST_WHITE,
+  CARDEA_DARK_GREEN,
+  CARDEA_LIGHT_BLUE,
   CARDEA_MUTED,
   CARDEA_NAVY,
 } from '../ui/cardeaTokens'
 import { useMood } from '../mood'
 
-const FILTER_CATEGORIES = [
-  'Mental Health',
-  'Family Support',
-  'Financial Aid',
-  'Community',
-] as const
-
-const CATEGORIES = ['All', ...FILTER_CATEGORIES] as const
+const CATEGORIES = ['All', ...SUPPORT_FILTER_CATEGORIES] as const
 type Category = (typeof CATEGORIES)[number]
 type SupportFilterCategory = (typeof FILTER_CATEGORIES)[number]
 
@@ -37,10 +32,38 @@ export default function FindSupport() {
   const [resources, setResources] = useState<SupportResource[]>([])
   const [locationQuery, setLocationQuery] = useState('')
   const [activeCategory, setActiveCategory] = useState<Category>('All')
+  const [filterByAge, setFilterByAge] = useState(false)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const [userId, setUserId] = useState<string | null>(null)
+  const [authBootstrapped, setAuthBootstrapped] = useState(false)
+  const [userProfile, setUserProfile] = useState<UserProfileFields | null>(null)
 
-  const load = useCallback(async () => {
+  useEffect(() => {
+    let cancelled = false
+    ;(async () => {
+      const uid = await ensureAuthUserId()
+      if (!cancelled) {
+        setUserId(uid)
+        setAuthBootstrapped(true)
+      }
+    })()
+    return () => {
+      cancelled = true
+    }
+  }, [])
+
+  useEffect(() => {
+    if (!authBootstrapped) return
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((_event, session) => {
+      setUserId(session?.user?.id ?? null)
+    })
+    return () => subscription.unsubscribe()
+  }, [authBootstrapped])
+
+  const load = useCallback(async (uid: string | null) => {
     setLoading(true)
     setError(null)
 
@@ -53,29 +76,28 @@ export default function FindSupport() {
       setResources([])
       setError(dbError.message)
     } else {
-      setResources((data as SupportResource[]) ?? [])
+      setResources((data ?? []).map((row) => mapSupportResourceRow(row as Record<string, unknown>)))
     }
     setLoading(false)
   }, [])
 
   useEffect(() => {
-    let cancelled = false
-    ;(async () => {
-      await ensureAuthUserId()
-      if (!cancelled) load()
-    })()
-    return () => {
-      cancelled = true
-    }
-  }, [load])
+    if (!authBootstrapped) return
+    load(userId)
+  }, [authBootstrapped, userId, load])
+
+  const childCurrentAge = userProfile?.current_age_category ?? null
 
   const filteredResources = useMemo(() => {
-    const q = locationQuery.trim().toLowerCase()
+    const q = locationQuery.trim()
 
-    const inCategory = resources.filter((r) => {
-      if (activeCategory === 'All') return true
-      const bucket = normalizeSupportCategoryBucket(r.category)
-      return bucket !== 'other' && bucket === activeCategory
+    let list = resources.filter((r) => {
+      if (activeCategory !== 'All') {
+        const bucket = normalizeSupportCategory(r.category)
+        if (bucket === 'other' || bucket !== activeCategory) return false
+      }
+      if (filterByAge && !resourceMatchesChildAge(r.age, childCurrentAge)) return false
+      return resourceMatchesLocationQuery(r, q)
     })
 
     if (!q) return inCategory
@@ -143,7 +165,7 @@ export default function FindSupport() {
               maxWidth: '560px',
             }}
           >
-            Local and national resources for mental health, family support, financial help, and community.
+            Local and national resources for family support, mental health, camps, and financial aid.
           </p>
         </div>
 
@@ -191,6 +213,58 @@ export default function FindSupport() {
         <div style={{ marginBottom: '28px' }}>
           <SupportCategoryChips options={CATEGORIES} active={activeCategory} onChange={setActiveCategory} />
         </div>
+
+        <div
+          style={{
+            marginBottom: '24px',
+            paddingTop: '16px',
+            borderTop: `1px solid ${CARDEA_LIGHT_BLUE}`,
+          }}
+        >
+          <p
+            style={{
+              fontSize: '0.85rem',
+              color: CARDEA_MUTED,
+              marginBottom: '12px',
+              fontWeight: 600,
+            }}
+          >
+            Personalize
+          </p>
+          <label
+            style={{
+              display: 'flex',
+              alignItems: 'flex-start',
+              gap: '10px',
+              cursor: childCurrentAge ? 'pointer' : 'not-allowed',
+              fontSize: '0.9rem',
+              color: CARDEA_NAVY,
+              opacity: childCurrentAge ? 1 : 0.65,
+            }}
+          >
+            <input
+              type="checkbox"
+              checked={filterByAge}
+              disabled={!childCurrentAge?.trim()}
+              onChange={(e) => setFilterByAge(e.target.checked)}
+              style={{ width: '18px', height: '18px', marginTop: '2px', accentColor: CARDEA_DARK_GREEN }}
+            />
+            <span>
+              Filter by my child&apos;s current age
+              {childCurrentAge?.trim() ? (
+                <span style={{ display: 'block', fontSize: '0.8rem', color: CARDEA_MUTED, marginTop: '4px' }}>
+                  From your profile: {childCurrentAge}
+                </span>
+              ) : (
+                <span style={{ display: 'block', fontSize: '0.8rem', color: CARDEA_MUTED, marginTop: '4px' }}>
+                  Complete onboarding with your child&apos;s current age to use this filter.
+                </span>
+              )}
+            </span>
+          </label>
+        </div>
+
+        <div style={{ height: '1px', background: CARDEA_LIGHT_BLUE, marginBottom: '28px' }} />
 
         {loading ? (
           <ResourcesPageLoading label="Loading resources…" />
