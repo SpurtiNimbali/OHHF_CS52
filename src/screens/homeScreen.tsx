@@ -75,7 +75,7 @@ const BASE_CARDS: ResourceCard[] = [
     id: 'questions',
     icon: Heart,
     title: 'Questions for your visit',
-    description: 'Save prompts to bring to your cardiologist appointments.',
+    description: 'Save prompts to bring to your healthcare appointments.',
     iconWrapClass: 'bg-[#FFAAA5]',
     iconClass: 'text-[#8B3A36]',
     to: '/resources?view=questions',

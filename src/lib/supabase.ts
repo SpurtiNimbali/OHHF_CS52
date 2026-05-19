@@ -40,9 +40,13 @@ export type SavedQuestion = {
 export type SupportResource = {
   id: string
   name: string
-  description: string
-  category: string
-  link: string
+  description: string | null
+  category: string | null
+  link: string | null
+  /** City name or `online`. */
+  location: string | null
+  /** Null when `location` is online-only. */
   zipcode: string | null
-  city: string | null
+  /** Onboarding age label(s); empty means all ages. */
+  age: string | null
 }

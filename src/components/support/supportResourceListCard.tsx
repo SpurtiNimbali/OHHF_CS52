@@ -1,5 +1,6 @@
 import { useState } from 'react'
 
+import { formatSupportResourceLocation } from '../../lib/supportResource'
 import type { SupportResource } from '../../lib/supabase'
 import { CARDEA_ALMOST_WHITE, CARDEA_DARK_GREEN, CARDEA_MUTED, CARDEA_NAVY } from '../../ui/cardeaTokens'
 import { CategoryBadge } from '../ui/categoryBadge'
@@ -25,6 +26,7 @@ function ExternalLinkIcon() {
 /** Single-column resource row (primary Find Support list). */
 export function SupportResourceListCard({ resource }: { resource: SupportResource }) {
   const [hovered, setHovered] = useState(false)
+  const locationLine = formatSupportResourceLocation(resource)
 
   return (
     <li
@@ -73,7 +75,7 @@ export function SupportResourceListCard({ resource }: { resource: SupportResourc
         </p>
       )}
 
-      {(resource.city || resource.zipcode) && (
+      {locationLine && (
         <p
           style={{
             margin: 0,
@@ -82,7 +84,7 @@ export function SupportResourceListCard({ resource }: { resource: SupportResourc
             fontFamily: 'Inter, system-ui, sans-serif',
           }}
         >
-          📍 {[resource.city, resource.zipcode].filter(Boolean).join(', ')}
+          📍 {locationLine}
         </p>
       )}
 

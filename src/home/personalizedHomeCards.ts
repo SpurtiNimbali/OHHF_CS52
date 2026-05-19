@@ -54,7 +54,7 @@ export const HOME_CARD_CATALOG: HomeCardDefinition[] = [
     id: 'visit-questions',
     icon: Heart,
     title: 'Questions for your visit',
-    descriptionDefault: 'Save prompts to bring to your cardiologist appointments.',
+    descriptionDefault: 'Save prompts to bring to your healthcare appointments.',
     to: '/resources?view=questions',
     palette: 'coral',
   },

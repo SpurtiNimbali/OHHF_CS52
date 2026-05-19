@@ -3,119 +3,31 @@ import {
   ResourcesPageError,
   ResourcesPageLoading,
 } from '../components/ResourcesPageStates'
-import { PersonalizedSupportGridCard } from '../components/support/supportResourceGridCard'
 import { SupportResourceListCard } from '../components/support/supportResourceListCard'
 import { PersonalizationMismatchBanner } from '../components/ui/personalizationMismatchBanner'
-import { normalizeCategoryLabel, safeExternalHref } from '../lib/supportResourceHref'
+import {
+  mapSupportResourceRow,
+  normalizeSupportCategory,
+  resourceMatchesChildAge,
+  resourceMatchesLocationQuery,
+  scoreResourceLocationMatch,
+  SUPPORT_FILTER_CATEGORIES,
+} from '../lib/supportResource'
 import { supabase, ensureAuthUserId, SupportResource } from '../lib/supabase'
 import {
   CARDEA_ALMOST_WHITE,
+  CARDEA_DARK_GREEN,
+  CARDEA_LIGHT_BLUE,
   CARDEA_MUTED,
   CARDEA_NAVY,
 } from '../ui/cardeaTokens'
 import { useMood } from '../mood'
 
-const FILTER_CATEGORIES = [
-  'Mental Health',
-  'Family Support',
-  'Financial Aid',
-  'Community',
-] as const
-
-const CATEGORIES = ['All', ...FILTER_CATEGORIES] as const
+const CATEGORIES = ['All', ...SUPPORT_FILTER_CATEGORIES] as const
 type Category = (typeof CATEGORIES)[number]
-type SupportFilterCategory = (typeof FILTER_CATEGORIES)[number]
 
-// ── ResourceCard ─────────────────────────────────────────────────────────────
-
-function ResourceCard({ resource }: { resource: SupportResource }) {
-  const [hovered, setHovered] = useState(false)
-
-  return (
-    <li
-      onMouseEnter={() => setHovered(true)}
-      onMouseLeave={() => setHovered(false)}
-      style={{
-        background: '#fff',
-        border: `1.5px solid ${hovered ? '#577568' : '#c6d9e5'}`,
-        borderRadius: '14px',
-        padding: '24px',
-        display: 'flex',
-        flexDirection: 'column',
-        gap: '10px',
-        boxShadow: hovered ? '0 8px 24px rgba(25,43,63,0.09)' : '0 2px 8px rgba(25,43,63,0.04)',
-        transition: 'all 0.2s ease',
-        listStyle: 'none',
-      }}
-    >
-      {/* Name + category badge */}
-      <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: '12px' }}>
-        <h3 style={{
-          margin: 0,
-          fontSize: '1rem',
-          fontWeight: 700,
-          color: '#192b3f',
-          lineHeight: 1.3,
-          fontFamily: 'Inter, system-ui, sans-serif',
-        }}>
-          {resource.name}
-        </h3>
-        <span style={{
-          flexShrink: 0,
-          fontSize: '0.72rem',
-          fontWeight: 600,
-          background: '#c6d9e5',
-          color: '#192b3f',
-          padding: '3px 10px',
-          borderRadius: '100px',
-          fontFamily: 'Inter, system-ui, sans-serif',
-          letterSpacing: '0.01em',
-        }}>
-          {resource.category}
-        </span>
-      </div>
-
-      {resource.description && (
-        <p style={{ margin: 0, fontSize: '0.875rem', color: '#acb7a8', lineHeight: 1.65, fontFamily: 'Inter, system-ui, sans-serif' }}>
-          {resource.description}
-        </p>
-      )}
-
-      {(resource.city || resource.zipcode) && (
-        <p style={{ margin: 0, fontSize: '0.78rem', color: '#acb7a8', fontFamily: 'Inter, system-ui, sans-serif' }}>
-          📍 {[resource.city, resource.zipcode].filter(Boolean).join(', ')}
-        </p>
-      )}
-
-      {resource.link && (
-        <a
-          href={resource.link}
-          target="_blank"
-          rel="noopener noreferrer"
-          style={{
-            marginTop: '4px',
-            display: 'inline-flex',
-            alignItems: 'center',
-            gap: '6px',
-            background: '#577568',
-            color: '#f5f9f9',
-            padding: '8px 18px',
-            borderRadius: '10px',
-            fontSize: '0.85rem',
-            fontWeight: 600,
-            textDecoration: 'none',
-            fontFamily: 'Inter, system-ui, sans-serif',
-            transition: 'background 0.2s ease',
-            width: 'fit-content',
-          }}
-          onMouseEnter={e => (e.currentTarget.style.background = '#192b3f')}
-          onMouseLeave={e => (e.currentTarget.style.background = '#577568')}
-        >
-          Visit Website ↗
-        </a>
-      )}
-    </li>
-  )
+type UserProfileFields = {
+  current_age_category: string | null
 }
 
 function CategoryChips({ active, onChange }: { active: Category; onChange: (c: Category) => void }) {
@@ -126,17 +38,18 @@ function CategoryChips({ active, onChange }: { active: Category; onChange: (c: C
         return (
           <button
             key={cat}
+            type="button"
             onClick={() => onChange(cat)}
             style={{
-              padding: '7px 16px',
-              borderRadius: '100px',
+              padding: '8px 18px',
+              borderRadius: 999,
               fontSize: '0.8rem',
               fontWeight: 600,
               fontFamily: 'Inter, system-ui, sans-serif',
               cursor: 'pointer',
-              border: `1.5px solid ${isActive ? '#577568' : '#c6d9e5'}`,
-              background: isActive ? '#577568' : '#fff',
-              color: isActive ? '#f5f9f9' : '#577568',
+              border: isActive ? 'none' : '1px solid rgba(25, 43, 63, 0.12)',
+              background: isActive ? CARDEA_NAVY : '#ffffff',
+              color: isActive ? '#ffffff' : CARDEA_NAVY,
               transition: 'all 0.15s ease',
             }}
           >
@@ -148,88 +61,112 @@ function CategoryChips({ active, onChange }: { active: Category; onChange: (c: C
   )
 }
 
-function normalizeSupportCategoryBucket(raw: string | number | null | undefined): SupportFilterCategory | 'other' {
-  const label = normalizeCategoryLabel(raw)
-  const key = FILTER_CATEGORIES.find((c) => c.toLowerCase() === label.toLowerCase())
-  return key ?? 'other'
-}
 
 export default function FindSupport() {
   const { theme } = useMood()
   const [resources, setResources] = useState<SupportResource[]>([])
   const [locationQuery, setLocationQuery] = useState('')
   const [activeCategory, setActiveCategory] = useState<Category>('All')
+  const [filterByAge, setFilterByAge] = useState(false)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const [userId, setUserId] = useState<string | null>(null)
+  const [authBootstrapped, setAuthBootstrapped] = useState(false)
+  const [userProfile, setUserProfile] = useState<UserProfileFields | null>(null)
 
-  const load = useCallback(async () => {
+  useEffect(() => {
+    let cancelled = false
+    ;(async () => {
+      const uid = await ensureAuthUserId()
+      if (!cancelled) {
+        setUserId(uid)
+        setAuthBootstrapped(true)
+      }
+    })()
+    return () => {
+      cancelled = true
+    }
+  }, [])
+
+  useEffect(() => {
+    if (!authBootstrapped) return
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((_event, session) => {
+      setUserId(session?.user?.id ?? null)
+    })
+    return () => subscription.unsubscribe()
+  }, [authBootstrapped])
+
+  const load = useCallback(async (uid: string | null) => {
     setLoading(true)
     setError(null)
 
-    const { data, error: dbError } = await supabase
-      .from('support_resources')
-      .select('id, name, description, link, city, zipcode, category')
-      .order('name', { ascending: true })
+    const resourcesQuery = supabase.from('support_resources').select('*').order('name', { ascending: true })
+
+    const profileQuery = uid
+      ? supabase.from('users').select('current_age_category').eq('id', uid).maybeSingle()
+      : Promise.resolve({ data: null as UserProfileFields | null, error: null })
+
+    const [{ data, error: dbError }, { data: profileRow, error: profileError }] = await Promise.all([
+      resourcesQuery,
+      profileQuery,
+    ])
+
+    if (!profileError && profileRow) {
+      setUserProfile(profileRow as UserProfileFields)
+    } else {
+      setUserProfile(null)
+    }
 
     if (dbError) {
       setResources([])
       setError(dbError.message)
     } else {
-      setResources((data as SupportResource[]) ?? [])
+      setResources((data ?? []).map((row) => mapSupportResourceRow(row as Record<string, unknown>)))
     }
     setLoading(false)
   }, [])
 
   useEffect(() => {
-    let cancelled = false
-    ;(async () => {
-      await ensureAuthUserId()
-      if (!cancelled) load()
-    })()
-    return () => {
-      cancelled = true
-    }
-  }, [load])
+    if (!authBootstrapped) return
+    load(userId)
+  }, [authBootstrapped, userId, load])
+
+  const childCurrentAge = userProfile?.current_age_category ?? null
 
   const filteredResources = useMemo(() => {
-    const q = locationQuery.trim().toLowerCase()
+    const q = locationQuery.trim()
 
-    const inCategory = resources.filter((r) => {
-      if (activeCategory === 'All') return true
-      const bucket = normalizeSupportCategoryBucket(r.category)
-      return bucket !== 'other' && bucket === activeCategory
+    let list = resources.filter((r) => {
+      if (activeCategory !== 'All') {
+        const bucket = normalizeSupportCategory(r.category)
+        if (bucket === 'other' || bucket !== activeCategory) return false
+      }
+      if (filterByAge && !resourceMatchesChildAge(r.age, childCurrentAge)) return false
+      return resourceMatchesLocationQuery(r, q)
     })
 
-    if (!q) return inCategory
+    if (q) {
+      list = [...list].sort(
+        (a, b) =>
+          scoreResourceLocationMatch(a, q) - scoreResourceLocationMatch(b, q) ||
+          String(a.name ?? '').localeCompare(String(b.name ?? '')),
+      )
+    } else {
+      list = [...list].sort((a, b) => String(a.name ?? '').localeCompare(String(b.name ?? '')))
+    }
 
-    const scored = inCategory
-      .map((r) => {
-        const name = String(r.name ?? '').toLowerCase()
-        const desc = String(r.description ?? '').toLowerCase()
-        const city = String(r.city ?? '').toLowerCase()
-        const zip = String(r.zipcode ?? '').toLowerCase()
+    return list
+  }, [resources, locationQuery, activeCategory, filterByAge, childCurrentAge])
 
-        const hasTextMatch = name.includes(q) || desc.includes(q)
-        const hasLocation = Boolean(city || zip)
-
-        let score = 5
-        if (city === q || zip === q) score = 0
-        else if (city.startsWith(q) || zip.startsWith(q)) score = 1
-        else if (city.includes(q) || zip.includes(q)) score = 2
-        else if (hasTextMatch) score = 3
-        else if (!hasLocation) score = 4
-
-        return { r, score }
-      })
-      .filter(({ score }) => score < 5)
-
-    scored.sort(
-      (a, b) => a.score - b.score || (a.r.name ?? '').localeCompare(b.r.name ?? '')
-    )
-    return scored.map(({ r }) => r)
-  }, [resources, activeCategory, locationQuery])
-
-  const sortedResources = filteredResources
+  const showAgeMismatchBanner =
+    !loading &&
+    !error &&
+    filterByAge &&
+    Boolean(childCurrentAge?.trim()) &&
+    resources.length > 0 &&
+    filteredResources.length === 0
 
   return (
     <div style={{ minHeight: '100%', background: CARDEA_ALMOST_WHITE, fontFamily: 'Inter, system-ui, sans-serif' }}>
@@ -267,82 +204,158 @@ export default function FindSupport() {
               maxWidth: '560px',
             }}
           >
-            Local and national resources for mental health, family support, financial help, and community.
+            Local and national resources for family support, mental health, camps, and financial aid.
           </p>
         </div>
 
-        {/* Category chips */}
-        <div style={{ marginBottom: '28px' }}>
+        <div
+          style={{
+            background: 'rgba(198, 217, 229, 0.42)',
+            borderRadius: 16,
+            padding: '18px 20px',
+            marginBottom: '22px',
+            border: '1px solid rgba(25, 43, 63, 0.06)',
+          }}
+        >
+          <label htmlFor="support-location-search" className="sr-only">
+            Search by city, zip code, or online
+          </label>
+          <div style={{ position: 'relative' }}>
+            <span
+              style={{
+                position: 'absolute',
+                left: '16px',
+                top: '50%',
+                transform: 'translateY(-50%)',
+                color: CARDEA_MUTED,
+                fontSize: '1rem',
+              }}
+              aria-hidden
+            >
+              📍
+            </span>
+            <input
+              id="support-location-search"
+              type="text"
+              value={locationQuery}
+              onChange={(e) => setLocationQuery(e.target.value)}
+              placeholder="Search by city, zip code, or online..."
+              style={{
+                width: '100%',
+                padding: '14px 18px 14px 44px',
+                borderRadius: 9999,
+                border: '1px solid rgba(25, 43, 63, 0.12)',
+                background: '#fff',
+                fontSize: '0.9rem',
+                color: CARDEA_NAVY,
+                fontFamily: 'Inter, system-ui, sans-serif',
+                outline: 'none',
+                boxSizing: 'border-box',
+              }}
+            />
+          </div>
+        </div>
+
+        <div style={{ marginBottom: '20px' }}>
           <CategoryChips active={activeCategory} onChange={setActiveCategory} />
         </div>
+
+        <div
+          style={{
+            marginBottom: '24px',
+            paddingTop: '16px',
+            borderTop: `1px solid ${CARDEA_LIGHT_BLUE}`,
+          }}
+        >
+          <p
+            style={{
+              fontSize: '0.85rem',
+              color: CARDEA_MUTED,
+              marginBottom: '12px',
+              fontWeight: 600,
+            }}
+          >
+            Personalize
+          </p>
+          <label
+            style={{
+              display: 'flex',
+              alignItems: 'flex-start',
+              gap: '10px',
+              cursor: childCurrentAge ? 'pointer' : 'not-allowed',
+              fontSize: '0.9rem',
+              color: CARDEA_NAVY,
+              opacity: childCurrentAge ? 1 : 0.65,
+            }}
+          >
+            <input
+              type="checkbox"
+              checked={filterByAge}
+              disabled={!childCurrentAge?.trim()}
+              onChange={(e) => setFilterByAge(e.target.checked)}
+              style={{ width: '18px', height: '18px', marginTop: '2px', accentColor: CARDEA_DARK_GREEN }}
+            />
+            <span>
+              Filter by my child&apos;s current age
+              {childCurrentAge?.trim() ? (
+                <span style={{ display: 'block', fontSize: '0.8rem', color: CARDEA_MUTED, marginTop: '4px' }}>
+                  From your profile: {childCurrentAge}
+                </span>
+              ) : (
+                <span style={{ display: 'block', fontSize: '0.8rem', color: CARDEA_MUTED, marginTop: '4px' }}>
+                  Complete onboarding with your child&apos;s current age to use this filter.
+                </span>
+              )}
+            </span>
+          </label>
+        </div>
+
+        <div style={{ height: '1px', background: CARDEA_LIGHT_BLUE, marginBottom: '28px' }} />
 
         {loading ? (
           <ResourcesPageLoading label="Loading resources…" />
         ) : error ? (
-          <ResourcesPageError message={error} onRetry={() => load()} />
+          <ResourcesPageError message={error} onRetry={() => load(userId)} />
+        ) : showAgeMismatchBanner ? (
+          <PersonalizationMismatchBanner
+            title="No resources match your child's age"
+            description="Try turning off the age filter, choosing a different category, or broadening your location search."
+          />
+        ) : filteredResources.length === 0 ? (
+          <div style={{ textAlign: 'center', padding: '64px 0' }}>
+            <div style={{ fontSize: '2.5rem', marginBottom: '12px' }}>💛</div>
+            <p style={{ margin: 0, fontSize: '0.9rem', color: CARDEA_MUTED }}>
+              No resources found — try adjusting your filters.
+            </p>
+          </div>
         ) : (
-          <ul style={{ listStyle: 'none', margin: 0, padding: 0, display: 'flex', flexDirection: 'column', gap: '16px' }}>
-            {sortedResources.map((r) => (
-              <ResourceCard key={r.id} resource={r} />
-            ))}
-          </ul>
+          <>
+            <ul
+              style={{
+                listStyle: 'none',
+                margin: 0,
+                padding: 0,
+                display: 'flex',
+                flexDirection: 'column',
+                gap: '16px',
+              }}
+            >
+              {filteredResources.map((r) => (
+                <SupportResourceListCard key={r.id} resource={r} />
+              ))}
+            </ul>
+            <p
+              style={{
+                textAlign: 'center',
+                color: CARDEA_MUTED,
+                marginTop: '30px',
+                fontSize: '0.9rem',
+              }}
+            >
+              Showing {filteredResources.length} resource{filteredResources.length !== 1 ? 's' : ''}
+            </p>
+          </>
         )}
-
-        {!loading &&
-          !error &&
-          resources.length > 0 &&
-          filteredResources.length > 0 &&
-          (personalizeByAge || personalizeByCondition) &&
-          personalizedResources.length === 0 && (
-            <PersonalizationMismatchBanner
-              title="No resources match your personalization settings"
-              description="Try turning off the age or condition options above, or adjust your search or category filter."
-            />
-          )}
-
-        {!loading &&
-          !error &&
-          (personalizeByAge || personalizeByCondition) &&
-          personalizedResources.length > 0 && (
-            <>
-              <div
-                style={{
-                  display: 'grid',
-                  gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))',
-                  gap: '20px',
-                }}
-              >
-                {personalizedResources.map((r, index) => {
-                  const catLabel = normalizeCategoryLabel(r.category) || 'Resource'
-                  const href = safeExternalHref(r.link)
-                  const locationLine = [r.city, r.zipcode]
-                    .filter((v) => v != null && String(v).trim() !== '')
-                    .map((v) => String(v))
-                    .join(', ')
-                  return (
-                    <PersonalizedSupportGridCard
-                      key={r.id}
-                      resource={r}
-                      categoryLabel={catLabel}
-                      locationLine={locationLine}
-                      href={href}
-                      index={index}
-                    />
-                  )
-                })}
-              </div>
-              <p
-                style={{
-                  textAlign: 'center',
-                  color: '#888',
-                  marginTop: '30px',
-                  fontSize: '0.9rem',
-                }}
-              >
-                Showing {personalizedResources.length} resource{personalizedResources.length !== 1 ? 's' : ''}
-              </p>
-            </>
-          )}
       </div>
     </div>
   )
