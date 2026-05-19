@@ -6,7 +6,14 @@ import {
 } from '../components/ResourcesPageStates'
 import { SupportResourceListCard } from '../components/support/supportResourceListCard'
 import { SupportCategoryChips } from '../components/ui/supportCategoryChips'
-import { normalizeCategoryLabel } from '../lib/supportResourceHref'
+import {
+  mapSupportResourceRow,
+  normalizeSupportCategory,
+  resourceMatchesChildAge,
+  resourceMatchesLocationQuery,
+  scoreResourceLocationMatch,
+  SUPPORT_FILTER_CATEGORIES,
+} from '../lib/supportResource'
 import { supabase, ensureAuthUserId, SupportResource } from '../lib/supabase'
 import {
   CARDEA_ALMOST_WHITE,
@@ -17,15 +24,14 @@ import {
 } from '../ui/cardeaTokens'
 import { useMood } from '../mood'
 
+type UserProfileFields = {
+  diagnosis_age_category: string | null
+  current_age_category: string | null
+  condition: string | null
+}
+
 const CATEGORIES = ['All', ...SUPPORT_FILTER_CATEGORIES] as const
 type Category = (typeof CATEGORIES)[number]
-type SupportFilterCategory = (typeof FILTER_CATEGORIES)[number]
-
-function normalizeSupportCategoryBucket(raw: string | number | null | undefined): SupportFilterCategory | 'other' {
-  const label = normalizeCategoryLabel(raw)
-  const key = FILTER_CATEGORIES.find((c) => c.toLowerCase() === label.toLowerCase())
-  return key ?? 'other'
-}
 
 export default function FindSupport() {
   const { theme } = useMood()
@@ -67,10 +73,29 @@ export default function FindSupport() {
     setLoading(true)
     setError(null)
 
-    const { data, error: dbError } = await supabase
+    const resourcesQuery = supabase
       .from('support_resources')
-      .select('id, name, description, link, location, zipcode, category')
+      .select('id, name, description, link, location, zipcode, category, age')
       .order('name', { ascending: true })
+
+    const profileQuery = uid
+      ? supabase
+          .from('users')
+          .select('diagnosis_age_category, current_age_category, condition')
+          .eq('id', uid)
+          .maybeSingle()
+      : Promise.resolve({ data: null as UserProfileFields | null, error: null })
+
+    const [{ data, error: dbError }, { data: profileRow, error: profileError }] = await Promise.all([
+      resourcesQuery,
+      profileQuery,
+    ])
+
+    if (!profileError && profileRow) {
+      setUserProfile(profileRow as UserProfileFields)
+    } else {
+      setUserProfile(null)
+    }
 
     if (dbError) {
       setResources([])
@@ -91,7 +116,7 @@ export default function FindSupport() {
   const filteredResources = useMemo(() => {
     const q = locationQuery.trim()
 
-    let list = resources.filter((r) => {
+    const list = resources.filter((r) => {
       if (activeCategory !== 'All') {
         const bucket = normalizeSupportCategory(r.category)
         if (bucket === 'other' || bucket !== activeCategory) return false
@@ -100,34 +125,17 @@ export default function FindSupport() {
       return resourceMatchesLocationQuery(r, q)
     })
 
-    if (!q) return inCategory
+    if (!q) return list
 
-    const scored = inCategory
-      .map((r) => {
-        const name = String(r.name ?? '').toLowerCase()
-        const desc = String(r.description ?? '').toLowerCase()
-        const location = String(r.location ?? '').toLowerCase()
-        const zip = String(r.zipcode ?? '').toLowerCase()
-
-        const hasTextMatch = name.includes(q) || desc.includes(q)
-        const hasLocation = Boolean(location || zip)
-
-        let score = 5
-        if (location === q || zip === q) score = 0
-        else if (location.startsWith(q) || zip.startsWith(q)) score = 1
-        else if (location.includes(q) || zip.includes(q)) score = 2
-        else if (hasTextMatch) score = 3
-        else if (!hasLocation) score = 4
-
-        return { r, score }
-      })
+    const scored = list
+      .map((r) => ({ r, score: scoreResourceLocationMatch(r, q) }))
       .filter(({ score }) => score < 5)
 
     scored.sort(
       (a, b) => a.score - b.score || (a.r.name ?? '').localeCompare(b.r.name ?? ''),
     )
     return scored.map(({ r }) => r)
-  }, [resources, activeCategory, locationQuery])
+  }, [resources, activeCategory, locationQuery, filterByAge, childCurrentAge])
 
   return (
     <div style={{ minHeight: '100%', background: CARDEA_ALMOST_WHITE, fontFamily: 'Inter, system-ui, sans-serif' }}>
@@ -269,7 +277,7 @@ export default function FindSupport() {
         {loading ? (
           <ResourcesPageLoading label="Loading resources…" />
         ) : error ? (
-          <ResourcesPageError message={error} onRetry={() => load()} />
+          <ResourcesPageError message={error} onRetry={() => load(userId)} />
         ) : resources.length === 0 ? (
           <ResourcesPageEmpty
             title="No support resources yet"

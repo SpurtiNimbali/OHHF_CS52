@@ -79,4 +79,5 @@ export type SupportResource = {
   link: string
   location: string | null
   zipcode: string | null
+  age: string | null
 }
