@@ -57,7 +57,7 @@ export function ResourcesRightNav() {
   const location = useLocation()
 
   const activeTab: TabId =
-    location.pathname === '/chat'
+    location.pathname === '/chat' || location.pathname.startsWith('/chat/')
       ? 'chat'
       : location.pathname === '/wellness'
         ? 'wellness'

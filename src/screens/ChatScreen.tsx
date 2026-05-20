@@ -4,7 +4,7 @@ import { motion, AnimatePresence } from 'motion/react'
 import { useNavigate } from 'react-router-dom'
 import ReactMarkdown from 'react-markdown'
 import type { Components } from 'react-markdown'
-import { MessageCircle, Heart, Shield, ArrowUp, ArrowLeft } from 'lucide-react'
+import { MessageCircle, Heart, Shield, ArrowUp, ArrowLeft, ClipboardList, BookOpen, Users } from 'lucide-react'
 
 // ── Brand tokens ──────────────────────────────────────────────────────────────
 
@@ -27,6 +27,16 @@ interface Citation {
 
 type MessageRole = 'user' | 'assistant'
 
+type CompanionStageApi = 'open' | 'hear' | 'reflect' | 'intervene' | 'invite'
+
+type SendCompanionOpts = Partial<{
+  conversationStage: CompanionStageApi
+  selectedEmotion: string | null
+  selectedUnderneath: string | null
+  /** Populated when user taps "I tried this" — server invite-stage check-ins use the ExerciseCard title. */
+  inviteExerciseName: string | null
+}>
+
 interface ApiUiRedirect {
   kind: string
   label: string
@@ -43,6 +53,13 @@ interface Message {
   timestamp: Date
   citations?: Citation[]
   uiRedirects?: ApiUiRedirect[]
+  companion?: {
+    emotionChips?: string[] | null
+    exercise?: { name: string; steps: string[] } | null
+    toolCards?: { name: string; route: string }[] | null
+    uiRedirect?: { label: string; destination: string } | null
+    detectedEmotion?: string | null
+  }
 }
 
 const CHAT_SESSION_KEY = 'cardea-chat-session-v1'
@@ -50,17 +67,23 @@ const CHAT_SESSION_KEY = 'cardea-chat-session-v1'
 type SerializedMessage = Omit<Message, 'timestamp'> & { timestamp: string }
 
 type PersistedChatPayload = {
-  version: 1
+  version: 2
   messages: SerializedMessage[]
   dynamicChips: string[]
+  companionStage?: 'open' | 'hear' | 'reflect' | 'intervene' | 'invite'
 }
 
-function loadChatSession(): { messages: Message[]; dynamicChips: string[] } {
+function loadChatSession(): {
+  messages: Message[]
+  dynamicChips: string[]
+  companionStage: 'open' | 'hear' | 'reflect' | 'intervene' | 'invite'
+} {
   try {
     const raw = sessionStorage.getItem(CHAT_SESSION_KEY)
-    if (!raw) return { messages: [], dynamicChips: [] }
+    if (!raw) return { messages: [], dynamicChips: [], companionStage: 'open' }
     const data = JSON.parse(raw) as Partial<PersistedChatPayload>
-    if (data.version !== 1 || !Array.isArray(data.messages)) return { messages: [], dynamicChips: [] }
+    const vOk = data.version === 2 || data.version === 1
+    if (!vOk || !Array.isArray(data.messages)) return { messages: [], dynamicChips: [], companionStage: 'open' }
     const messages = (data.messages as SerializedMessage[]).map((m) => ({
       ...m,
       timestamp: new Date(m.timestamp),
@@ -68,17 +91,25 @@ function loadChatSession(): { messages: Message[]; dynamicChips: string[] } {
     const dynamicChips = Array.isArray(data.dynamicChips)
       ? data.dynamicChips.filter((x): x is string => typeof x === 'string')
       : []
-    return { messages, dynamicChips }
+    const cs = data.companionStage
+    const companionStage =
+      cs === 'open' || cs === 'hear' || cs === 'reflect' || cs === 'intervene' || cs === 'invite' ? cs : 'open'
+    return { messages, dynamicChips, companionStage }
   } catch {
-    return { messages: [], dynamicChips: [] }
+    return { messages: [], dynamicChips: [], companionStage: 'open' }
   }
 }
 
-function saveChatSession(messages: Message[], dynamicChips: string[]) {
+function saveChatSession(
+  messages: Message[],
+  dynamicChips: string[],
+  companionStage: PersistedChatPayload['companionStage'],
+) {
   const payload: PersistedChatPayload = {
-    version: 1,
+    version: 2,
     messages: messages.map((m) => ({ ...m, timestamp: m.timestamp.toISOString() })),
     dynamicChips,
+    companionStage,
   }
   sessionStorage.setItem(CHAT_SESSION_KEY, JSON.stringify(payload))
 }
@@ -86,23 +117,43 @@ function saveChatSession(messages: Message[], dynamicChips: string[]) {
 // ── Static data ───────────────────────────────────────────────────────────────
 
 const CHIPS = [
-  "I'm feeling anxious",
-  'Help me calm down',
-  'Breathing exercises',
-  'I feel overwhelmed',
-  'Sleep support',
+  "Something's been sitting heavy on me",
+  "I'm worried about what's ahead",
+  'Help me calm my body down',
+  "I'm overwhelmed by care logistics",
+  'Explain something in plain language',
+  "I'm not sure what I'm feeling",
 ]
 
 const FEATURE_CARDS = [
-  { Icon: MessageCircle, title: 'Confidential',  desc: 'Your conversations are private and secure'              },
-  { Icon: Heart,         title: 'Compassionate', desc: 'Non-judgmental support whenever you need it'            },
-  { Icon: Shield,        title: 'Resource-Rich', desc: 'Access to helpful tools and professional resources'     },
+  { Icon: MessageCircle, title: 'Private', desc: 'Space to say what can be hard to say elsewhere' },
+  { Icon: Heart, title: 'Trauma-aware', desc: 'CBT-informed support that respects medical complexity' },
+  { Icon: Shield, title: 'Resource-backed', desc: 'Guidance woven from trusted CHD & caregiver sources' },
 ]
+
+/** Empty-chat welcome copy (static so the screen does not swap after load). Corpus-backed generation remains available at `GET /api/chat/welcome` for other use. */
+const WELCOME_MARKDOWN =
+  "This room is for the emotional weight that travels with caring for a child's heart — the vigilance alongside love, the questions that circle at night, the strength it takes to show up again and again.\n\n" +
+  '**Cardea** uses a steady, trauma-informed tone: curiosity over judgment, small doable steps, and room to notice thoughts, body cues, and stress without fixing you.\n\n' +
+  "Whenever you're ready, bring what's most alive for you right now — a worry, something you want to understand, a moment you're proud survived, or the thing you haven't said out loud yet. You can start from scratch or use a prompt below."
 
 function shortLabel(text: string, max: number): string {
   const t = text.trim()
   if (t.length <= max) return t
   return `${t.slice(0, max - 1)}…`
+}
+
+/** Avoid duplicate footer links (same intent + path). */
+function dedupeUiRedirects(redirects: ApiUiRedirect[]): ApiUiRedirect[] {
+  const seen = new Set<string>()
+  const out: ApiUiRedirect[] = []
+  for (const r of redirects) {
+    const key = `${r.kind}|${r.path}`
+    if (seen.has(key)) continue
+    seen.add(key)
+    out.push(r)
+  }
+  return out
 }
 
 const assistantMarkdownComponents: Components = {
@@ -163,14 +214,32 @@ function WelcomeState({ onChip }: { onChip: (label: string) => void }) {
     <motion.div
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
-      style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', flex: 1, padding: '40px 24px', textAlign: 'center', fontFamily: FONT }}
+      style={{
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'center',
+        justifyContent: 'center',
+        flex: 1,
+        padding: '40px 24px',
+        textAlign: 'center',
+        fontFamily: FONT,
+      }}
     >
       {/* Heart pill — brand light-blue tint */}
       <motion.div
         initial={{ scale: 0.85, opacity: 0 }}
         animate={{ scale: 1, opacity: 1 }}
         transition={{ duration: 0.35 }}
-        style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: 80, height: 56, borderRadius: 32, background: LIGHT_BLUE, marginBottom: 24 }}
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          width: 80,
+          height: 56,
+          borderRadius: 32,
+          background: LIGHT_BLUE,
+          marginBottom: 24,
+        }}
       >
         <Heart style={{ width: 28, height: 28, color: NAVY }} strokeWidth={1.5} />
       </motion.div>
@@ -178,53 +247,120 @@ function WelcomeState({ onChip }: { onChip: (label: string) => void }) {
       <motion.h2
         initial={{ opacity: 0, y: 8 }}
         animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.1 }}
-        style={{ margin: '0 0 12px', fontSize: '1.2rem', fontWeight: 700, color: NAVY }}
+        transition={{ delay: 0.08 }}
+        style={{ margin: '0 0 8px', fontSize: '1.15rem', fontWeight: 700, color: NAVY }}
       >
-        Welcome to Mental Health Support
+        Welcome in — this hour is yours
       </motion.h2>
 
       <motion.p
-        initial={{ opacity: 0, y: 8 }}
+        initial={{ opacity: 0, y: 6 }}
         animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.15 }}
-        style={{ margin: '0 0 32px', fontSize: '0.875rem', color: MUTED, lineHeight: 1.65, maxWidth: 360 }}
+        transition={{ delay: 0.1 }}
+        style={{
+          margin: '0 0 22px',
+          fontSize: '0.8rem',
+          fontWeight: 600,
+          letterSpacing: '0.06em',
+          textTransform: 'uppercase',
+          color: MUTED,
+        }}
       >
-        I&apos;m here to listen and provide supportive resources. Your wellbeing
-        matters, and you&apos;re not alone in this journey.
+        Cardea · mental health support for heart families
       </motion.p>
 
+      <motion.div
+        initial={{ opacity: 0, y: 8 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.14 }}
+        style={{
+          margin: '0 auto 28px',
+          maxWidth: 520,
+          width: '100%',
+          textAlign: 'left',
+          fontSize: '0.9rem',
+          color: NAVY,
+          lineHeight: 1.65,
+        }}
+      >
+        <ReactMarkdown components={assistantMarkdownComponents}>{WELCOME_MARKDOWN}</ReactMarkdown>
+      </motion.div>
+
       {/* Feature cards */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 12, width: '100%', maxWidth: 520, marginBottom: 32 }}>
+      <div
+        style={{
+          display: 'grid',
+          gridTemplateColumns: 'repeat(3, 1fr)',
+          gap: 12,
+          width: '100%',
+          maxWidth: 520,
+          marginBottom: 28,
+        }}
+      >
         {FEATURE_CARDS.map(({ Icon, title, desc }, i) => (
           <motion.div
             key={title}
             initial={{ opacity: 0, y: 16 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.2 + i * 0.08 }}
-            style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 10, padding: '20px 16px', background: '#fff', borderRadius: 14, border: `1.5px solid ${LIGHT_BLUE}` }}
+            transition={{ delay: 0.2 + i * 0.06 }}
+            style={{
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+              gap: 10,
+              padding: '16px 12px',
+              background: '#fff',
+              borderRadius: 14,
+              border: `1.5px solid ${LIGHT_BLUE}`,
+            }}
           >
             <Icon style={{ width: 22, height: 22, color: MUTED }} strokeWidth={1.5} />
-            <p style={{ margin: 0, fontSize: '0.82rem', fontWeight: 700, color: NAVY }}>{title}</p>
-            <p style={{ margin: 0, fontSize: '0.75rem', color: MUTED, lineHeight: 1.5 }}>{desc}</p>
+            <p style={{ margin: 0, fontSize: '0.8rem', fontWeight: 700, color: NAVY }}>{title}</p>
+            <p style={{ margin: 0, fontSize: '0.72rem', color: MUTED, lineHeight: 1.45, textAlign: 'center' }}>
+              {desc}
+            </p>
           </motion.div>
         ))}
       </div>
 
+      <p
+        style={{
+          margin: '0 0 12px',
+          fontSize: '0.78rem',
+          fontWeight: 650,
+          color: MUTED,
+          width: '100%',
+          maxWidth: 520,
+        }}
+      >
+        Ways to start (tap one or type your own in the box below)
+      </p>
+
       {/* Prompt chips */}
-      <div style={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'center', gap: 8, marginBottom: 32 }}>
+      <div style={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'center', gap: 8, marginBottom: 28 }}>
         {CHIPS.map((chip, i) => (
           <motion.button
             key={chip}
             initial={{ opacity: 0, scale: 0.9 }}
             animate={{ opacity: 1, scale: 1 }}
-            transition={{ delay: 0.4 + i * 0.05 }}
+            transition={{ delay: 0.35 + i * 0.04 }}
             whileHover={{ scale: 1.03 }}
             whileTap={{ scale: 0.97 }}
             onClick={() => onChip(chip)}
-            style={{ padding: '8px 16px', borderRadius: 100, background: '#fff', border: `1.5px solid ${LIGHT_BLUE}`, fontSize: '0.82rem', fontWeight: 600, color: NAVY, cursor: 'pointer', fontFamily: FONT, transition: 'border-color 0.15s' }}
-            onMouseEnter={e => (e.currentTarget.style.borderColor = GREEN)}
-            onMouseLeave={e => (e.currentTarget.style.borderColor = LIGHT_BLUE)}
+            style={{
+              padding: '8px 16px',
+              borderRadius: 100,
+              background: '#fff',
+              border: `1.5px solid ${LIGHT_BLUE}`,
+              fontSize: '0.8rem',
+              fontWeight: 600,
+              color: NAVY,
+              cursor: 'pointer',
+              fontFamily: FONT,
+              transition: 'border-color 0.15s',
+            }}
+            onMouseEnter={(e) => (e.currentTarget.style.borderColor = GREEN)}
+            onMouseLeave={(e) => (e.currentTarget.style.borderColor = LIGHT_BLUE)}
           >
             {chip}
           </motion.button>
@@ -235,8 +371,8 @@ function WelcomeState({ onChip }: { onChip: (label: string) => void }) {
       <motion.p
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
-        transition={{ delay: 0.65 }}
-        style={{ fontSize: '0.75rem', color: MUTED, maxWidth: 360, lineHeight: 1.65 }}
+        transition={{ delay: 0.5 }}
+        style={{ fontSize: '0.75rem', color: MUTED, maxWidth: 400, lineHeight: 1.65 }}
       >
         <span style={{ fontWeight: 700, color: NAVY }}>Crisis Support:</span> If you&apos;re in
         crisis, please contact the{' '}
@@ -247,62 +383,114 @@ function WelcomeState({ onChip }: { onChip: (label: string) => void }) {
   )
 }
 
-// ── Prominent in-app suggestions (user message clearly matched) ───────────────
+// ── Standalone intent resource cards (glossary, support, care-team — not in citations footer) ──
 
-function ProminentRedirectHints({ redirects, onNavigate }: { redirects: ApiUiRedirect[]; onNavigate: (path: string) => void }) {
-  if (!redirects.length) return null
+const INTENT_RESOURCE_UI: Record<
+  string,
+  {
+    title: string
+    description: string
+    buttonLabel: string
+    Icon: typeof ClipboardList
+  }
+> = {
+  cardiologist_questions: {
+    title: 'Questions for your care team',
+    description: 'Save and organize prompts for cardiology visits and other appointments.',
+    buttonLabel: 'Open question library',
+    Icon: ClipboardList,
+  },
+  glossary: {
+    title: 'Medical glossary',
+    description: 'Look up heart and CHD terms in plain language.',
+    buttonLabel: 'Open glossary',
+    Icon: BookOpen,
+  },
+  support_groups: {
+    title: 'Support & community resources',
+    description: 'Connect with peers, groups, and practical help for families.',
+    buttonLabel: 'Browse support resources',
+    Icon: Users,
+  },
+}
+
+function IntentResourceCard({
+  redirect,
+  onNavigate,
+}: {
+  redirect: ApiUiRedirect
+  onNavigate: (path: string) => void
+}) {
+  const meta = INTENT_RESOURCE_UI[redirect.kind]
+  const Icon = meta?.Icon ?? MessageCircle
+  const title = meta?.title ?? redirect.label
+  const description =
+    meta?.description ?? 'Open this resource in the app.'
+  const buttonLabel = meta?.buttonLabel ?? 'Open'
+
   return (
     <div
       style={{
-        marginTop: 10,
-        padding: '12px 14px',
-        borderRadius: 12,
-        background: 'rgba(198, 217, 229, 0.35)',
-        border: `1px solid ${LIGHT_BLUE}`,
         width: '100%',
         boxSizing: 'border-box',
+        padding: '14px 16px',
+        borderRadius: 14,
+        background: '#fff',
+        border: `2px solid ${GREEN}`,
+        boxShadow: '0 2px 8px rgba(25, 43, 63, 0.06)',
       }}
     >
-      <p style={{ margin: '0 0 10px', fontSize: '0.72rem', fontWeight: 700, color: NAVY, letterSpacing: '0.04em' }}>
-        Suggested resources
-      </p>
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-        {redirects.map((r) => (
+      <div style={{ display: 'flex', alignItems: 'flex-start', gap: 12 }}>
+        <div
+          style={{
+            flexShrink: 0,
+            width: 40,
+            height: 40,
+            borderRadius: 10,
+            background: OFF_WHITE,
+            border: `1px solid ${LIGHT_BLUE}`,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+          }}
+        >
+          <Icon style={{ width: 20, height: 20, color: GREEN }} strokeWidth={2} />
+        </div>
+        <div style={{ flex: 1, minWidth: 0 }}>
+          <p style={{ margin: '0 0 4px', fontSize: '0.82rem', fontWeight: 700, color: NAVY, fontFamily: FONT }}>
+            {title}
+          </p>
+          <p style={{ margin: '0 0 12px', fontSize: '0.72rem', color: MUTED, lineHeight: 1.5, fontFamily: FONT }}>
+            {description}
+          </p>
           <button
-            key={r.kind}
             type="button"
-            onClick={() => onNavigate(r.path)}
+            onClick={() => onNavigate(redirect.path)}
             style={{
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'space-between',
-              gap: 10,
-              padding: '10px 12px',
+              width: '100%',
+              padding: '10px 14px',
               borderRadius: 10,
-              border: `1.5px solid ${GREEN}`,
-              background: '#fff',
+              border: 'none',
+              background: GREEN,
+              color: '#fff',
+              fontSize: '0.78rem',
+              fontWeight: 650,
               cursor: 'pointer',
-              textAlign: 'left',
               fontFamily: FONT,
             }}
           >
-            <span style={{ fontSize: '0.8rem', fontWeight: 600, color: NAVY }}>{r.label}</span>
-            <span
-              style={{
-                fontSize: '0.65rem',
-                fontWeight: 700,
-                textTransform: 'uppercase',
-                color: GREEN,
-                flexShrink: 0,
-              }}
-            >
-              Open
-            </span>
+            {buttonLabel}
           </button>
-        ))}
+        </div>
       </div>
     </div>
   )
+}
+
+function resolveAppPath(destination: string): string {
+  if (destination.startsWith('/')) return destination
+  if (destination.startsWith('?')) return `/resources${destination}`
+  return destination
 }
 
 // ── MessageBubble ─────────────────────────────────────────────────────────────
@@ -310,14 +498,22 @@ function ProminentRedirectHints({ redirects, onNavigate }: { redirects: ApiUiRed
 function MessageBubble({
   message,
   onOpenCitations,
+  onReflectChip,
+  onExerciseTried,
+  onExerciseSkip,
 }: {
   message: Message
   onOpenCitations: (citations: Citation[]) => void
+  onReflectChip?: (chip: string, emotionId: string | null) => void
+  onExerciseTried?: (exerciseName?: string) => void
+  onExerciseSkip?: () => void
 }) {
   const navigate = useNavigate()
   const isUser = message.role === 'user'
   const hasCitations = !isUser && Boolean(message.citations?.length)
-  const footRedirects = !isUser && message.uiRedirects?.length ? message.uiRedirects : []
+  const footRedirects = dedupeUiRedirects(
+    !isUser && message.uiRedirects?.length ? message.uiRedirects : [],
+  )
   const prominentRedirects = footRedirects.filter((r) => r.prominent === true)
   const subtleRedirects = footRedirects.filter((r) => r.prominent !== true)
   const showFoot = hasCitations || subtleRedirects.length > 0
@@ -403,7 +599,157 @@ function MessageBubble({
           )}
         </div>
         {!isUser && prominentRedirects.length > 0 && (
-          <ProminentRedirectHints redirects={prominentRedirects} onNavigate={(p) => navigate(p)} />
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 10, width: '100%' }}>
+            {prominentRedirects.map((r) => (
+              <IntentResourceCard key={`${r.kind}-${r.path}`} redirect={r} onNavigate={(p) => navigate(p)} />
+            ))}
+          </div>
+        )}
+        {!isUser && message.companion?.emotionChips && message.companion.emotionChips.length > 0 && (
+          <div style={{ marginTop: 8, width: '100%', display: 'flex', flexDirection: 'column', gap: 6 }}>
+            <p style={{ margin: 0, fontSize: '0.7rem', fontWeight: 650, color: MUTED }}>
+              What might be underneath? Tap what fits—or say it in your own words.
+            </p>
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
+              {message.companion.emotionChips.map((chip) => (
+                <button
+                  key={chip.slice(0, 40)}
+                  type="button"
+                  onClick={() => onReflectChip?.(chip, message.companion?.detectedEmotion ?? null)}
+                  style={{
+                    padding: '8px 12px',
+                    borderRadius: 12,
+                    border: `1.5px solid ${GREEN}`,
+                    background: OFF_WHITE,
+                    fontFamily: FONT,
+                    fontSize: '0.75rem',
+                    fontWeight: 600,
+                    color: NAVY,
+                    cursor: 'pointer',
+                    textAlign: 'left',
+                    textTransform: 'none',
+                    fontVariant: 'normal',
+                  }}
+                >
+                  {chip}
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
+        {!isUser && message.companion?.exercise && (
+          <div
+            style={{
+              marginTop: 10,
+              width: '100%',
+              padding: 12,
+              borderRadius: 12,
+              background: OFF_WHITE,
+              border: `1px solid ${LIGHT_BLUE}`,
+              boxSizing: 'border-box',
+            }}
+          >
+            <p style={{ margin: '0 0 6px', fontSize: '0.78rem', fontWeight: 700, color: NAVY }}>
+              {message.companion.exercise.name}
+            </p>
+            <ol style={{ margin: '0 0 10px', paddingLeft: '1.1em', fontSize: '0.75rem', color: NAVY }}>
+              {message.companion.exercise.steps.map((s, i) => (
+                <li key={i} style={{ margin: '0 0 4px', lineHeight: 1.5 }}>
+                  {s}
+                </li>
+              ))}
+            </ol>
+            <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+              <button
+                type="button"
+                onClick={() =>
+                  onExerciseTried?.(message.companion?.exercise?.name)
+                }
+                style={{
+                  padding: '8px 12px',
+                  borderRadius: 10,
+                  border: 'none',
+                  background: GREEN,
+                  color: '#fff',
+                  fontWeight: 650,
+                  fontSize: '0.75rem',
+                  cursor: 'pointer',
+                  fontFamily: FONT,
+                }}
+              >
+                I tried this
+              </button>
+              <button
+                type="button"
+                onClick={() => onExerciseSkip?.()}
+                style={{
+                  padding: '8px 12px',
+                  borderRadius: 10,
+                  border: `1.5px solid ${LIGHT_BLUE}`,
+                  background: '#fff',
+                  color: NAVY,
+                  fontWeight: 650,
+                  fontSize: '0.75rem',
+                  cursor: 'pointer',
+                  fontFamily: FONT,
+                }}
+              >
+                Not right now
+              </button>
+            </div>
+          </div>
+        )}
+        {!isUser &&
+          message.companion?.toolCards &&
+          message.companion.toolCards.length > 0 &&
+          !message.companion?.exercise && (
+          <div style={{ marginTop: 8, width: '100%', display: 'flex', flexDirection: 'column', gap: 6 }}>
+            <p style={{ margin: 0, fontSize: '0.7rem', fontWeight: 650, color: MUTED }}>
+              Gentle tools nearby
+            </p>
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
+              {message.companion.toolCards.map((t) => (
+                <button
+                  key={t.route + t.name}
+                  type="button"
+                  onClick={() => navigate(t.route)}
+                  style={{
+                    padding: '8px 12px',
+                    borderRadius: 10,
+                    border: `1.5px solid ${LIGHT_BLUE}`,
+                    background: '#fff',
+                    fontSize: '0.75rem',
+                    fontWeight: 600,
+                    cursor: 'pointer',
+                    fontFamily: FONT,
+                  }}
+                >
+                  {t.name}
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
+        {!isUser && message.companion?.uiRedirect && (
+          <div style={{ marginTop: 8, width: '100%' }}>
+            <button
+              type="button"
+              onClick={() => navigate(resolveAppPath(message.companion!.uiRedirect!.destination))}
+              style={{
+                width: '100%',
+                padding: '10px 12px',
+                borderRadius: 10,
+                border: `2px dashed ${GREEN}`,
+                background: '#fff',
+                fontSize: '0.78rem',
+                fontWeight: 650,
+                color: NAVY,
+                cursor: 'pointer',
+              }}
+            >
+              {message.companion.uiRedirect.label}
+            </button>
+          </div>
         )}
         <span style={{ fontSize: '0.68rem', color: MUTED, padding: '0 4px' }}>
           {message.timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
@@ -445,98 +791,204 @@ function LoadingBubble() {
 
 export default function ChatScreen() {
   const navigate = useNavigate()
-  const [messages, setMessages] = useState<Message[]>(() => loadChatSession().messages)
+  const boot = loadChatSession()
+  const [messages, setMessages] = useState<Message[]>(() => boot.messages)
   const [isLoading, setIsLoading] = useState(false)
   const [value, setValue] = useState('')
-  const [dynamicChips, setDynamicChips] = useState<string[]>(() => loadChatSession().dynamicChips)
+  const [dynamicChips, setDynamicChips] = useState<string[]>(() => boot.dynamicChips)
+  const [convStage, setConvStage] = useState<CompanionStageApi>(() => boot.companionStage)
+  const [selEmotion, setSelEmotion] = useState<string | null>(null)
+  const [selUnder, setSelUnder] = useState<string | null>(null)
+  const messagesRef = useRef<Message[]>(boot.messages)
+
+  useEffect(() => {
+    messagesRef.current = messages
+  }, [messages])
+
   const textareaRef = useRef<HTMLTextAreaElement>(null)
-  const bottomRef   = useRef<HTMLDivElement>(null)
+  const bottomRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' })
   }, [messages, isLoading])
 
   useEffect(() => {
-    saveChatSession(messages, dynamicChips)
-  }, [messages, dynamicChips])
+    saveChatSession(messages, dynamicChips, convStage)
+  }, [messages, dynamicChips, convStage])
 
   const openCitations = useCallback(
     (citations: Citation[]) => {
-      saveChatSession(messages, dynamicChips)
+      saveChatSession(messages, dynamicChips, convStage)
       navigate('/chat/citations', { state: { citations } })
     },
-    [messages, dynamicChips, navigate],
+    [messages, dynamicChips, convStage, navigate],
   )
 
   const canSend = value.trim().length > 0 && !isLoading
-  const chipRow = messages.length > 0 && dynamicChips.length > 0 ? dynamicChips : CHIPS
 
-  const handleSend = useCallback(async (content: string) => {
-    const text = content.trim()
-    if (!text || isLoading) return
+  const handleSend = useCallback(
+    async (content: string, opts?: SendCompanionOpts) => {
+      const text = content.trim()
+      if (!text || isLoading) return
 
-    setMessages((prev) => [...prev, { id: crypto.randomUUID(), role: 'user', content: text, timestamp: new Date() }])
-    setValue('')
-    if (textareaRef.current) textareaRef.current.style.height = 'auto'
-    setIsLoading(true)
-
-    try {
-      const res = await fetch('/api/chat', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ message: text }),
-      })
-      const data = (await res.json()) as {
-        error?: string
-        answer?: string
-        citations?: Array<{ chunkId: string; title: string; sourceUrl: string; excerpt: string }>
-        suggestedQuestions?: string[]
-        uiRedirects?: ApiUiRedirect[]
-      }
-
-      if (!res.ok) {
-        throw new Error(data.error || `Request failed (${res.status})`)
-      }
-
-      const citations: Citation[] | undefined = data.citations?.map((c) => ({
-        id: c.chunkId,
-        title: c.title,
-        description: c.excerpt,
-        url: c.sourceUrl || undefined,
-        type: 'article',
+      const historyPayload = messagesRef.current.map((m) => ({
+        role: m.role as 'user' | 'assistant',
+        content: m.content,
       }))
 
-      const suggested = Array.isArray(data.suggestedQuestions) ? data.suggestedQuestions : []
-      setDynamicChips(suggested.length >= 5 ? suggested.slice(0, 5) : suggested)
+      const stageForRequest =
+        opts?.conversationStage ??
+        convStage ??
+        ('open' as CompanionStageApi)
+      const selectedEmotion = opts?.selectedEmotion ?? selEmotion ?? null
+      const selectedUnderneath = opts?.selectedUnderneath ?? selUnder ?? null
 
       setMessages((prev) => [
         ...prev,
-        {
-          id: crypto.randomUUID(),
-          role: 'assistant',
-          content: data.answer ?? '',
-          timestamp: new Date(),
-          citations,
-          uiRedirects: data.uiRedirects,
-        },
+        { id: crypto.randomUUID(), role: 'user', content: text, timestamp: new Date() },
       ])
-    } catch (e) {
-      const msg = e instanceof Error ? e.message : 'Something went wrong'
-      setMessages((prev) => [
-        ...prev,
-        {
-          id: crypto.randomUUID(),
-          role: 'assistant',
-          content:
-            `I couldn’t reach the knowledge chat service (${msg}). Make sure the API server is running (\`npm run server:dev\`), ` +
-            'the knowledge index is built (`npm run rag:build`), and `OPENAI_API_KEY` (embeddings) + `ANTHROPIC_API_KEY` (chat) are set.',
-          timestamp: new Date(),
-        },
-      ])
-    } finally {
-      setIsLoading(false)
-    }
-  }, [isLoading])
+      setValue('')
+      if (textareaRef.current) textareaRef.current.style.height = 'auto'
+      setIsLoading(true)
+
+      try {
+        const payload = {
+          message: text,
+          history: historyPayload,
+          conversationStage: stageForRequest,
+          selectedEmotion,
+          selectedUnderneath,
+          ...(opts?.inviteExerciseName !== undefined
+            ? { inviteExerciseName: opts.inviteExerciseName }
+            : {}),
+          sessionContext: {
+            caregiverName: '',
+            caregiverRole: '',
+            emotionCheckIn: null,
+            lastActivity: null,
+          },
+        }
+
+        const res = await fetch('/api/chat', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload),
+        })
+        const data = (await res.json()) as {
+          error?: string
+          answer?: string
+          nextStage?: CompanionStageApi
+          emotionChips?: string[] | null
+          exercise?: { name: string; steps: string[] } | null
+          toolCards?: { name: string; route: string }[] | null
+          uiRedirect?: { label: string; destination: string } | null
+          crisis?: boolean
+          detectedEmotion?: string | null
+          citations?: Array<{ chunkId: string; title: string; sourceUrl: string; excerpt: string }>
+          suggestedQuestions?: string[]
+          uiRedirects?: ApiUiRedirect[]
+        }
+
+        if (!res.ok) throw new Error(data.error || `Request failed (${res.status})`)
+
+        if (typeof data.nextStage === 'string') {
+          const ns = data.nextStage
+          if (ns === 'open' || ns === 'hear' || ns === 'reflect' || ns === 'intervene' || ns === 'invite') {
+            setConvStage(ns)
+          }
+        }
+        const citations: Citation[] | undefined = data.citations?.map((c) => ({
+          id: c.chunkId,
+          title: c.title,
+          description: c.excerpt,
+          url: c.sourceUrl || undefined,
+          type: 'article',
+        }))
+
+        const suggested = Array.isArray(data.suggestedQuestions) ? data.suggestedQuestions : []
+        setDynamicChips(suggested.length >= 5 ? suggested.slice(0, 5) : suggested)
+
+        const emotionChipList =
+          Array.isArray(data.emotionChips) && data.emotionChips.length > 0 ? data.emotionChips : undefined
+        const hasCompanionArtifacts =
+          Boolean(emotionChipList?.length) ||
+          Boolean(data.exercise) ||
+          Boolean(data.toolCards?.length) ||
+          Boolean(data.uiRedirect)
+
+        const companionBlock = hasCompanionArtifacts
+          ? {
+              ...(emotionChipList ? { emotionChips: emotionChipList } : {}),
+              exercise: data.exercise ?? undefined,
+              toolCards:
+                Array.isArray(data.toolCards) && data.toolCards.length > 0 ? data.toolCards : undefined,
+              uiRedirect: data.uiRedirect ?? undefined,
+              detectedEmotion:
+                typeof data.detectedEmotion === 'string' ? data.detectedEmotion : undefined,
+            }
+          : undefined
+
+        setSelEmotion(null)
+        setSelUnder(null)
+
+        setMessages((prev) => [
+          ...prev,
+          {
+            id: crypto.randomUUID(),
+            role: 'assistant',
+            content: data.answer ?? '',
+            timestamp: new Date(),
+            citations,
+            uiRedirects: data.uiRedirects,
+            companion: companionBlock,
+          },
+        ])
+      } catch (e) {
+        const msg = e instanceof Error ? e.message : 'Something went wrong'
+        setMessages((prev) => [
+          ...prev,
+          {
+            id: crypto.randomUUID(),
+            role: 'assistant',
+            content:
+              `Couldn’t reach the chat service (${msg}). Make sure \`npm run server:dev\` is running ` +
+              'and `npm run rag:build` ran with `OPENAI_API_KEY` set.',
+            timestamp: new Date(),
+          },
+        ])
+      } finally {
+        setIsLoading(false)
+      }
+    },
+    [isLoading, convStage, selEmotion, selUnder],
+  )
+
+  const handleReflectChip = useCallback(
+    (chip: string, emotionId: string | null) => {
+      setSelEmotion(emotionId)
+      setSelUnder(chip)
+      handleSend(chip, {
+        conversationStage: 'reflect',
+        selectedEmotion: emotionId,
+        selectedUnderneath: chip,
+      })
+    },
+    [handleSend],
+  )
+
+  const handleExerciseTried = useCallback(
+    (exerciseName?: string) => {
+      handleSend('Checking in.', {
+        conversationStage: 'invite',
+        inviteExerciseName: exerciseName ?? null,
+      })
+    },
+    [handleSend],
+  )
+
+  const handleExerciseSkip = useCallback(() => {
+    setConvStage('open')
+  }, [])
 
   const handleKeyDown = (e: KeyboardEvent<HTMLTextAreaElement>) => {
     if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleSend(value) }
@@ -583,25 +1035,6 @@ export default function ChatScreen() {
         </div>
       </header>
 
-      {/* ── Prompt chips ───────────────────────────────────────────────────── */}
-      <div style={{ display: 'flex', gap: 8, padding: '10px 16px', overflowX: 'auto', background: OFF_WHITE, borderBottom: `1px solid ${LIGHT_BLUE}`, flexShrink: 0, scrollbarWidth: 'none' }}>
-        {chipRow.map((chip, i) => (
-          <motion.button
-            key={`chip-${i}-${chip.slice(0, 24)}`}
-            initial={{ opacity: 0, y: 6 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: i * 0.06 }}
-            onClick={() => handleSend(chip)}
-            disabled={isLoading}
-            style={{ flexShrink: 0, padding: '6px 14px', borderRadius: 100, background: '#fff', border: `1.5px solid ${LIGHT_BLUE}`, fontSize: '0.8rem', fontWeight: 600, color: NAVY, cursor: 'pointer', fontFamily: FONT, transition: 'border-color 0.15s', opacity: isLoading ? 0.5 : 1 }}
-            onMouseEnter={e => { if (!isLoading) e.currentTarget.style.borderColor = GREEN }}
-            onMouseLeave={e => { e.currentTarget.style.borderColor = LIGHT_BLUE }}
-          >
-            {chip}
-          </motion.button>
-        ))}
-      </div>
-
       {/* ── Thread ─────────────────────────────────────────────────────────── */}
       <div style={{ flex: 1, overflowY: 'auto' }}>
         {messages.length === 0 && !isLoading ? (
@@ -610,7 +1043,14 @@ export default function ChatScreen() {
           <div style={{ display: 'flex', flexDirection: 'column', gap: 16, padding: '24px 16px', maxWidth: 680, margin: '0 auto' }}>
             <AnimatePresence initial={false}>
               {messages.map((msg) => (
-                <MessageBubble key={msg.id} message={msg} onOpenCitations={openCitations} />
+                <MessageBubble
+                  key={msg.id}
+                  message={msg}
+                  onOpenCitations={openCitations}
+                  onReflectChip={handleReflectChip}
+                  onExerciseTried={handleExerciseTried}
+                  onExerciseSkip={handleExerciseSkip}
+                />
               ))}
               {isLoading && <LoadingBubble key="loading" />}
             </AnimatePresence>

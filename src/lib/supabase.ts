@@ -1,4 +1,4 @@
-import { createClient } from '@supabase/supabase-js'
+import { createClient, type SupabaseClient } from '@supabase/supabase-js'
 
 const supabaseUrl = (import.meta.env.VITE_SUPABASE_URL as string | undefined)?.trim() ?? ''
 const supabaseAnonKey = (import.meta.env.VITE_SUPABASE_ANON_KEY as string | undefined)?.trim() ?? ''
@@ -45,6 +45,7 @@ export const supabase = createClient(
 /**
  * Returns `auth.users.id` for the current session, or creates an anonymous
  * session if none exists (same idea as onboarding persistence).
+ * Returns null when browser Supabase is not configured.
  */
 export async function ensureAuthUserId(): Promise<string | null> {
   if (!isSupabaseConfigured) return null
@@ -53,7 +54,7 @@ export async function ensureAuthUserId(): Promise<string | null> {
   const existing = sessionData.session?.user?.id
   if (existing) return existing
 
-  const { data: anonData, error: anonError } = await supabase.auth.signInAnonymously()
+  const { data: anonData, error: anonError } = await client.auth.signInAnonymously()
   if (anonError || !anonData.user?.id) return null
   return anonData.user.id
 }
