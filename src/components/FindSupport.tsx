@@ -60,9 +60,9 @@ function ResourceCard({ resource }: { resource: SupportResource }) {
         </p>
       )}
 
-      {(resource.city || resource.zipcode) && (
+      {(resource.location || resource.zipcode) && (
         <p style={{ margin: 0, fontSize: '0.78rem', color: '#acb7a8', fontFamily: 'Inter, system-ui, sans-serif' }}>
-          📍 {[resource.city, resource.zipcode].filter(Boolean).join(', ')}
+          📍 {[resource.location, resource.zipcode].filter(Boolean).join(', ')}
         </p>
       )}
 
@@ -159,7 +159,7 @@ export default function FindSupport() {
 
     const scored = categoryFiltered.flatMap((r) => {
       const zip = String(r.zipcode ?? '').toLowerCase()
-      const city = String(r.city ?? '').toLowerCase()
+      const city = String(r.location ?? '').toLowerCase()
       const hasLocation = zip || city
 
       if (city === query || zip === query) return [{ r, score: 0 }]

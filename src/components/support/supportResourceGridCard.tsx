@@ -9,7 +9,12 @@ function GridCardInterior({
   categoryLabel,
   description,
   locationLine,
-}: Pick<PersonalizedSupportGridCardProps, 'name' | 'categoryLabel' | 'description' | 'locationLine'>) {
+}: {
+  name: string
+  categoryLabel: string
+  description: string | null
+  locationLine: string
+}) {
   return (
     <>
       <div

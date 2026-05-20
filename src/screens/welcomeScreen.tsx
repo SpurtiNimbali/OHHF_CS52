@@ -152,7 +152,6 @@ function OnboardingFormLayout({
           flexDirection: 'column',
           alignItems: 'stretch',
           gap: 14,
-          minHeight: 0,
           boxSizing: 'border-box',
         }}
       >
