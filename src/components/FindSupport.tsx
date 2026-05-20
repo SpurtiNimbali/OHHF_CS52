@@ -107,7 +107,10 @@ function CategoryChips({ active, onChange }: { active: Category; onChange: (c: C
         return (
           <button
             key={cat}
-            onClick={() => onChange(cat)}
+            onClick={() => {
+              if (isActive && cat !== 'All') onChange('All')
+              else if (!isActive) onChange(cat)
+            }}
             style={{
               padding: '7px 16px',
               borderRadius: '100px',

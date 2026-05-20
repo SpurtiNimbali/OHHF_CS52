@@ -219,7 +219,12 @@ export default function FindSupport() {
         </div>
 
         <div style={{ marginBottom: '28px' }}>
-          <SupportCategoryChips options={CATEGORIES} active={activeCategory} onChange={setActiveCategory} />
+          <SupportCategoryChips
+            options={CATEGORIES}
+            active={activeCategory}
+            onChange={setActiveCategory}
+            allOption="All"
+          />
         </div>
 
         <div

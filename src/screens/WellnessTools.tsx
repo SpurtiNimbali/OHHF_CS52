@@ -813,11 +813,17 @@ function MicroJournalTool({
   )
 }
 
+const NAME_IT_MAX_WORDS = 10
+
 function NameItTool({ onOpenTool }: { onOpenTool: (toolId: ToolId) => void }) {
   const [selected, setSelected] = useState<string[]>([])
   const toggle = (word: string) => {
     setSelected((cur) =>
-      cur.includes(word) ? cur.filter((w) => w !== word) : cur.length >= 4 ? cur : [...cur, word],
+      cur.includes(word)
+        ? cur.filter((w) => w !== word)
+        : cur.length >= NAME_IT_MAX_WORDS
+          ? cur
+          : [...cur, word],
     )
   }
   const recommendation: ToolId =
@@ -831,7 +837,9 @@ function NameItTool({ onOpenTool }: { onOpenTool: (toolId: ToolId) => void }) {
 
   return (
     <div className="space-y-4">
-      <p className="text-sm" style={{ color: CARDEA_MUTED }}>pick up to four words. naming softens them.</p>
+      <p className="text-sm" style={{ color: CARDEA_MUTED }}>
+        pick up to {NAME_IT_MAX_WORDS} words. naming softens them.
+      </p>
       {Object.entries(emotionFamilies).map(([family, words]) => (
         <div key={family}>
           <p className="mb-2 text-xs font-bold uppercase tracking-[0.16em]" style={{ color: CARDEA_MUTED }}>{family}</p>
@@ -1302,7 +1310,6 @@ export default function WellnessTools() {
   const [moodLog, setMoodLog] = useLocalState<MoodLogEntry[]>(STORAGE.moods, [])
   const [toolLog, setToolLog] = useLocalState<ToolUseEntry[]>(STORAGE.tools, [])
   const [journalPrompt, setJournalPrompt] = useState<string | null>(null)
-  const [checkInNote, setCheckInNote] = useState('')
   const [checkInSaved, setCheckInSaved] = useState(false)
 
   useEffect(() => {
@@ -1345,11 +1352,9 @@ export default function WellnessTools() {
         id: makeId('mood'),
         date: new Date().toISOString(),
         emotion: selectedMeta.moodId,
-        note: checkInNote.trim() || undefined,
       },
       ...moodLog,
     ].slice(0, 80))
-    setCheckInNote('')
     setCheckInSaved(true)
     window.setTimeout(() => setCheckInSaved(false), 1800)
   }
@@ -1465,18 +1470,18 @@ export default function WellnessTools() {
             </div>
 
             <div className="mt-4 rounded-2xl border bg-white/85 p-4 shadow-sm" style={{ borderColor: 'rgba(25,43,63,0.08)' }}>
-              <label className="mb-2 block text-sm font-semibold text-[#192b3f]" htmlFor="wellness-underneath">
-                What&apos;s underneath it?
-              </label>
-              <input
-                id="wellness-underneath"
-                type="text"
-                value={checkInNote}
-                onChange={(e) => setCheckInNote(e.target.value)}
-                placeholder="a worry, a need, a body feeling..."
-                className="w-full rounded-xl border bg-[#f5f9f9] px-4 py-3 text-sm text-[#192b3f] outline-none placeholder:text-[#acb7a8]"
-                style={{ borderColor: CARDEA_LIGHT_BLUE }}
-              />
+              <p className="mb-3 text-sm font-semibold text-[#192b3f]">
+                Want to explore what&apos;s underneath it?
+              </p>
+              <button
+                type="button"
+                onClick={() => navigate('/chat')}
+                className="inline-flex items-center gap-2 rounded-xl px-4 py-2.5 text-sm font-semibold text-white"
+                style={{ background: CARDEA_DARK_GREEN }}
+              >
+                Open chat
+                <ArrowRight className="h-4 w-4" aria-hidden />
+              </button>
               <div className="mt-3 flex flex-wrap items-center justify-between gap-3">
                 <p className="text-xs leading-relaxed" style={{ color: CARDEA_MUTED }}>
                   two questions. one minute.

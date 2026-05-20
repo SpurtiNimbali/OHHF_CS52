@@ -1,6 +1,6 @@
-import { Link, useLocation, useSearchParams } from 'react-router-dom'
+import { Link, useLocation } from 'react-router-dom'
 import { motion } from 'motion/react'
-import { Home, Activity, MessageCircle, Heart, MessageSquare, Wind } from 'lucide-react'
+import { Home, MessageCircle, MessageSquare, Wind } from 'lucide-react'
 import { moodColorWithAlpha, useMood } from '../mood'
 import { CARDEA_FONT_MONTSERRAT_STACK } from '../ui/cardeaTokens'
 
@@ -35,7 +35,7 @@ export const NAV_TILE_PALETTE = {
   },
 } as const
 
-type TabId = 'home' | 'track' | 'learn' | 'support' | 'wellness' | 'chat'
+type TabId = 'home' | 'learn' | 'wellness' | 'chat'
 
 type PaletteKey = keyof typeof NAV_TILE_PALETTE
 
@@ -47,9 +47,7 @@ const items: {
   palette: PaletteKey
 }[] = [
   { id: 'home',    label: 'Home',    to: '/home',                   Icon: Home,          palette: 'mint'     },
-  { id: 'track',   label: 'Track',   to: '/home',                   Icon: Activity,      palette: 'mint'     },
   { id: 'learn',   label: 'Learn',   to: '/resources',              Icon: MessageCircle, palette: 'sky'      },
-  { id: 'support', label: 'Support', to: '/resources?view=support', Icon: Heart,         palette: 'coral'    },
   { id: 'wellness', label: 'Tools',   to: '/wellness',               Icon: Wind,          palette: 'lavender' },
   { id: 'chat',    label: 'Chat',    to: '/chat',                   Icon: MessageSquare, palette: 'lavender' },
 ]
@@ -57,8 +55,6 @@ const items: {
 export function ResourcesRightNav() {
   const { theme } = useMood()
   const location = useLocation()
-  const [searchParams] = useSearchParams()
-  const view = searchParams.get('view')
 
   const activeTab: TabId =
     location.pathname === '/chat'
@@ -66,9 +62,7 @@ export function ResourcesRightNav() {
       : location.pathname === '/wellness'
         ? 'wellness'
       : location.pathname === '/resources'
-        ? view === 'support'
-          ? 'support'
-          : 'learn'
+        ? 'learn'
         : 'home'
 
   return (
