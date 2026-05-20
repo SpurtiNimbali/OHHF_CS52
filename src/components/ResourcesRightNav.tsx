@@ -61,7 +61,7 @@ export function ResourcesRightNav() {
   const view = searchParams.get('view')
 
   const activeTab: TabId =
-    location.pathname === '/chat'
+    location.pathname === '/chat' || location.pathname.startsWith('/chat/')
       ? 'chat'
       : location.pathname === '/wellness'
         ? 'wellness'

@@ -10,6 +10,7 @@ import { SignUpScreen } from './screens/signUpScreen'
 import { WelcomeScreen } from './screens/welcomeScreen'
 import ResourcesLanding from './screens/ResourcesLanding'
 import ChatScreen from './screens/ChatScreen'
+import ChatCitationsScreen from './screens/ChatCitationsScreen'
 import WellnessTools from './screens/WellnessTools'
 import { ResourcesRightNav } from './components/ResourcesRightNav'
 import { MoodProvider } from './mood'
@@ -28,13 +29,25 @@ function App() {
     <BrowserRouter>
       <MoodProvider>
         <Routes>
-          <Route path="/" element={<AuthLandingScreen />} />
+          <Route path="/" element={<Navigate to="/home" replace />} />
+          <Route path="/auth" element={<AuthLandingScreen />} />
           <Route path="/sign-in" element={<SignInScreen />} />
           <Route path="/sign-up" element={<SignUpScreen />} />
           <Route path="/onboarding" element={<WelcomeScreen />} />
           <Route path="/home" element={<HomeScreen />} />
           <Route path="/resources" element={<ResourcesLanding />} />
           <Route path="/wellness" element={<WellnessTools />} />
+          <Route
+            path="/chat/citations"
+            element={
+              <div style={{ display: 'flex', height: '100vh', overflow: 'hidden' }}>
+                <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+                  <ChatCitationsScreen />
+                </div>
+                <ResourcesRightNav />
+              </div>
+            }
+          />
           <Route path="/chat" element={
             <div style={{ display: 'flex', height: '100vh', overflow: 'hidden' }}>
               <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
@@ -43,7 +56,7 @@ function App() {
               <ResourcesRightNav />
             </div>
           } />
-          <Route path="*" element={<Navigate to="/" replace />} />
+          <Route path="*" element={<Navigate to="/home" replace />} />
         </Routes>
       </MoodProvider>
     </BrowserRouter>
