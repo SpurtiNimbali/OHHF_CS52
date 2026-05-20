@@ -1,5 +1,5 @@
 import { Router, Request, Response } from 'express'
-import { supabase } from '../lib/supabase.js'
+import { getSupabase } from '../lib/supabase.js'
 import { getRecommendations } from '../logic/recommendations.js'
 
 const router = Router()
@@ -24,7 +24,7 @@ router.post('/', async (req: Request, res: Response) => {
   const recommended_tools = getRecommendations(moods)
 
   // ── Persist to Supabase ───────────────────────────────────────────────────
-  const { error: dbError } = await supabase.from('emotional_checkins').insert({
+  const { error: dbError } = await getSupabase().from('emotional_checkins').insert({
     user_id: user_id.trim(),
     moods,
     recommended_tools,
