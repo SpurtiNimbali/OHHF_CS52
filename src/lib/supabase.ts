@@ -1,4 +1,4 @@
-import { createClient, type SupabaseClient } from '@supabase/supabase-js'
+import { createClient } from '@supabase/supabase-js'
 
 const supabaseUrl = (import.meta.env.VITE_SUPABASE_URL as string | undefined)?.trim() ?? ''
 const supabaseAnonKey = (import.meta.env.VITE_SUPABASE_ANON_KEY as string | undefined)?.trim() ?? ''
@@ -54,7 +54,7 @@ export async function ensureAuthUserId(): Promise<string | null> {
   const existing = sessionData.session?.user?.id
   if (existing) return existing
 
-  const { data: anonData, error: anonError } = await client.auth.signInAnonymously()
+  const { data: anonData, error: anonError } = await supabase.auth.signInAnonymously()
   if (anonError || !anonData.user?.id) return null
   return anonData.user.id
 }

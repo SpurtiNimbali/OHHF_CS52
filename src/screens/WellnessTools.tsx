@@ -881,26 +881,8 @@ function NameItTool({ onOpenTool }: { onOpenTool: (toolId: ToolId) => void }) {
 }
 
 function FeelingsWheelTool({ onOpenTool }: { onOpenTool: (toolId: ToolId) => void }) {
-  const families = Object.keys(emotionFamilies)
-  const [family, setFamily] = useState(families[0])
   return (
     <div className="space-y-4">
-      <p className="text-sm" style={{ color: CARDEA_MUTED }}>start broad. then pick a closer word.</p>
-      <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
-        {families.map((item) => (
-          <button
-            key={item}
-            type="button"
-            onClick={() => setFamily(item)}
-            className={`rounded-2xl border p-4 text-sm font-semibold capitalize ${
-              family === item ? 'text-white' : 'bg-white text-[#192b3f]'
-            }`}
-            style={{ background: family === item ? CARDEA_DARK_GREEN : undefined, borderColor: CARDEA_LIGHT_BLUE }}
-          >
-            {item}
-          </button>
-        ))}
-      </div>
       <NameItTool onOpenTool={onOpenTool} />
       <Link
         to="/chat"
@@ -1512,15 +1494,6 @@ export default function WellnessTools() {
               </div>
             ) : null}
           </div>
-
-          {selectedEmotion === 'disconnected' ? (
-            <div className="mt-4 rounded-3xl border bg-white p-5 shadow-sm" style={{ borderColor: 'rgba(87, 117, 104, 0.28)' }}>
-              <p className="mb-3 text-sm font-semibold text-[#192b3f]">
-                it sounds like you want to feel closer. try this.
-              </p>
-              <ToolTile toolId="today-nudge" onOpen={openTool} accent="rgba(168, 230, 207, 0.65)" />
-            </div>
-          ) : null}
 
           {recentMoods.length > 2 ? (
             <div className="mt-4 rounded-3xl bg-white/80 p-5 shadow-sm">
