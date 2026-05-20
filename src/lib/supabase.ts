@@ -70,6 +70,7 @@ export type SavedQuestion = {
   user_id: string
   question_id: string | null
   custom_text: string | null
+  source: 'generated' | 'custom' | 'bank' | null
 }
 
 export type SupportResource = {

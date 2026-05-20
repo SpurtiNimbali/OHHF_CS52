@@ -162,8 +162,8 @@ export default function FindSupport() {
 
     const scored = categoryFiltered.flatMap((r) => {
       const zip = String(r.zipcode ?? '').toLowerCase()
-      const location = String(r.location ?? '').toLowerCase()
-      const hasLocation = zip || location
+      const city = String(r.location ?? '').toLowerCase()
+      const hasLocation = zip || city
 
       if (location === query || zip === query) return [{ r, score: 0 }]
       if (location.startsWith(query)) return [{ r, score: 1 }]
