@@ -132,7 +132,6 @@ function orderCardsForMood(moodId: MoodId | null): ResourceCard[] {
 export function HomeScreen() {
   const navigate = useNavigate()
   const { moodId, setMoodId, theme, variant } = useMood()
-  const [moodNote, setMoodNote] = useState('')
   const [checkInSaved, setCheckInSaved] = useState(false)
   const [showMoodCheckIn, setShowMoodCheckIn] = useState(false)
 
@@ -140,8 +139,7 @@ export function HomeScreen() {
 
   function saveMoodCheckIn() {
     if (!moodId) return
-    appendMoodCheckIn(moodId, moodNote)
-    setMoodNote('')
+    appendMoodCheckIn(moodId, '')
     setCheckInSaved(true)
     window.setTimeout(() => setShowMoodCheckIn(false), 650)
     window.setTimeout(() => setCheckInSaved(false), 1800)
@@ -353,18 +351,17 @@ export function HomeScreen() {
             </div>
 
             <div className="mt-4 rounded-2xl border bg-[#f5f9f9] p-4" style={{ borderColor: 'rgba(25,43,63,0.08)' }}>
-              <label className="mb-2 block text-sm font-semibold text-[#192b3f]" htmlFor="home-mood-underneath">
-                What&apos;s underneath it?
-              </label>
-              <input
-                id="home-mood-underneath"
-                type="text"
-                value={moodNote}
-                onChange={(e) => setMoodNote(e.target.value)}
-                placeholder="a worry, a need, a body feeling..."
-                className="w-full rounded-xl border bg-white px-4 py-3 text-sm text-[#192b3f] outline-none placeholder:text-[#acb7a8]"
-                style={{ borderColor: 'rgba(25,43,63,0.1)', fontFamily: CARDEA_FONT_PRIMARY }}
-              />
+              <p className="mb-3 text-sm font-semibold text-[#192b3f]">
+                Want to explore what&apos;s underneath it?
+              </p>
+              <button
+                type="button"
+                onClick={() => navigate('/chat')}
+                className="inline-flex items-center gap-2 rounded-xl px-4 py-2.5 text-sm font-semibold text-white"
+                style={{ background: '#577568', fontFamily: CARDEA_FONT_PRIMARY }}
+              >
+                Open chat
+              </button>
               <div className="mt-3 flex items-center justify-between gap-3">
                 <p className="text-xs leading-relaxed" style={{ color: CARDEA_MUTED }}>
                   one minute. no perfect answer needed.

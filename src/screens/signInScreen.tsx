@@ -2,7 +2,12 @@ import React, { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { CustomSelect } from '../components/CustomSelect'
 import { securityQuestionLabel, type SecurityQuestionId } from '../constants/securityQuestions'
-import { supabase } from '../lib/supabaseClient'
+import {
+  supabase,
+  isSupabaseConfigured,
+  SUPABASE_SETUP_MESSAGE,
+  formatSupabaseClientError,
+} from '../lib/supabaseClient'
 import { AUTH_FONT_FAMILY, AUTH_NAVY } from '../ui/authTokens'
 
 const SECURITY_ANSWER_MIN_LENGTH = 3
@@ -42,25 +47,6 @@ function localSecurityAnswerError(raw: string): string | null {
   return null
 }
 
-function formatSupabaseishError(e: unknown): string {
-  if (!e) return 'Something went wrong. Please try again.'
-  if (e instanceof Error) return e.message || 'Something went wrong. Please try again.'
-
-  if (typeof e === 'object') {
-    const maybe = e as { message?: unknown; details?: unknown; hint?: unknown; code?: unknown }
-    const parts = [maybe.message, maybe.details, maybe.hint, maybe.code]
-      .filter((p) => typeof p === 'string' && p.trim().length > 0) as string[]
-    if (parts.length) return parts.join(' — ')
-    try {
-      return JSON.stringify(e)
-    } catch {
-      // ignore
-    }
-  }
-
-  return String(e)
-}
-
 export function SignInScreen() {
   const navigate = useNavigate()
   const [step, setStep] = useState<SignInStep>('username')
@@ -88,6 +74,10 @@ export function SignInScreen() {
       setError('Enter a username to continue.')
       return
     }
+    if (!isSupabaseConfigured) {
+      setError(SUPABASE_SETUP_MESSAGE)
+      return
+    }
     setIsWorking(true)
     setError(null)
     try {
@@ -95,7 +85,7 @@ export function SignInScreen() {
         p_username: u,
       })
       if (rpcError) {
-        const full = formatSupabaseishError(rpcError)
+        const full = formatSupabaseClientError(rpcError)
         if (full.toLowerCase().includes('get_user_sign_in_preview')) {
           setError('Sign-in is not set up in the project yet. Run the SQL in supabase/migrations for get_user_sign_in_preview.')
         } else {
@@ -136,7 +126,7 @@ export function SignInScreen() {
       setSecurityAnswer('')
       setSecurityAnswerBegan(false)
     } catch (e) {
-      setError(formatSupabaseishError(e))
+      setError(formatSupabaseClientError(e))
     } finally {
       setIsWorking(false)
     }
@@ -148,6 +138,10 @@ export function SignInScreen() {
     }
     if (!selectedQuestionId) {
       setError('Missing sign-in data. Go back and enter your username again.')
+      return
+    }
+    if (!isSupabaseConfigured) {
+      setError(SUPABASE_SETUP_MESSAGE)
       return
     }
     setIsWorking(true)
@@ -186,12 +180,12 @@ export function SignInScreen() {
         ).error
       }
       if (verifyErr) {
-        setError(formatSupabaseishError(verifyErr))
+        setError(formatSupabaseClientError(verifyErr))
         return
       }
       navigate('/home')
     } catch (e) {
-      setError(formatSupabaseishError(e))
+      setError(formatSupabaseClientError(e))
     } finally {
       setIsWorking(false)
     }

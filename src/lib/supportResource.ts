@@ -37,9 +37,9 @@ export function mapSupportResourceRow(row: Record<string, unknown>): SupportReso
   return {
     id: String(row.id ?? ''),
     name: String(row.name ?? ''),
-    description: pickString(row, 'description'),
-    link: pickString(row, 'link'),
-    category: pickString(row, 'category'),
+    description: pickString(row, 'description') ?? '',
+    link: pickString(row, 'link') ?? '',
+    category: pickString(row, 'category') ?? '',
     location: pickString(row, 'location', 'city'),
     zipcode: pickString(row, 'zipcode', 'zip_code', 'zip code'),
     age: pickString(row, 'age'),

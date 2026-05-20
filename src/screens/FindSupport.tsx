@@ -1,10 +1,11 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import {
+  ResourcesPageEmpty,
   ResourcesPageError,
   ResourcesPageLoading,
 } from '../components/ResourcesPageStates'
 import { SupportResourceListCard } from '../components/support/supportResourceListCard'
-import { PersonalizationMismatchBanner } from '../components/ui/personalizationMismatchBanner'
+import { SupportCategoryChips } from '../components/ui/supportCategoryChips'
 import {
   mapSupportResourceRow,
   normalizeSupportCategory,
@@ -23,44 +24,14 @@ import {
 } from '../ui/cardeaTokens'
 import { useMood } from '../mood'
 
+type UserProfileFields = {
+  diagnosis_age_category: string | null
+  current_age_category: string | null
+  condition: string | null
+}
+
 const CATEGORIES = ['All', ...SUPPORT_FILTER_CATEGORIES] as const
 type Category = (typeof CATEGORIES)[number]
-
-type UserProfileFields = {
-  current_age_category: string | null
-}
-
-function CategoryChips({ active, onChange }: { active: Category; onChange: (c: Category) => void }) {
-  return (
-    <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
-      {CATEGORIES.map((cat) => {
-        const isActive = cat === active
-        return (
-          <button
-            key={cat}
-            type="button"
-            onClick={() => onChange(cat)}
-            style={{
-              padding: '8px 18px',
-              borderRadius: 999,
-              fontSize: '0.8rem',
-              fontWeight: 600,
-              fontFamily: 'Inter, system-ui, sans-serif',
-              cursor: 'pointer',
-              border: isActive ? 'none' : '1px solid rgba(25, 43, 63, 0.12)',
-              background: isActive ? CARDEA_NAVY : '#ffffff',
-              color: isActive ? '#ffffff' : CARDEA_NAVY,
-              transition: 'all 0.15s ease',
-            }}
-          >
-            {cat}
-          </button>
-        )
-      })}
-    </div>
-  )
-}
-
 
 export default function FindSupport() {
   const { theme } = useMood()
@@ -102,10 +73,17 @@ export default function FindSupport() {
     setLoading(true)
     setError(null)
 
-    const resourcesQuery = supabase.from('support_resources').select('*').order('name', { ascending: true })
+    const resourcesQuery = supabase
+      .from('support_resources')
+      .select('id, name, description, link, location, zipcode, category, age')
+      .order('name', { ascending: true })
 
     const profileQuery = uid
-      ? supabase.from('users').select('current_age_category').eq('id', uid).maybeSingle()
+      ? supabase
+          .from('users')
+          .select('diagnosis_age_category, current_age_category, condition')
+          .eq('id', uid)
+          .maybeSingle()
       : Promise.resolve({ data: null as UserProfileFields | null, error: null })
 
     const [{ data, error: dbError }, { data: profileRow, error: profileError }] = await Promise.all([
@@ -138,7 +116,7 @@ export default function FindSupport() {
   const filteredResources = useMemo(() => {
     const q = locationQuery.trim()
 
-    let list = resources.filter((r) => {
+    const list = resources.filter((r) => {
       if (activeCategory !== 'All') {
         const bucket = normalizeSupportCategory(r.category)
         if (bucket === 'other' || bucket !== activeCategory) return false
@@ -147,26 +125,17 @@ export default function FindSupport() {
       return resourceMatchesLocationQuery(r, q)
     })
 
-    if (q) {
-      list = [...list].sort(
-        (a, b) =>
-          scoreResourceLocationMatch(a, q) - scoreResourceLocationMatch(b, q) ||
-          String(a.name ?? '').localeCompare(String(b.name ?? '')),
-      )
-    } else {
-      list = [...list].sort((a, b) => String(a.name ?? '').localeCompare(String(b.name ?? '')))
-    }
+    if (!q) return list
 
-    return list
-  }, [resources, locationQuery, activeCategory, filterByAge, childCurrentAge])
+    const scored = list
+      .map((r) => ({ r, score: scoreResourceLocationMatch(r, q) }))
+      .filter(({ score }) => score < 5)
 
-  const showAgeMismatchBanner =
-    !loading &&
-    !error &&
-    filterByAge &&
-    Boolean(childCurrentAge?.trim()) &&
-    resources.length > 0 &&
-    filteredResources.length === 0
+    scored.sort(
+      (a, b) => a.score - b.score || (a.r.name ?? '').localeCompare(b.r.name ?? ''),
+    )
+    return scored.map(({ r }) => r)
+  }, [resources, activeCategory, locationQuery, filterByAge, childCurrentAge])
 
   return (
     <div style={{ minHeight: '100%', background: CARDEA_ALMOST_WHITE, fontFamily: 'Inter, system-ui, sans-serif' }}>
@@ -212,52 +181,50 @@ export default function FindSupport() {
           style={{
             background: 'rgba(198, 217, 229, 0.42)',
             borderRadius: 16,
-            padding: '18px 20px',
-            marginBottom: '22px',
-            border: '1px solid rgba(25, 43, 63, 0.06)',
+            padding: '20px 22px',
+            marginBottom: 24,
           }}
         >
-          <label htmlFor="support-location-search" className="sr-only">
-            Search by city, zip code, or online
+          <label
+            htmlFor="support-location-search"
+            style={{
+              display: 'block',
+              marginBottom: 10,
+              fontSize: '0.8125rem',
+              fontWeight: 600,
+              color: CARDEA_NAVY,
+            }}
+          >
+            Search by city or zip
           </label>
-          <div style={{ position: 'relative' }}>
-            <span
-              style={{
-                position: 'absolute',
-                left: '16px',
-                top: '50%',
-                transform: 'translateY(-50%)',
-                color: CARDEA_MUTED,
-                fontSize: '1rem',
-              }}
-              aria-hidden
-            >
-              📍
-            </span>
-            <input
-              id="support-location-search"
-              type="text"
-              value={locationQuery}
-              onChange={(e) => setLocationQuery(e.target.value)}
-              placeholder="Search by city, zip code, or online..."
-              style={{
-                width: '100%',
-                padding: '14px 18px 14px 44px',
-                borderRadius: 9999,
-                border: '1px solid rgba(25, 43, 63, 0.12)',
-                background: '#fff',
-                fontSize: '0.9rem',
-                color: CARDEA_NAVY,
-                fontFamily: 'Inter, system-ui, sans-serif',
-                outline: 'none',
-                boxSizing: 'border-box',
-              }}
-            />
-          </div>
+          <input
+            id="support-location-search"
+            type="search"
+            value={locationQuery}
+            onChange={(e) => setLocationQuery(e.target.value)}
+            placeholder="e.g. Palo Alto or 94305"
+            style={{
+              width: '100%',
+              padding: '12px 14px',
+              borderRadius: 12,
+              border: '1px solid rgba(25, 43, 63, 0.12)',
+              fontSize: '0.9375rem',
+              fontFamily: 'Inter, system-ui, sans-serif',
+              color: CARDEA_NAVY,
+              background: '#fff',
+              boxSizing: 'border-box',
+              outline: 'none',
+            }}
+          />
         </div>
 
-        <div style={{ marginBottom: '20px' }}>
-          <CategoryChips active={activeCategory} onChange={setActiveCategory} />
+        <div style={{ marginBottom: '28px' }}>
+          <SupportCategoryChips
+            options={CATEGORIES}
+            active={activeCategory}
+            onChange={setActiveCategory}
+            allOption="All"
+          />
         </div>
 
         <div
@@ -316,30 +283,19 @@ export default function FindSupport() {
           <ResourcesPageLoading label="Loading resources…" />
         ) : error ? (
           <ResourcesPageError message={error} onRetry={() => load(userId)} />
-        ) : showAgeMismatchBanner ? (
-          <PersonalizationMismatchBanner
-            title="No resources match your child's age"
-            description="Try turning off the age filter, choosing a different category, or broadening your location search."
+        ) : resources.length === 0 ? (
+          <ResourcesPageEmpty
+            title="No support resources yet"
+            description="Resources will appear here once they are added to the database."
           />
         ) : filteredResources.length === 0 ? (
-          <div style={{ textAlign: 'center', padding: '64px 0' }}>
-            <div style={{ fontSize: '2.5rem', marginBottom: '12px' }}>💛</div>
-            <p style={{ margin: 0, fontSize: '0.9rem', color: CARDEA_MUTED }}>
-              No resources found — try adjusting your filters.
-            </p>
-          </div>
+          <ResourcesPageEmpty
+            title={activeCategory !== 'All' ? `No ${activeCategory} resources match` : 'No resources match your search'}
+            description="Try a different category, city, or zip code."
+          />
         ) : (
           <>
-            <ul
-              style={{
-                listStyle: 'none',
-                margin: 0,
-                padding: 0,
-                display: 'flex',
-                flexDirection: 'column',
-                gap: '16px',
-              }}
-            >
+            <ul style={{ listStyle: 'none', margin: 0, padding: 0, display: 'flex', flexDirection: 'column', gap: '16px' }}>
               {filteredResources.map((r) => (
                 <SupportResourceListCard key={r.id} resource={r} />
               ))}
@@ -348,11 +304,12 @@ export default function FindSupport() {
               style={{
                 textAlign: 'center',
                 color: CARDEA_MUTED,
-                marginTop: '30px',
-                fontSize: '0.9rem',
+                marginTop: 36,
+                fontSize: '0.875rem',
               }}
             >
-              Showing {filteredResources.length} resource{filteredResources.length !== 1 ? 's' : ''}
+              Showing {filteredResources.length} of {resources.length} resource
+              {resources.length !== 1 ? 's' : ''}
             </p>
           </>
         )}

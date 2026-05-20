@@ -3,10 +3,13 @@ export function SupportCategoryChips<T extends string>({
   options,
   active,
   onChange,
+  allOption,
 }: {
   options: readonly T[]
   active: T
   onChange: (c: T) => void
+  /** Clicking the active chip again clears the filter (e.g. back to All). */
+  allOption: T
 }) {
   return (
     <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
@@ -16,7 +19,10 @@ export function SupportCategoryChips<T extends string>({
           <button
             key={cat}
             type="button"
-            onClick={() => onChange(cat)}
+            onClick={() => {
+              if (isActive && cat !== allOption) onChange(allOption)
+              else if (!isActive) onChange(cat)
+            }}
             style={{
               padding: '8px 18px',
               borderRadius: 999,

@@ -1,39 +1,46 @@
-import { createClient, type SupabaseClient } from '@supabase/supabase-js'
+import { createClient } from '@supabase/supabase-js'
 
-function browserSupabaseCredentialsReady(): boolean {
-  const u = (import.meta.env.VITE_SUPABASE_URL as string | undefined)?.trim()
-  const k = (import.meta.env.VITE_SUPABASE_ANON_KEY as string | undefined)?.trim()
-  return Boolean(u && k)
-}
+const supabaseUrl = (import.meta.env.VITE_SUPABASE_URL as string | undefined)?.trim() ?? ''
+const supabaseAnonKey = (import.meta.env.VITE_SUPABASE_ANON_KEY as string | undefined)?.trim() ?? ''
 
-function createBrowserSupabase(): SupabaseClient {
-  const supabaseUrl = (import.meta.env.VITE_SUPABASE_URL as string | undefined)?.trim()
-  const supabaseAnonKey = (import.meta.env.VITE_SUPABASE_ANON_KEY as string | undefined)?.trim()
+export const isSupabaseConfigured = Boolean(supabaseUrl && supabaseAnonKey)
 
-  if (!supabaseUrl || !supabaseAnonKey) {
-    throw new Error(
-      'Missing VITE_SUPABASE_URL or VITE_SUPABASE_ANON_KEY in .env.local (needed for glossary, support, cardiologist saves, auth)',
+export const SUPABASE_SETUP_MESSAGE =
+  'Supabase is not connected. Copy .env.example to .env, add VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY from your Supabase project (Settings → API), then restart npm run dev.'
+
+export function formatSupabaseClientError(error: unknown): string {
+  if (!isSupabaseConfigured) return SUPABASE_SETUP_MESSAGE
+
+  let message = 'Something went wrong. Please try again.'
+  if (error instanceof Error && error.message.trim()) {
+    message = error.message.trim()
+  } else if (typeof error === 'object' && error !== null) {
+    const maybe = error as { message?: unknown; details?: unknown; hint?: unknown; code?: unknown }
+    const parts = [maybe.message, maybe.details, maybe.hint, maybe.code].filter(
+      (part): part is string => typeof part === 'string' && part.trim().length > 0,
     )
+    if (parts.length) message = parts.join(' — ')
+  } else if (error != null) {
+    message = String(error)
   }
 
-  return createClient(supabaseUrl, supabaseAnonKey)
+  const lower = message.toLowerCase()
+  if (lower.includes('failed to fetch') || lower.includes('networkerror')) {
+    return 'Could not reach Supabase. Check your internet connection, confirm VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY in .env are correct, then restart npm run dev.'
+  }
+
+  return message
 }
 
-let singleton: SupabaseClient | undefined
-
-function getSingleton(): SupabaseClient {
-  if (!singleton) singleton = createBrowserSupabase()
-  return singleton
+if (!isSupabaseConfigured && import.meta.env.DEV) {
+  console.warn(`[Cardea] ${SUPABASE_SETUP_MESSAGE}`)
 }
 
-/** Lazily created so dev server can bundle without anon key until a route uses Supabase. */
-export const supabase: SupabaseClient = new Proxy({} as SupabaseClient, {
-  get(_target, prop, receiver) {
-    const s = getSingleton()
-    const value = Reflect.get(s, prop, receiver)
-    return typeof value === 'function' ? (value as Function).bind(s) : value
-  },
-})
+/** Always defined so importing modules does not crash the app at startup. */
+export const supabase = createClient(
+  supabaseUrl || 'https://placeholder.supabase.co',
+  supabaseAnonKey || 'public-anon-key',
+)
 
 /**
  * Returns `auth.users.id` for the current session, or creates an anonymous
@@ -41,16 +48,13 @@ export const supabase: SupabaseClient = new Proxy({} as SupabaseClient, {
  * Returns null when browser Supabase is not configured.
  */
 export async function ensureAuthUserId(): Promise<string | null> {
-  if (!browserSupabaseCredentialsReady()) return null
-
-  const client = getSingleton()
-
-  const { data: sessionData, error: sessionError } = await client.auth.getSession()
+  if (!isSupabaseConfigured) return null
+  const { data: sessionData, error: sessionError } = await supabase.auth.getSession()
   if (sessionError) return null
   const existing = sessionData.session?.user?.id
   if (existing) return existing
 
-  const { data: anonData, error: anonError } = await client.auth.signInAnonymously()
+  const { data: anonData, error: anonError } = await supabase.auth.signInAnonymously()
   if (anonError || !anonData.user?.id) return null
   return anonData.user.id
 }
@@ -71,13 +75,10 @@ export type SavedQuestion = {
 export type SupportResource = {
   id: string
   name: string
-  description: string | null
-  category: string | null
-  link: string | null
-  /** City name or `online`. */
+  description: string
+  category: string
+  link: string
   location: string | null
-  /** Null when `location` is online-only. */
   zipcode: string | null
-  /** Onboarding age label(s); empty means all ages. */
   age: string | null
 }

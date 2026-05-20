@@ -1,19 +1,33 @@
 import { createClient, type SupabaseClient } from '@supabase/supabase-js'
 import '../env.js'
 
-let client: SupabaseClient | undefined
+const supabaseUrl = (
+  process.env.SUPABASE_URL ??
+  process.env.VITE_SUPABASE_URL ??
+  ''
+).trim()
 
-/** Creates the anon Supabase client on first use (check-in routes) so chat/care-team can boot without these vars locally. */
-export function getSupabase(): SupabaseClient {
-  const supabaseUrl = process.env.SUPABASE_URL
-  const supabaseKey = process.env.SUPABASE_KEY
+/** Server-only — never expose in Vite client bundles. */
+const supabaseSecretKey = (
+  process.env.SUPABASE_SECRET_KEY ??
+  process.env.SUPABASE_SERVICE_ROLE_KEY ??
+  process.env.SUPABASE_KEY ??
+  process.env.VITE_SUPABASE_SECRET_KEY ??
+  ''
+).trim()
 
-  if (!supabaseUrl || !supabaseKey) {
-    throw new Error('Missing SUPABASE_URL or SUPABASE_KEY environment variables')
-  }
+export const isServerSupabaseConfigured = Boolean(supabaseUrl && supabaseSecretKey)
 
-  if (!client) {
-    client = createClient(supabaseUrl, supabaseKey)
-  }
-  return client
+if (!isServerSupabaseConfigured) {
+  console.warn(
+    '[Cardea server] Missing Supabase URL or secret key. Set SUPABASE_URL (or VITE_SUPABASE_URL) and SUPABASE_SECRET_KEY in .env, then run npm run server:dev',
+  )
 }
+
+export const supabase = createClient(
+  supabaseUrl || 'https://placeholder.supabase.co',
+  supabaseSecretKey || 'placeholder-secret-key',
+  {
+    auth: { autoRefreshToken: false, persistSession: false },
+  },
+)
