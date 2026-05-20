@@ -259,6 +259,12 @@ function moodVariantFor(id: MoodId) {
   return MOOD_VARIANTS.find((m) => m.id === id) ?? MOOD_VARIANTS[0]
 }
 
+/** Recent check-ins bar only — Unsure uses neutral chip gray, not mint heart fill. */
+function recentCheckInColor(moodId: MoodId): string {
+  if (moodId === 'numb') return '#D4DCE8'
+  return moodVariantFor(moodId).theme.heartFill
+}
+
 function isSameLocalDay(a: Date, b: Date): boolean {
   return (
     a.getFullYear() === b.getFullYear() &&
@@ -1321,7 +1327,7 @@ export default function WellnessTools() {
         return {
           ...entry,
           label: emotion?.label ?? mood.label,
-          color: mood.theme.heartFill,
+          color: recentCheckInColor(entry.emotion),
           dateTime: formatCheckInDateTime(entry.date),
         }
       }),
