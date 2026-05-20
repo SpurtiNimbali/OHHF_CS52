@@ -111,12 +111,26 @@ function makeLocalSavedQuestion(text: string, userId: string | null, source: Sav
   } as SavedQuestion
 }
 
+/** Visit context chips for generation (templates + filtering). Custom question tags use bank categories instead. */
+const VISIT_CONTEXT_FILTERS = [
+  'Surgery or procedure',
+  'New diagnosis',
+  'Routine follow-up',
+  'Medications',
+  'Test results',
+  'Lifestyle & wellbeing',
+  'Symptoms & concerns',
+  'Family history & genetics',
+  'Prevention & heart health',
+  'Care coordination & referrals',
+] as const
+
+type VisitFilter = (typeof VISIT_CONTEXT_FILTERS)[number]
+
 type SavedQuestionMeta = {
   source: 'generated' | 'custom' | 'bank'
   contextTags: string[]
   notes: string
-  /** Links a saved row back to `care_team_generated_questions.id` for + Save button state. */
-  generatedSourceId?: string
 }
 
 function metaStorageKey(userId: string | null): string {
@@ -135,41 +149,9 @@ function normalizeStoredMeta(raw: unknown): Record<string, SavedQuestionMeta> {
     const contextTags = Array.isArray(e.contextTags)
       ? e.contextTags.filter((t): t is string => typeof t === 'string')
       : []
-    const generatedSourceId =
-      typeof e.generatedSourceId === 'string' && e.generatedSourceId.trim()
-        ? e.generatedSourceId.trim()
-        : undefined
-    out[id] = {
-      source: source as SavedQuestionMeta['source'],
-      contextTags,
-      notes,
-      ...(generatedSourceId ? { generatedSourceId } : {}),
-    }
+    out[id] = { source: source as SavedQuestionMeta['source'], contextTags, notes }
   }
   return out
-}
-
-function buildSavedGeneratedIds(
-  generated: GeneratedItem[],
-  saved: SavedQuestion[],
-  meta: Record<string, SavedQuestionMeta>,
-): Set<string> {
-  const ids = new Set<string>()
-  for (const g of generated) {
-    for (const s of saved) {
-      const m = meta[s.id]
-      if (!m) continue
-      if (m.generatedSourceId === g.id) {
-        ids.add(g.id)
-        break
-      }
-      if (m.source === 'generated' && s.custom_text?.trim() === g.text.trim()) {
-        ids.add(g.id)
-        break
-      }
-    }
-  }
-  return ids
 }
 
 function loadAllMeta(userId: string | null): Record<string, SavedQuestionMeta> {
@@ -191,57 +173,215 @@ function persistAllMeta(userId: string | null, meta: Record<string, SavedQuestio
 }
 
 type GeneratedItem = {
-  id: string
-  position: number
+  tempId: string
   text: string
-  category: string
+  filter: VisitFilter | 'General'
 }
 
-function mapApiQuestionsToGenerated(
-  questions: { id: string; question: string; category: string; position?: number }[],
+const FILTER_TEMPLATES: Partial<Record<VisitFilter, string[]>> = {
+  'Surgery or procedure': [
+    'What do I need to stop or change before a procedure (medications, food, supplements)?',
+    'What activity limits apply after my procedure, and for how long?',
+    'What symptoms should prompt me to call you or seek emergency care?',
+    'Who will coordinate updates with my other doctors?',
+  ],
+  'New diagnosis': [
+    'Can you explain my diagnosis in plain language and what it means day to day?',
+    'What caused this condition, and could it affect my family?',
+    'What are the treatment options and the goals of each?',
+    'What should I read or avoid reading online about this?',
+  ],
+  'Routine follow-up': [
+    'Are my symptoms stable, or should we change the plan?',
+    'When is my next follow-up, and what will you check?',
+    'How do I reach your team between visits if something changes?',
+    'What targets should I aim for (blood pressure, weight, exercise)?',
+  ],
+  Medications: [
+    'What is each medication for, and what are the most important side effects?',
+    'Are any of my medications risky when combined?',
+    'Is there a simpler or less expensive option for any of these?',
+    'What should I do if I miss a dose?',
+  ],
+  'Test results': [
+    'Can you walk through my recent test results and what they mean for my heart?',
+    'Do I need repeat testing, and on what schedule?',
+    'Were there any findings that need a new treatment or referral?',
+    'How will we track whether treatment is working?',
+  ],
+  'Lifestyle & wellbeing': [
+    'How can stress or anxiety affect my heart, and what supports do you recommend?',
+    'What diet changes matter most for my condition?',
+    'What type and amount of exercise is safe for me?',
+    'Is a cardiac rehab or counseling referral appropriate?',
+  ],
+  'Symptoms & concerns': [
+    'Could my symptoms be heart-related, and what should I watch for?',
+    'When should I call your office vs. go to the ER for these symptoms?',
+    'Are there triggers I should avoid or track day to day?',
+    'What tests would help clarify what I am feeling?',
+  ],
+  'Family history & genetics': [
+    'Given my family history, what is my risk and how often should I be checked?',
+    'Would genetic testing or screening for relatives be useful?',
+    'What symptoms should family members report to a doctor?',
+    'Does my family history change my treatment or monitoring plan?',
+  ],
+  'Prevention & heart health': [
+    'What can I do to lower my risk of a heart event in the next few years?',
+    'How do blood pressure, cholesterol, and weight goals apply to me?',
+    'Are vaccines or other preventive steps especially important for my heart?',
+    'What follow-up schedule makes sense if I stay stable?',
+  ],
+  'Care coordination & referrals': [
+    'Do I need referrals to other specialists, and who will coordinate my care?',
+    'How do I get records or test results to you from other hospitals?',
+    'What should my primary care doctor know or monitor between visits?',
+    'Who do I contact after-hours if something changes?',
+  ],
+}
+
+function tokenize(s: string): Set<string> {
+  return new Set(
+    s
+      .toLowerCase()
+      .replace(/[^a-z0-9\s]/g, ' ')
+      .split(/\s+/)
+      .filter((w) => w.length > 2),
+  )
+}
+
+function scoreBankQuestion(
+  q: CardiologistQuestion,
+  ctxTokens: Set<string>,
+  filters: Set<VisitFilter>,
+): number {
+  let score = 0
+  const text = `${q.question_text ?? ''} ${q.category ?? ''}`.toLowerCase()
+  const cat = (q.category ?? '').toLowerCase()
+
+  for (const f of filters) {
+    const fLow = f.toLowerCase()
+    if (text.includes(fLow) || cat.includes(fLow.split(' ')[0])) score += 3
+    const words = fLow.split(/[^a-z]+/)
+    for (const w of words) {
+      if (w.length > 2 && text.includes(w)) score += 1
+    }
+  }
+
+  for (const t of ctxTokens) {
+    if (text.includes(t)) score += 2
+  }
+
+  return score
+}
+
+function pickFilterForQuestion(
+  q: CardiologistQuestion,
+  filters: Set<VisitFilter>,
+): VisitFilter | 'General' {
+  if (filters.size === 1) return [...filters][0]
+  const text = `${q.question_text} ${q.category}`.toLowerCase()
+  for (const f of filters) {
+    if (text.includes(f.toLowerCase().slice(0, 8))) return f
+  }
+  const first = [...filters][0]
+  return first ?? 'General'
+}
+
+function generateSuggestions(
+  visitContext: string,
+  filters: Set<VisitFilter>,
+  bank: CardiologistQuestion[],
 ): GeneratedItem[] {
-  return questions.map((q, i) => ({
-    id: q.id?.trim() || `local-${i}`,
-    position: typeof q.position === 'number' && q.position > 0 ? q.position : i + 1,
-    text: q.question,
-    category: q.category?.trim() || 'General',
-  }))
+  const ctxTokens = tokenize(visitContext)
+  const out: GeneratedItem[] = []
+  const seen = new Set<string>()
+
+  const add = (text: string, filter: VisitFilter | 'General') => {
+    const k = text.trim().toLowerCase()
+    if (!k || seen.has(k)) return
+    seen.add(k)
+    out.push({
+      tempId: `g-${seen.size}-${Math.random().toString(36).slice(2, 9)}`,
+      text: text.trim(),
+      filter,
+    })
+  }
+
+  for (const f of filters) {
+    const temps = FILTER_TEMPLATES[f]
+    if (temps) {
+      for (const t of temps) {
+        add(t, f)
+        if (out.length >= 14) break
+      }
+    }
+    if (out.length >= 14) break
+  }
+
+  if (filters.size === 0 && visitContext.trim().length < 8) {
+    add('What is the most important thing I should understand about my heart health at this visit?', 'General')
+    add('What changes to my medications or lifestyle do you recommend?', 'General')
+  }
+
+  const scored = bank
+    .map((q) => ({ q, s: scoreBankQuestion(q, ctxTokens, filters) }))
+    .filter(({ s }) => s > 0 || filters.size === 0)
+    .sort((a, b) => b.s - a.s)
+
+  for (const { q } of scored) {
+    if (out.length >= 12) break
+    const filt = filters.size ? pickFilterForQuestion(q, filters) : 'General'
+    add(q.question_text, filt)
+  }
+
+  return out.slice(0, 10)
 }
 
-function getSavedLabel(row: SavedQuestion): string {
+function distinctBankCategories(bank: CardiologistQuestion[]): string[] {
+  const seen = new Set<string>()
+  for (const q of bank) {
+    const c = q.category?.trim()
+    if (c) seen.add(c)
+  }
+  return [...seen].sort((a, b) => a.localeCompare(b))
+}
+
+function getSavedLabel(row: SavedQuestion, bank: CardiologistQuestion[]): string {
   if (row.custom_text?.trim()) return row.custom_text.trim()
-  return 'Saved question'
+  const m = bank.find((q) => String(q.id) === String(row.question_id))
+  return m?.question_text ?? 'Saved question'
 }
 
 export default function QuestionsForCardiologist() {
-  const [, setSearchParams] = useSearchParams()
+  const [questions, setQuestions] = useState<CardiologistQuestion[]>([])
   const [saved, setSaved] = useState<SavedQuestion[]>([])
   const [userId, setUserId] = useState<string | null>(null)
   const [authBootstrapped, setAuthBootstrapped] = useState(false)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
-  const [intake, setIntake] = useState(EMPTY_CARE_TEAM_INTAKE)
+  const [visitContext, setVisitContext] = useState('')
+  const [selectedFilters, setSelectedFilters] = useState<Set<VisitFilter>>(new Set())
   const [generated, setGenerated] = useState<GeneratedItem[]>([])
   const [generating, setGenerating] = useState(false)
-  const [savingGeneratedId, setSavingGeneratedId] = useState<string | null>(null)
-  const [savedGeneratedIds, setSavedGeneratedIds] = useState<Set<string>>(() => new Set())
 
   const [activeTab, setActiveTab] = useState<'suggested' | 'saved'>('suggested')
   const [customLine, setCustomLine] = useState('')
   const [adding, setAdding] = useState(false)
   const [showCustomForm, setShowCustomForm] = useState(false)
   const [customQuestionTags, setCustomQuestionTags] = useState<Set<string>>(new Set())
-  const [corpusCategories, setCorpusCategories] = useState<string[]>([])
+  const bankCategoryTags = useMemo(() => distinctBankCategories(questions), [questions])
 
   useEffect(() => {
-    const valid = new Set(corpusCategories)
+    const valid = new Set(bankCategoryTags)
     setCustomQuestionTags((prev) => {
       const filtered = [...prev].filter((t) => valid.has(t))
       if (filtered.length === prev.size && filtered.every((t) => prev.has(t))) return prev
       return new Set(filtered)
     })
-  }, [corpusCategories])
+  }, [bankCategoryTags])
   const customInputRef = useRef<HTMLInputElement>(null)
   const [expandedSavedId, setExpandedSavedId] = useState<string | null>(null)
   const [savedMeta, setSavedMeta] = useState<Record<string, SavedQuestionMeta>>({})
@@ -267,10 +407,6 @@ export default function QuestionsForCardiologist() {
     if (!authBootstrapped) return
     setSavedMeta(loadAllMeta(userId))
   }, [authBootstrapped, userId])
-
-  useEffect(() => {
-    setSavedGeneratedIds(buildSavedGeneratedIds(generated, saved, savedMeta))
-  }, [generated, saved, savedMeta])
 
   useEffect(() => {
     if (!authBootstrapped) return
@@ -315,8 +451,12 @@ export default function QuestionsForCardiologist() {
           : Promise.resolve({ generationId: null, expiresAt: null, questions: [] }),
       ])
 
-      setCorpusCategories(corpusResult.categories)
-      setGenerated(mapApiQuestionsToGenerated(generatedBatch.questions))
+      if (qError) {
+        setQuestions([])
+        setError(qError.message)
+      } else {
+        setQuestions((rows as CardiologistQuestion[]) ?? [])
+      }
 
       if (uid) {
         const { data: savedRows, error: sError } = await supabase
@@ -360,6 +500,15 @@ export default function QuestionsForCardiologist() {
     load(userId)
   }, [authBootstrapped, userId, load])
 
+  const toggleFilter = (f: VisitFilter) => {
+    setSelectedFilters((prev) => {
+      const next = new Set(prev)
+      if (next.has(f)) next.delete(f)
+      else next.add(f)
+      return next
+    })
+  }
+
   const toggleCustomQuestionTag = (tag: string) => {
     setCustomQuestionTags((prev) => {
       const next = new Set(prev)
@@ -386,11 +535,7 @@ export default function QuestionsForCardiologist() {
           document.getElementById('questions-panel')?.scrollIntoView({ behavior: 'smooth', block: 'start' })
         }, 50)
       }
-    } catch (e) {
-      setError(e instanceof Error ? e.message : 'Could not generate questions. Try again.')
-    } finally {
-      setGenerating(false)
-    }
+    }, 380)
   }
 
   async function saveGeneratedItem(item: GeneratedItem) {
@@ -498,23 +643,6 @@ export default function QuestionsForCardiologist() {
       persistAllMeta(userId, next)
       return next
     })
-    if (linkedGeneratedId) {
-      setSavedGeneratedIds((prev) => {
-        const next = new Set(prev)
-        next.delete(linkedGeneratedId)
-        return next
-      })
-    } else if (row.custom_text?.trim()) {
-      const text = row.custom_text.trim()
-      const match = generated.find((g) => g.text.trim() === text)
-      if (match) {
-        setSavedGeneratedIds((prev) => {
-          const next = new Set(prev)
-          next.delete(match.id)
-          return next
-        })
-      }
-    }
     if (expandedSavedId === row.id) setExpandedSavedId(null)
   }
 
@@ -538,9 +666,11 @@ export default function QuestionsForCardiologist() {
         }
       }
       if (tags.length) return { label: tags[0] }
+      const cat = questions.find((q) => String(q.id) === String(item.question_id))?.category?.trim()
+      if (cat) return { label: cat }
       return { label: 'Saved' }
     },
-    [savedMeta],
+    [savedMeta, questions],
   )
 
   if (loading) {
@@ -567,10 +697,10 @@ export default function QuestionsForCardiologist() {
           className="mb-2 text-3xl tracking-wide text-[#192b3f] sm:text-4xl md:text-5xl"
           style={{ fontFamily: "'Bebas Neue', sans-serif", letterSpacing: '0.08em' }}
         >
-          QUESTIONS FOR YOUR HEALTH CARE TEAM
+          QUESTIONS FOR YOUR CARDIOLOGIST
         </h1>
         <p className="max-w-2xl text-sm leading-relaxed sm:text-base" style={{ color: MUTED_GREEN }}>
-          Tell us about your upcoming visit and we&apos;ll suggest questions for your health care team.
+          Describe your upcoming visit and we&apos;ll suggest questions to ask — or add your own.
         </p>
       </div>
 
@@ -582,14 +712,25 @@ export default function QuestionsForCardiologist() {
           background: 'linear-gradient(90deg, rgba(198,217,229,0.35) 0%, rgba(245,249,249,0.95) 100%)',
         }}
       >
-        <div className="mx-auto max-w-3xl space-y-6">
-          <CareTeamIntakeForm value={intake} onChange={setIntake} />
+        <div className="mx-auto max-w-3xl space-y-4">
+          <label className="sr-only" htmlFor="visit-context">
+            Visit notes
+          </label>
+          <textarea
+            id="visit-context"
+            rows={4}
+            value={visitContext}
+            onChange={(e) => setVisitContext(e.target.value)}
+            placeholder="I have an appointment tomorrow. I want to discuss…"
+            className="min-h-[7.5rem] w-full resize-y rounded-xl border-2 bg-white/95 px-4 py-3 text-sm text-[#192b3f] outline-none focus:ring-2 sm:text-base"
+            style={{ borderColor: LIGHT_BLUE, boxShadow: '0 2px 12px rgba(25, 43, 63, 0.06)' }}
+          />
 
           <button
             type="button"
-            disabled={generating || !isCareTeamIntakeComplete(intake)}
+            disabled={generating}
             onClick={runGenerate}
-            className="w-full rounded-xl px-5 py-4 text-base font-semibold text-white shadow-sm transition-opacity disabled:opacity-60"
+            className="w-full rounded-xl px-5 py-3.5 text-sm font-semibold text-white shadow-sm transition-opacity disabled:opacity-60 sm:w-auto sm:min-w-[200px]"
             style={{ background: DARK_GREEN }}
           >
             {generating ? 'Generating…' : 'Generate Questions'}
@@ -643,15 +784,15 @@ export default function QuestionsForCardiologist() {
                   Tags (optional)
                 </p>
                 <p className="mb-3 text-xs leading-snug" style={{ color: MUTED_GREEN }}>
-                  Optional tags from the standard question library.
+                  Categories from the question library — same labels as on saved questions.
                 </p>
                 <div className="mb-4 flex flex-wrap gap-2">
-                  {corpusCategories.length === 0 ? (
+                  {bankCategoryTags.length === 0 ? (
                     <p className="text-xs italic" style={{ color: MUTED_GREEN }}>
                       No categories are available in the question library yet.
                     </p>
                   ) : (
-                    corpusCategories.map((tag) => {
+                    bankCategoryTags.map((tag) => {
                       const on = customQuestionTags.has(tag)
                       return (
                         <button
@@ -697,6 +838,31 @@ export default function QuestionsForCardiologist() {
             )}
           </AnimatePresence>
 
+          <div>
+            <p className="mb-2 text-xs font-semibold uppercase tracking-wider" style={{ color: MUTED_GREEN }}>
+              My visit context:
+            </p>
+            <div className="flex flex-wrap gap-2">
+              {VISIT_CONTEXT_FILTERS.map((f) => {
+                const on = selectedFilters.has(f)
+                return (
+                  <button
+                    key={f}
+                    type="button"
+                    onClick={() => toggleFilter(f)}
+                    className={`rounded-full border-2 px-3 py-1.5 text-left text-xs font-medium transition-colors sm:text-sm ${
+                      on
+                        ? 'border-transparent text-white'
+                        : 'border-[rgba(25,43,63,0.15)] bg-white/90 text-[#192b3f] hover:border-[rgba(87,117,104,0.4)]'
+                    }`}
+                    style={on ? { background: DARK_GREEN, borderColor: DARK_GREEN } : undefined}
+                  >
+                    {f}
+                  </button>
+                )
+              })}
+            </div>
+          </div>
         </div>
       </div>
 
@@ -934,6 +1100,52 @@ export default function QuestionsForCardiologist() {
           )}
         </div>
       </div>
+
+      {/* Generated */}
+      <AnimatePresence>
+        {generated.length > 0 && (
+          <motion.section
+            id="suggested-questions"
+            initial={{ opacity: 0, y: 12 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -8 }}
+            className="scroll-mt-4 border-t px-3 py-8 sm:px-4 sm:scroll-mt-6"
+            style={{ borderColor: 'rgba(25, 43, 63, 0.08)', background: ALMOST_WHITE }}
+          >
+            <h2 className="mb-1 text-lg font-semibold text-[#192b3f]">Suggested for your visit</h2>
+            <p className="mb-5 max-w-2xl text-sm leading-relaxed" style={{ color: MUTED_GREEN }}>
+              Based on what you shared. Tap to save any question.
+            </p>
+            <ul className="mx-auto max-w-3xl space-y-3">
+              {generated.map((g) => (
+                <li
+                  key={g.tempId}
+                  className="flex flex-col gap-3 rounded-xl border bg-white p-4 sm:flex-row sm:items-center sm:justify-between"
+                  style={{ borderColor: 'rgba(25, 43, 63, 0.1)' }}
+                >
+                  <div className="min-w-0 flex-1">
+                    <p className="text-sm font-medium leading-snug text-[#192b3f]">{g.text}</p>
+                    <span
+                      className="mt-2 inline-block rounded-full px-2.5 py-0.5 text-xs font-semibold"
+                      style={{ background: 'rgba(198, 217, 229, 0.5)', color: NAVY }}
+                    >
+                      {g.filter}
+                    </span>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => saveGeneratedLine(g.text, g.filter)}
+                    className="shrink-0 rounded-lg border-2 px-4 py-2 text-sm font-semibold transition-colors"
+                    style={{ borderColor: DARK_GREEN, color: DARK_GREEN }}
+                  >
+                    + Save
+                  </button>
+                </li>
+              ))}
+            </ul>
+          </motion.section>
+        )}
+      </AnimatePresence>
     </div>
   )
 }

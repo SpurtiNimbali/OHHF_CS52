@@ -1,0 +1,184 @@
+[
+  {
+    "id": "overwhelmed",
+    "feeling": "I feel overwhelmed",
+    "underneath": "Scheduling overload, Medication routines to stay on top of, Family and caregiving responsibilities, Too much medical information at once, A constant background worry",
+    "modalities": ["CBT", "DBT"],
+    "modalityReason": "Helps break down thoughts, prioritize, and regulate stress in the moment",
+    "exercise": {
+      "name": "The 3-1-1 Reset",
+      "steps": [
+        "Write down 3 things on your mind.",
+        "Circle the 1 most important today.",
+        "Take 1 deep breath before your next step."
+      ]
+    },
+    "benefits": ["Reduces mental overload", "Brings focus back to what matters", "Creates small, doable action"],
+    "tools": [{ "name": "5-4-3-2-1 Grounding", "route": "/wellness" }]
+  },
+  {
+    "id": "anxious",
+    "feeling": "I feel anxious",
+    "underneath": "Worry about my child's health, what could happen, or uncertainty about the future",
+    "modalities": ["CBT", "DBT"],
+    "modalityReason": "Helps challenge worry thoughts and calm your body",
+    "exercise": {
+      "name": "5-4-3-2-1 Grounding",
+      "steps": [
+        "5 things you see, 4 you can feel, 3 you hear, 2 you smell, 1 you taste.",
+        "Then ask: \"What is true right now?\""
+      ]
+    },
+    "benefits": ["Calms the nervous system", "Brings you into the present", "Reduces spiral of worry"],
+    "tools": [{ "name": "5-4-3-2-1 Grounding", "route": "/wellness" }]
+  },
+  {
+    "id": "exhausted",
+    "feeling": "I'm exhausted",
+    "underneath": "Sleep deprivation, constant caregiving, hospital stays, emotional and physical fatigue",
+    "modalities": ["ACT", "DBT"],
+    "modalityReason": "Supports self-compassion, values, and pacing your energy",
+    "exercise": {
+      "name": "Rest Permission Pause",
+      "steps": [
+        "Notice how your body feels.",
+        "Ask: \"What do I need right now?\"",
+        "Do one small thing that restores your energy (even 5 minutes)."
+      ]
+    },
+    "benefits": ["Validates your limits", "Prevents burnout", "Helps you refill your cup"],
+    "tools": [
+      { "name": "Cold Reset", "route": "/wellness" },
+      { "name": "Journaling", "route": "/wellness" },
+      { "name": "Move It Out", "route": "/wellness" }
+    ]
+  },
+  {
+    "id": "guilty",
+    "feeling": "I feel guilty",
+    "underneath": "Feeling like I'm not doing enough, not present enough for siblings, struggling to ask for help",
+    "modalities": ["CBT", "ACT"],
+    "modalityReason": "Helps reframe guilt and return to what matters most",
+    "exercise": {
+      "name": "Self-Compassion Reframe",
+      "steps": [
+        "Write the guilt thought.",
+        "Would you say this to another heart parent? No? Why?",
+        "Write a kinder, more realistic truth."
+      ]
+    },
+    "benefits": ["Releases self-blame", "Builds self-compassion", "Supports emotional healing"],
+    "tools": []
+  },
+  {
+    "id": "helpless",
+    "feeling": "I feel helpless",
+    "underneath": "Can't control outcomes, waiting for test results, emergencies, or the unknown",
+    "modalities": ["ACT", "DBT"],
+    "modalityReason": "Helps you focus on what you can control while accepting what you cannot",
+    "exercise": {
+      "name": "Control Circle",
+      "steps": [
+        "Draw two circles: Control / Cannot Control.",
+        "List items in each circle.",
+        "Choose 1 action from the Control circle to focus on today."
+      ]
+    },
+    "benefits": ["Reduces feelings of powerlessness", "Shifts focus to meaningful action", "Builds emotional resilience"],
+    "tools": []
+  },
+  {
+    "id": "angry",
+    "feeling": "I feel angry",
+    "underneath": "Frustrated with the medical system, insurance, limitations, or unfairness of the situation",
+    "modalities": ["DBT", "Gottman"],
+    "modalityReason": "Helps regulate intense emotion and communicate needs more effectively",
+    "exercise": {
+      "name": "STOP Skill (DBT)",
+      "steps": [
+        "S - Stop",
+        "T - Take a breath",
+        "O - Observe your body, thoughts, and situation",
+        "P - Proceed with intention"
+      ]
+    },
+    "benefits": ["Prevents reactive reactions", "Helps you respond vs. react", "Protects relationships"],
+    "tools": [
+      { "name": "Cold Reset", "route": "/wellness" },
+      { "name": "STOP Skill", "route": "/wellness" }
+    ]
+  },
+  {
+    "id": "scared",
+    "feeling": "I'm scared",
+    "underneath": "Fear of emergencies, procedures, long-term prognosis, or losing my child",
+    "modalities": ["EMDR", "Brainspotting"],
+    "modalityReason": "Helps calm the trauma response and create safety in your body",
+    "exercise": {
+      "name": "Safe Place Visualization",
+      "steps": [
+        "Close your eyes and imagine a place where you feel safe.",
+        "Notice what you see, hear, and feel there.",
+        "Breathe slowly and stay for a minute."
+      ]
+    },
+    "benefits": ["Calms fear response", "Creates internal sense of safety", "Supports trauma healing"],
+    "tools": [
+      { "name": "Reframing", "route": "/wellness" },
+      { "name": "Safe Place Visualization", "route": "/wellness" }
+    ]
+  },
+  {
+    "id": "numb",
+    "feeling": "I feel numb",
+    "underneath": "Overwhelmed for so long that emotions feel distant or disconnected",
+    "modalities": ["Brainspotting", "Art Therapy"],
+    "modalityReason": "Helps reconnect with your body and emotions gently and safely",
+    "exercise": {
+      "name": "Body Check-In",
+      "steps": [
+        "Notice where you feel any sensation.",
+        "Place a hand there and breathe.",
+        "Ask: \"What might this sensation be trying to tell me?\""
+      ]
+    },
+    "benefits": ["Reconnects you with your body", "Gently builds emotional awareness", "Supports nervous system regulation"],
+    "tools": [{ "name": "Body Scan", "route": "/wellness" }]
+  },
+  {
+    "id": "disconnected",
+    "feeling": "I feel disconnected from my child or partner",
+    "underneath": "Caregiving stress makes it hard to connect, feel present, or enjoy one another",
+    "modalities": ["PCIT", "Gottman"],
+    "modalityReason": "Strengthens connection through intentional, positive interactions",
+    "exercise": {
+      "name": "5-Minute Connection",
+      "steps": [
+        "Set a timer for 5 minutes.",
+        "Give your full attention (no phones, no problem-solving).",
+        "Share or play together."
+      ]
+    },
+    "benefits": ["Rebuilds emotional connection", "Strengthens relationships", "Increases feelings of support"],
+    "tools": [{ "name": "Be the Parent", "route": "/wellness", "note": "highlight when relevant" }]
+  },
+  {
+    "id": "unknown",
+    "feeling": "I don't know what I'm feeling",
+    "underneath": "Emotional overload, survival mode, or difficulty identifying feelings",
+    "modalities": ["CBT", "Art Therapy"],
+    "modalityReason": "Helps increase emotional awareness and expression",
+    "exercise": {
+      "name": "Feelings Wheel & Draw",
+      "steps": [
+        "Look at a feelings wheel and choose a section that fits.",
+        "Draw or color how that feeling looks in your body."
+      ]
+    },
+    "benefits": ["Builds emotional vocabulary", "Creates clarity and connection", "Supports self-expression"],
+    "tools": [
+      { "name": "Feelings Wheel", "route": "/wellness" },
+      { "name": "Name It to Tame It", "route": "/wellness" }
+    ]
+  }
+]
