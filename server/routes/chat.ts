@@ -12,7 +12,7 @@ router.get('/welcome', async (_req: Request, res: Response) => {
   } catch (e) {
     const msg = e instanceof Error ? e.message : 'Welcome unavailable'
     console.error('[chat/welcome]', e)
-    if (/Missing OPENAI_API_KEY/i.test(msg)) {
+    if (/Missing (OPENROUTER_API_KEY|OPENAI_API_KEY)/i.test(msg)) {
       return res.status(503).json({ error: msg })
     }
     if (/Knowledge index unavailable/i.test(msg)) {
@@ -102,7 +102,7 @@ router.post('/', async (req: Request, res: Response) => {
   } catch (e) {
     const msg = e instanceof Error ? e.message : 'Chat failed'
     console.error('[chat]', e)
-    if (/Missing (ANTHROPIC_API_KEY|OPENAI_API_KEY)/i.test(msg)) {
+    if (/Missing (ANTHROPIC_API_KEY|OPENROUTER_API_KEY|OPENAI_API_KEY)/i.test(msg)) {
       return res.status(503).json({ error: msg })
     }
     if (/Knowledge index unavailable/i.test(msg)) {
