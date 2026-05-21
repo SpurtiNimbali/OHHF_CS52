@@ -1,14 +1,13 @@
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import { motion, AnimatePresence } from 'motion/react'
 import { Bookmark, ChevronDown, Plus, Trash2 } from 'lucide-react'
-import { CareTeamIntakeForm } from '../components/careTeam/CareTeamIntakeForm'
 import { fetchCareTeamCorpusList } from '../lib/careTeamCorpusApi'
 import {
   fetchLatestGeneratedQuestionsFromApi,
 } from '../lib/careTeamQuestionApi'
-import { EMPTY_CARE_TEAM_INTAKE, isCareTeamIntakeComplete, type CareTeamIntakeAnswers } from '../lib/careTeamQuestionIntake'
-import { supabase, ensureAuthUserId, SavedQuestion } from '../lib/supabase'
+import type { CareTeamIntakeAnswers } from '../lib/careTeamQuestionIntake'
+import { supabase, ensureAuthUserId, CardiologistQuestion, SavedQuestion } from '../lib/supabase'
 
 function generateMockQuestions(intake: CareTeamIntakeAnswers): GeneratedItem[] {
   const provider = intake.providerTypes[0] ?? 'Cardiologist'
@@ -64,10 +63,9 @@ function generateMockQuestions(intake: CareTeamIntakeAnswers): GeneratedItem[] {
   ]
 
   return pool.slice(0, 10).map((q, i) => ({
-    id: `mock-${i + 1}`,
-    position: i + 1,
+    tempId: `mock-${i + 1}`,
     text: q.text,
-    category: q.category,
+    filter: (q.category as VisitFilter | 'General') || 'General',
   }))
 }
 
@@ -131,6 +129,7 @@ type SavedQuestionMeta = {
   source: 'generated' | 'custom' | 'bank'
   contextTags: string[]
   notes: string
+  generatedSourceId?: string
 }
 
 function metaStorageKey(userId: string | null): string {
@@ -149,7 +148,14 @@ function normalizeStoredMeta(raw: unknown): Record<string, SavedQuestionMeta> {
     const contextTags = Array.isArray(e.contextTags)
       ? e.contextTags.filter((t): t is string => typeof t === 'string')
       : []
-    out[id] = { source: source as SavedQuestionMeta['source'], contextTags, notes }
+    const generatedSourceId =
+      typeof e.generatedSourceId === 'string' ? e.generatedSourceId : undefined
+    out[id] = {
+      source: source as SavedQuestionMeta['source'],
+      contextTags,
+      notes,
+      ...(generatedSourceId ? { generatedSourceId } : {}),
+    }
   }
   return out
 }
@@ -355,6 +361,7 @@ function getSavedLabel(row: SavedQuestion, bank: CardiologistQuestion[]): string
 }
 
 export default function QuestionsForCardiologist() {
+  const [, setSearchParams] = useSearchParams()
   const [questions, setQuestions] = useState<CardiologistQuestion[]>([])
   const [saved, setSaved] = useState<SavedQuestion[]>([])
   const [userId, setUserId] = useState<string | null>(null)
@@ -366,6 +373,7 @@ export default function QuestionsForCardiologist() {
   const [selectedFilters, setSelectedFilters] = useState<Set<VisitFilter>>(new Set())
   const [generated, setGenerated] = useState<GeneratedItem[]>([])
   const [generating, setGenerating] = useState(false)
+  const [savingGeneratedId, setSavingGeneratedId] = useState<string | null>(null)
 
   const [activeTab, setActiveTab] = useState<'suggested' | 'saved'>('suggested')
   const [customLine, setCustomLine] = useState('')
@@ -385,6 +393,13 @@ export default function QuestionsForCardiologist() {
   const customInputRef = useRef<HTMLInputElement>(null)
   const [expandedSavedId, setExpandedSavedId] = useState<string | null>(null)
   const [savedMeta, setSavedMeta] = useState<Record<string, SavedQuestionMeta>>({})
+  const savedGeneratedIds = useMemo(() => {
+    const ids = new Set<string>()
+    for (const meta of Object.values(savedMeta)) {
+      if (meta.generatedSourceId) ids.add(meta.generatedSourceId)
+    }
+    return ids
+  }, [savedMeta])
 
   useEffect(() => {
     let cancelled = false
@@ -440,7 +455,7 @@ export default function QuestionsForCardiologist() {
     setLoading(true)
     setError(null)
     try {
-      const [corpusResult, generatedBatch] = await Promise.all([
+      const [corpusResult] = await Promise.all([
         fetchCareTeamCorpusList().catch(() => ({ questions: [], categories: [] as string[] })),
         uid
           ? fetchLatestGeneratedQuestionsFromApi(uid).catch(() => ({
@@ -451,12 +466,13 @@ export default function QuestionsForCardiologist() {
           : Promise.resolve({ generationId: null, expiresAt: null, questions: [] }),
       ])
 
-      if (qError) {
-        setQuestions([])
-        setError(qError.message)
-      } else {
-        setQuestions((rows as CardiologistQuestion[]) ?? [])
-      }
+      setQuestions(
+        (corpusResult.questions ?? []).map((q) => ({
+          id: q.slug,
+          question_text: q.question,
+          category: q.question_category,
+        })),
+      )
 
       if (uid) {
         const { data: savedRows, error: sError } = await supabase
@@ -519,30 +535,30 @@ export default function QuestionsForCardiologist() {
   }
 
   const runGenerate = async () => {
-    if (!isCareTeamIntakeComplete(intake)) {
-      setError('Please answer all four questions above before generating.')
-      return
-    }
     setError(null)
     setGenerating(true)
     try {
       await new Promise((r) => setTimeout(r, 600))
-      const questions = generateMockQuestions(intake)
-      setGenerated(questions)
-      if (questions.length > 0) {
+      const items = generateSuggestions(visitContext, selectedFilters, questions)
+      setGenerated(items)
+      if (items.length > 0) {
         setActiveTab('suggested')
         window.setTimeout(() => {
           document.getElementById('questions-panel')?.scrollIntoView({ behavior: 'smooth', block: 'start' })
         }, 50)
       }
-    }, 380)
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Could not generate questions.')
+    } finally {
+      setGenerating(false)
+    }
   }
 
   async function saveGeneratedItem(item: GeneratedItem) {
     const text = item.text.trim()
     if (!text || savingGeneratedId) return
 
-    setSavingGeneratedId(item.id)
+    setSavingGeneratedId(item.tempId)
     setError(null)
 
     let s: SavedQuestion | null = null
@@ -572,9 +588,9 @@ export default function QuestionsForCardiologist() {
         ...prev,
         [s!.id]: {
           source: 'generated' as const,
-          contextTags: [item.category],
+          contextTags: [item.filter],
           notes: '',
-          generatedSourceId: item.id,
+          generatedSourceId: item.tempId,
         },
       }
       persistAllMeta(userId, next)
@@ -644,6 +660,10 @@ export default function QuestionsForCardiologist() {
       return next
     })
     if (expandedSavedId === row.id) setExpandedSavedId(null)
+  }
+
+  async function saveGeneratedLine(text: string, filter: VisitFilter | 'General') {
+    await saveGeneratedItem({ tempId: `line-${Date.now()}`, text, filter })
   }
 
   const savedBadge = useCallback(
@@ -951,11 +971,11 @@ export default function QuestionsForCardiologist() {
             ) : (
               <ul className="mx-auto max-w-3xl space-y-3">
                 {generated.map((g) => {
-                  const alreadySaved = savedGeneratedIds.has(g.id)
-                  const isSaving = savingGeneratedId === g.id
+                  const alreadySaved = savedGeneratedIds.has(g.tempId)
+                  const isSaving = savingGeneratedId === g.tempId
                   return (
                     <li
-                      key={`${g.id}-${g.position}`}
+                      key={g.tempId}
                       className="flex items-start gap-3 rounded-xl border p-4"
                       style={{ borderColor: '#a8c8dc', background: 'rgba(198,217,229,0.22)' }}
                     >
@@ -966,7 +986,7 @@ export default function QuestionsForCardiologist() {
                             className="rounded-full px-2.5 py-0.5 text-xs font-semibold"
                             style={{ background: '#c6d9e5', color: NAVY }}
                           >
-                            {g.category}
+                            {g.filter}
                           </span>
                           <span className="rounded-full px-2 py-0.5 text-xs font-medium" style={{ background: 'rgba(198,217,229,0.5)', color: '#2a5070' }}>AI suggested</span>
                         </div>

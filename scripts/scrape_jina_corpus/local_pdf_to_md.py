@@ -35,11 +35,65 @@ REPORT_PATH = REPORT_DIR / "local_pdf_conversion_report.txt"
 SOURCE_GROUP_LABEL = "Local PDF"
 OUTPUT_SUFFIX = "__local_pdfs.md"
 
+# Local PDFs are extraction inputs only; **Source:** / RAG citation_source_url use public URLs.
+# Keys: batch folder name under local_pdf_resources/ → exact PDF filename → public URL.
+PUBLIC_PDF_SOURCE_URLS: dict[str, dict[str, str]] = {
+    "mended_hearts_org__caregiver_support": {
+        "Caregiver-Connections-Time-for-Caring-copy.pdf": (
+            "https://mendedhearts.org/wp-content/uploads/2024/07/Caregiver-Connections-Time-for-Caring-copy.pdf"
+        ),
+        "Caregiver-Depression-Piece.pdf": (
+            "https://www.mendedhearts.org/Docs/Caregiver%20Depression%20Piece.pdf"
+        ),
+        "Caregiving-One-Pager.pdf": (
+            "https://mendedhearts.org/wp-content/uploads/2024/09/Caregiving-One-Pager.pdf"
+        ),
+        "Caring-for-Yourself-WH-CHD.pdf": (
+            "https://mendedhearts.org/wp-content/uploads/2025/02/Caring-for-Yourself-WH-CHD.pdf"
+        ),
+        "MLH-Tips-for-Caregivers-1.docx.pdf": "https://mendedhearts.org/education-and-resources/",
+        "Taking the Stress Out of Caregiving - Mended Hearts.pdf": (
+            "https://mendedhearts.org/story/taking-the-stress-out-of-caregiving/"
+        ),
+    },
+    "mended_hearts_org__medical_navigation": {
+        "Feeding-Issues-for-Babies-with-CHD.pdf": (
+            "https://mendedhearts.org/wp-content/uploads/2026/03/Feeding-Issues-for-Babies-with-CHD.pdf"
+        ),
+        "Feeding-Issues-WH-CHD-2026.pdf": (
+            "https://mendedhearts.org/wp-content/uploads/2026/01/Feeding-Issues-WH-CHD-2026.pdf"
+        ),
+        "Neurodevelopmental-Issues-WH-CHD.pdf": (
+            "https://mendedhearts.org/wp-content/uploads/2024/09/Neurodevelopmental-Issues-WH-CHD.pdf"
+        ),
+        "Preparing-for-a-doctor-appointment-WH-CHD.pdf": (
+            "https://mendedhearts.org/wp-content/uploads/2025/02/Preparing-for-a-doctor-appointment-WH-CHD.pdf"
+        ),
+        "Transitioning-from-Hospital-to-Home-WH-CHD.pdf": (
+            "https://mendedhearts.org/wp-content/uploads/2025/07/Transitioning-from-Hospital-to-Home-WH-CHD.pdf"
+        ),
+    },
+    "mended_hearts_org__mended_little_heart_guide_lite": {
+        "MLHGuide-Lite-New-1.pdf": (
+            "https://mendedhearts.org/wp-content/uploads/2017/03/MLHGuide-Lite-New-1.pdf"
+        ),
+    },
+    "mended_hearts_org__mended_little_heartguide": {
+        "MLHG_2015-2025.pdf": "https://mendedhearts.org/wp-content/uploads/2025/02/MLHG_2015-2025.pdf",
+    },
+    "mended_hearts_org__neurodevelopmental_issues_chd": {
+        "Neurodevelopmental-Issues-CHD.pdf": (
+            "https://mendedhearts.org/wp-content/uploads/2024/10/Neurodevelopmental-Issues-CHD-1.pdf"
+        ),
+    },
+}
+
 
 @dataclass
 class PdfResult:
     path: Path
     rel_source: str
+    citation_source: str
     title: str
     page_count: int
     markdown_body: str
@@ -59,6 +113,39 @@ class BatchReport:
 def display_rel_source(batch_name: str, filename: str) -> str:
     """Path relative to scrape_jina_corpus/, always forward slashes."""
     return f"local_pdf_resources/{batch_name}/{filename}".replace("\\", "/")
+
+
+def _normalize_pdf_match_key(filename: str) -> str:
+    """Lowercase alphanumeric key for robust filename matching."""
+    return re.sub(r"[^a-z0-9]+", "", filename.lower())
+
+
+def resolve_public_source_url(batch_name: str, filename: str) -> Optional[str]:
+    """
+    Map a local PDF filename to its public citation URL.
+    Returns None when the batch or file is not in the mapping (caller keeps local rel path).
+    """
+    batch_map = PUBLIC_PDF_SOURCE_URLS.get(batch_name)
+    if not batch_map:
+        return None
+    if filename in batch_map:
+        return batch_map[filename]
+    target = _normalize_pdf_match_key(filename)
+    hits = [
+        url for fn, url in batch_map.items() if _normalize_pdf_match_key(fn) == target
+    ]
+    if len(hits) == 1:
+        return hits[0]
+    return None
+
+
+def citation_source_for_pdf(batch_name: str, filename: str) -> tuple[str, str, bool]:
+    """Returns (local_rel_source, citation_source_for_md, mapped_to_public)."""
+    rel = display_rel_source(batch_name, filename)
+    public = resolve_public_source_url(batch_name, filename)
+    if public:
+        return rel, public, True
+    return rel, rel, False
 
 
 def normalize_title_from_stem(stem: str) -> str:
@@ -86,7 +173,7 @@ def extract_pdf_text(doc: fitz.Document) -> Tuple[str, int]:
 
 
 def process_one_pdf(batch_name: str, pdf_path: Path) -> PdfResult:
-    rel = display_rel_source(batch_name, pdf_path.name)
+    rel, citation, _mapped = citation_source_for_pdf(batch_name, pdf_path.name)
     try:
         with fitz.open(pdf_path) as doc:
             title = infer_pdf_title(doc, pdf_path)
@@ -94,6 +181,7 @@ def process_one_pdf(batch_name: str, pdf_path: Path) -> PdfResult:
         return PdfResult(
             path=pdf_path,
             rel_source=rel,
+            citation_source=citation,
             title=title,
             page_count=page_count,
             markdown_body=body,
@@ -102,6 +190,7 @@ def process_one_pdf(batch_name: str, pdf_path: Path) -> PdfResult:
         return PdfResult(
             path=pdf_path,
             rel_source=rel,
+            citation_source=citation,
             title=normalize_title_from_stem(pdf_path.stem),
             page_count=0,
             markdown_body="",
@@ -124,7 +213,7 @@ def write_batch_markdown(
 
     for i, pr in enumerate(successful, 1):
         f.write(f"## {i}. {pr.title}\n\n")
-        f.write(f"**Source:** {pr.rel_source}\n\n")
+        f.write(f"**Source:** {pr.citation_source}\n\n")
         f.write(pr.markdown_body)
         f.write("\n\n---\n\n")
 
@@ -144,6 +233,7 @@ def run() -> int:
     batch_dirs = collect_batch_dirs()
     all_reports: List[BatchReport] = []
     failures_global: List[str] = []
+    unmapped_public_urls: List[str] = []
     batches_written = 0
 
     if not batch_dirs:
@@ -152,7 +242,7 @@ def run() -> int:
         REPORT_PATH.write_text(msg, encoding="utf-8")
         return 1
 
-    print("Local PDF → raw markdown")
+    print("Local PDF -> raw markdown")
     print(f"Input root:  {LOCAL_PDF_ROOT}")
     print(f"Output dir: {OUTPUT_DIR}")
     print(f"Report:     {REPORT_PATH}\n")
@@ -179,10 +269,17 @@ def run() -> int:
             res = batch_name and process_one_pdf(batch_name, pdf_path)
             if res.error:
                 br.failures.append((pdf_path, res.error))
-                print(f"  [FAIL] {pdf_path.name} — {res.error}")
+                print(f"  [FAIL] {pdf_path.name} - {res.error}")
             else:
                 successful.append(res)
-                print(f"  [OK]   {pdf_path.name} — {res.page_count} pages — title: {res.title!r}")
+                mapped = res.citation_source != res.rel_source
+                cite_note = "public URL" if mapped else "local path (no mapping)"
+                print(
+                    f"  [OK]   {pdf_path.name} - {res.page_count} pages - "
+                    f"title: {res.title!r} - citation: {cite_note}"
+                )
+                if not mapped:
+                    unmapped_public_urls.append(f"{batch_name}/{pdf_path.name}")
 
         out_name = f"{batch_name}{OUTPUT_SUFFIX}"
         out_path = OUTPUT_DIR / out_name
@@ -193,7 +290,7 @@ def run() -> int:
                 write_batch_markdown(out_name, successful, len(pdfs), f)
             br.results = successful
             batches_written += 1
-            print(f"  → Wrote: {out_path}")
+            print(f"  -> Wrote: {out_path}")
         else:
             print("  [SKIP] No PDFs converted successfully; no output file written.")
             failures_global.append(f"{batch_name}: all {len(pdfs)} PDF(s) failed")
@@ -210,11 +307,17 @@ def run() -> int:
             print(f"    - {line}")
     else:
         print("  Issues: none")
+    if unmapped_public_urls:
+        print(f"  PDFs without public URL mapping ({len(unmapped_public_urls)}):")
+        for line in unmapped_public_urls:
+            print(f"    - {line}")
+    else:
+        print("  Public URL mapping: all converted PDFs mapped")
 
     # Report file
     lines: List[str] = []
     ts = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%S UTC")
-    lines.append(f"Local PDF conversion report — {ts}\n")
+    lines.append(f"Local PDF conversion report - {ts}\n")
     lines.append(f"Script: {Path(__file__).resolve()}\n")
     lines.append(f"Input:  {LOCAL_PDF_ROOT}\n")
     lines.append(f"Output: {OUTPUT_DIR}\n\n")
@@ -229,7 +332,8 @@ def run() -> int:
             lines.append(f"  Successfully converted ({len(br.results)}):\n")
             for pr in br.results:
                 lines.append(f"    - {pr.path}\n")
-                lines.append(f"      source key: {pr.rel_source}\n")
+                lines.append(f"      local input: {pr.rel_source}\n")
+                lines.append(f"      citation source: {pr.citation_source}\n")
                 lines.append(f"      pages: {pr.page_count}\n")
         elif br.pdfs_attempted == 0:
             lines.append("  Status: no PDFs — skipped\n")
