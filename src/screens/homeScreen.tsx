@@ -9,11 +9,18 @@ import {
   MOOD_VARIANTS,
   type MoodId,
   getChatPromptHint,
+  getMoodChatPrefill,
   getMoodMessage,
   moodShellBackgroundClasses,
   MoodHeartFill,
   useMood,
 } from '../mood'
+import {
+  ensureMoodEntryForChat,
+  insertMoodEntry,
+  markMoodCheckInSaved,
+  clearMoodCheckInSession,
+} from '../lib/moodEntries'
 import { CARDEA_FONT_PRIMARY, CARDEA_MUTED, CARDEA_NAVY } from '../ui/cardeaTokens'
 
 const WELLNESS_MOOD_LOG_KEY = 'cardea-wellness-mood-log'
@@ -133,16 +140,42 @@ export function HomeScreen() {
   const navigate = useNavigate()
   const { moodId, setMoodId, theme, variant } = useMood()
   const [checkInSaved, setCheckInSaved] = useState(false)
+  const [checkInError, setCheckInError] = useState<string | null>(null)
   const [showMoodCheckIn, setShowMoodCheckIn] = useState(false)
 
   const personalizedCards = useMemo(() => orderCardsForMood(moodId), [moodId])
 
-  function saveMoodCheckIn() {
+  async function saveMoodCheckIn() {
     if (!moodId) return
+    setCheckInError(null)
     appendMoodCheckIn(moodId, '')
+    const { entry, error } = await insertMoodEntry(moodId)
+    if (error) {
+      setCheckInError(error)
+      return
+    }
+    if (entry) markMoodCheckInSaved(moodId, entry.id)
     setCheckInSaved(true)
-    window.setTimeout(() => setShowMoodCheckIn(false), 650)
-    window.setTimeout(() => setCheckInSaved(false), 1800)
+    window.setTimeout(() => setCheckInSaved(false), 2500)
+  }
+
+  async function openMoodChat() {
+    if (!moodId) return
+    setCheckInError(null)
+    appendMoodCheckIn(moodId, '')
+    const { entry, entryId: moodEntryId, error } = await ensureMoodEntryForChat(moodId)
+    if (error) {
+      setCheckInError(error)
+      return
+    }
+    if (entry) markMoodCheckInSaved(moodId, entry.id)
+    navigate('/chat', {
+      state: {
+        prefill: getMoodChatPrefill(moodId),
+        moodId,
+        moodEntryId,
+      },
+    })
   }
 
   return (
@@ -203,6 +236,7 @@ export function HomeScreen() {
               type="button"
               onClick={() => {
                 setCheckInSaved(false)
+                setCheckInError(null)
                 setShowMoodCheckIn(true)
               }}
               className="flex w-full items-center gap-4 rounded-2xl border bg-white p-4 text-left shadow-sm transition hover:shadow-md"
@@ -343,6 +377,8 @@ export function HomeScreen() {
                   onClick={() => {
                     setMoodId(m.id)
                     setCheckInSaved(false)
+                    setCheckInError(null)
+                    clearMoodCheckInSession()
                   }}
                   activeClassNames={`${m.chipBg} ${m.chipText}`}
                   index={index}
@@ -356,12 +392,16 @@ export function HomeScreen() {
               </p>
               <button
                 type="button"
-                onClick={() => navigate('/chat')}
-                className="inline-flex items-center gap-2 rounded-xl px-4 py-2.5 text-sm font-semibold text-white"
+                disabled={!moodId}
+                onClick={() => void openMoodChat()}
+                className="inline-flex items-center gap-2 rounded-xl px-4 py-2.5 text-sm font-semibold text-white disabled:cursor-not-allowed disabled:opacity-40"
                 style={{ background: '#577568', fontFamily: CARDEA_FONT_PRIMARY }}
               >
                 Open chat
               </button>
+              {checkInError ? (
+                <p className="mt-2 text-xs leading-relaxed text-[#9B1C31]">{checkInError}</p>
+              ) : null}
               <div className="mt-3 flex items-center justify-between gap-3">
                 <p className="text-xs leading-relaxed" style={{ color: CARDEA_MUTED }}>
                   one minute. no perfect answer needed.
@@ -375,7 +415,7 @@ export function HomeScreen() {
                   <button
                     type="button"
                     disabled={!moodId}
-                    onClick={saveMoodCheckIn}
+                    onClick={() => void saveMoodCheckIn()}
                     className="rounded-full px-4 py-2 text-xs font-semibold text-white disabled:opacity-40"
                     style={{ background: '#577568' }}
                   >

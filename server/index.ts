@@ -3,6 +3,8 @@ import './env.js'
 import checkInRouter from './routes/checkIn.js'
 import chatRouter from './routes/chat.js'
 import careTeamQuestionsRouter from './routes/careTeamQuestions.js'
+import moodEntriesRouter from './routes/moodEntries.js'
+import journalEntriesRouter from './routes/journalEntries.js'
 
 const app = express()
 const PORT = process.env.PORT ?? 3001
@@ -13,6 +15,8 @@ app.use(express.json())
 app.use('/api/check-in', checkInRouter)
 app.use('/api/chat', chatRouter)
 app.use('/api/care-team-questions', careTeamQuestionsRouter)
+app.use('/api/mood-entries', moodEntriesRouter)
+app.use('/api/journal-entries', journalEntriesRouter)
 
 // ── Health check ──────────────────────────────────────────────────────────────
 app.get('/health', (_req, res) => {

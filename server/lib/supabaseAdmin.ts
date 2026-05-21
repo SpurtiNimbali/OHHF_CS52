@@ -14,10 +14,16 @@ function resolveSupabaseUrl(): string {
 }
 
 function resolveServiceRoleKey(): string {
-  const key = (process.env.SUPABASE_SERVICE_ROLE_KEY ?? '').trim()
+  const key = (
+    process.env.SUPABASE_SERVICE_ROLE_KEY ??
+    process.env.SUPABASE_SECRET_KEY ??
+    process.env.SUPABASE_KEY ??
+    process.env.VITE_SUPABASE_SECRET_KEY ??
+    ''
+  ).trim()
   if (!key) {
     throw new Error(
-      'Missing SUPABASE_SERVICE_ROLE_KEY in .env.local (Project Settings → API → service_role)',
+      'Missing Supabase service role key. Set SUPABASE_SERVICE_ROLE_KEY or SUPABASE_SECRET_KEY in .env (Project Settings → API → service_role).',
     )
   }
   return key

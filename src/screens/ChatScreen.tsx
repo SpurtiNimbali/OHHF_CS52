@@ -1,7 +1,9 @@
 import { useState, useCallback, useEffect, useRef, KeyboardEvent, ChangeEvent } from 'react'
 import type { CSSProperties } from 'react'
 import { motion, AnimatePresence } from 'motion/react'
-import { useNavigate } from 'react-router-dom'
+import { useLocation, useNavigate } from 'react-router-dom'
+import { isMoodCheckInChatState } from '../mood/moodCheckInNav'
+import { markMoodEntryIfChat } from '../lib/moodEntries'
 import ReactMarkdown from 'react-markdown'
 import type { Components } from 'react-markdown'
 import { MessageCircle, Heart, Shield, ArrowUp, ArrowLeft, ClipboardList, BookOpen, Users } from 'lucide-react'
@@ -791,6 +793,7 @@ function LoadingBubble() {
 
 export default function ChatScreen() {
   const navigate = useNavigate()
+  const location = useLocation()
   const boot = loadChatSession()
   const [messages, setMessages] = useState<Message[]>(() => boot.messages)
   const [isLoading, setIsLoading] = useState(false)
@@ -800,13 +803,37 @@ export default function ChatScreen() {
   const [selEmotion, setSelEmotion] = useState<string | null>(null)
   const [selUnder, setSelUnder] = useState<string | null>(null)
   const messagesRef = useRef<Message[]>(boot.messages)
+  const moodCheckInRef = useRef<{ moodEntryId: string | null; emotionCheckIn: string | null }>({
+    moodEntryId: null,
+    emotionCheckIn: null,
+  })
+  const moodChatMarkedRef = useRef(false)
+  const textareaRef = useRef<HTMLTextAreaElement>(null)
+  const bottomRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
     messagesRef.current = messages
   }, [messages])
 
-  const textareaRef = useRef<HTMLTextAreaElement>(null)
-  const bottomRef = useRef<HTMLDivElement>(null)
+  useEffect(() => {
+    const state = location.state
+    if (!isMoodCheckInChatState(state)) return
+    moodCheckInRef.current = {
+      moodEntryId: state.moodEntryId,
+      emotionCheckIn: state.moodId,
+    }
+    if (state.prefill.trim()) {
+      setValue(state.prefill.trim())
+      window.requestAnimationFrame(() => {
+        const el = textareaRef.current
+        if (!el) return
+        el.style.height = 'auto'
+        el.style.height = `${Math.min(el.scrollHeight, 160)}px`
+        el.focus()
+      })
+    }
+    navigate(location.pathname, { replace: true, state: null })
+  }, [location.pathname, location.state, navigate])
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' })
@@ -851,6 +878,12 @@ export default function ChatScreen() {
       if (textareaRef.current) textareaRef.current.style.height = 'auto'
       setIsLoading(true)
 
+      const moodEntryId = moodCheckInRef.current.moodEntryId
+      if (moodEntryId && !moodChatMarkedRef.current) {
+        moodChatMarkedRef.current = true
+        void markMoodEntryIfChat(moodEntryId)
+      }
+
       try {
         const payload = {
           message: text,
@@ -864,7 +897,7 @@ export default function ChatScreen() {
           sessionContext: {
             caregiverName: '',
             caregiverRole: '',
-            emotionCheckIn: null,
+            emotionCheckIn: moodCheckInRef.current.emotionCheckIn,
             lastActivity: null,
           },
         }
