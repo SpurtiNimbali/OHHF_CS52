@@ -8,7 +8,7 @@
 
 ## 1. MLHGuide Lite New
 
-**Source:** local_pdf_resources/mended_hearts_org__mended_little_heart_guide_lite/MLHGuide-Lite-New-1.pdf
+**Source:** https://mendedhearts.org/wp-content/uploads/2017/03/MLHGuide-Lite-New-1.pdf
 
 <!-- Page 1 -->
 

@@ -8,7 +8,7 @@
 
 ## 1. Microsoft Outlook - Memo Style
 
-**Source:** local_pdf_resources/mended_hearts_org__caregiver_support/Caregiver-Connections-Time-for-Caring-copy.pdf
+**Source:** https://mendedhearts.org/wp-content/uploads/2024/07/Caregiver-Connections-Time-for-Caring-copy.pdf
 
 <!-- Page 1 -->
 
@@ -97,7 +97,7 @@ Mended Hearts/Mended Little Hearts | 8150 N. Central Expwy., M2248 | Dallas | TX
 
 ## 2. Caregiver Depression Piece
 
-**Source:** local_pdf_resources/mended_hearts_org__caregiver_support/Caregiver-Depression-Piece.pdf
+**Source:** https://www.mendedhearts.org/Docs/Caregiver%20Depression%20Piece.pdf
 
 <!-- Page 1 -->
 
@@ -159,7 +159,7 @@ Mended Hearts®, Young Mended Hearts®, Mended Little Hearts® and the Heart-sha
 
 ## 3. Caregiving One-Pager
 
-**Source:** local_pdf_resources/mended_hearts_org__caregiver_support/Caregiving-One-Pager.pdf
+**Source:** https://mendedhearts.org/wp-content/uploads/2024/09/Caregiving-One-Pager.pdf
 
 <!-- Page 1 -->
 
@@ -251,7 +251,7 @@ medications
 
 ## 4. Caring for Yourself  - WH CHD
 
-**Source:** local_pdf_resources/mended_hearts_org__caregiver_support/Caring-for-Yourself-WH-CHD.pdf
+**Source:** https://mendedhearts.org/wp-content/uploads/2025/02/Caring-for-Yourself-WH-CHD.pdf
 
 <!-- Page 1 -->
 
@@ -305,7 +305,7 @@ of The Mended Hearts, Inc.© 2023-2024 The Mended Hearts, Inc. all rights reserv
 
 ## 5. MLH-Tips-for-Caregivers-1.docx
 
-**Source:** local_pdf_resources/mended_hearts_org__caregiver_support/MLH-Tips-for-Caregivers-1.docx.pdf
+**Source:** https://mendedhearts.org/education-and-resources/
 
 <!-- Page 1 -->
 
@@ -404,7 +404,7 @@ Mended Little Hearts® and the Heart-shaped logos are registered trademarks of T
 
 ## 6. Taking the Stress Out of Caregiving Mended Hearts
 
-**Source:** local_pdf_resources/mended_hearts_org__caregiver_support/Taking the Stress Out of Caregiving - Mended Hearts.pdf
+**Source:** https://mendedhearts.org/story/taking-the-stress-out-of-caregiving/
 
 <!-- Page 1 -->
 

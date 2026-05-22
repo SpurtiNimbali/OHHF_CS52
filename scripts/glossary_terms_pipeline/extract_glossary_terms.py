@@ -21,7 +21,7 @@ OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
 SOURCE_METADATA = {
     "childrens_heart_foundation_org__its_my_heart.md": {
         "source_name": "Children's Heart Foundation",
-        "source_url": "https://www.childrensheartfoundation.org/file_download/afc69f23-39fb-40e5-93f3-8e143dc3114a",
+        "source_url": "https://www.childrensheartfoundation.org/about-chds/resources.html",
     },
     "mended_hearts_org__mended_little_heartguide__local_pdfs.md": {
         "source_name": "Mended Little Hearts",

@@ -8,7 +8,7 @@
 
 ## 1. Feeding Issues for Babies with CHD
 
-**Source:** local_pdf_resources/mended_hearts_org__medical_navigation/Feeding-Issues-for-Babies-with-CHD.pdf
+**Source:** https://mendedhearts.org/wp-content/uploads/2026/03/Feeding-Issues-for-Babies-with-CHD.pdf
 
 <!-- Page 1 -->
 
@@ -765,7 +765,7 @@ www.mendedlittlehearts.org
 
 ## 2. Feeding Issues -WH CHD
 
-**Source:** local_pdf_resources/mended_hearts_org__medical_navigation/Feeding-Issues-WH-CHD-2026.pdf
+**Source:** https://mendedhearts.org/wp-content/uploads/2026/01/Feeding-Issues-WH-CHD-2026.pdf
 
 <!-- Page 1 -->
 
@@ -821,7 +821,7 @@ E m p o w e r C H D ™,  E m p o w e r C K D ™,  E m p o w e r H e a r t A t 
 
 ## 3. Neurodevelopmental Issues - WH CHD
 
-**Source:** local_pdf_resources/mended_hearts_org__medical_navigation/Neurodevelopmental-Issues-WH-CHD.pdf
+**Source:** https://mendedhearts.org/wp-content/uploads/2024/09/Neurodevelopmental-Issues-WH-CHD.pdf
 
 <!-- Page 1 -->
 
@@ -892,7 +892,7 @@ TM
 
 ## 4. Preparing for a doctor appointment - WH CHD
 
-**Source:** local_pdf_resources/mended_hearts_org__medical_navigation/Preparing-for-a-doctor-appointment-WH-CHD.pdf
+**Source:** https://mendedhearts.org/wp-content/uploads/2025/02/Preparing-for-a-doctor-appointment-WH-CHD.pdf
 
 <!-- Page 1 -->
 
@@ -963,7 +963,7 @@ TM
 
 ## 5. Transitioning from Hospital to Home -WH CHD
 
-**Source:** local_pdf_resources/mended_hearts_org__medical_navigation/Transitioning-from-Hospital-to-Home-WH-CHD.pdf
+**Source:** https://mendedhearts.org/wp-content/uploads/2025/07/Transitioning-from-Hospital-to-Home-WH-CHD.pdf
 
 <!-- Page 1 -->
 
