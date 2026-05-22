@@ -8,7 +8,7 @@
 
 ## 1. Neurodevelopmental Issues CHD
 
-**Source:** local_pdf_resources/mended_hearts_org__neurodevelopmental_issues_chd/Neurodevelopmental-Issues-CHD.pdf
+**Source:** https://mendedhearts.org/wp-content/uploads/2024/10/Neurodevelopmental-Issues-CHD-1.pdf
 
 <!-- Page 1 -->
 

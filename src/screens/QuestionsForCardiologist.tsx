@@ -1,7 +1,73 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { useSearchParams } from 'react-router-dom'
 import { motion, AnimatePresence } from 'motion/react'
 import { Bookmark, ChevronDown, Plus, Trash2 } from 'lucide-react'
+import { fetchCareTeamCorpusList } from '../lib/careTeamCorpusApi'
+import {
+  fetchLatestGeneratedQuestionsFromApi,
+} from '../lib/careTeamQuestionApi'
+import type { CareTeamIntakeAnswers } from '../lib/careTeamQuestionIntake'
 import { supabase, ensureAuthUserId, CardiologistQuestion, SavedQuestion } from '../lib/supabase'
+
+function generateMockQuestions(intake: CareTeamIntakeAnswers): GeneratedItem[] {
+  const provider = intake.providerTypes[0] ?? 'Cardiologist'
+  const visit = intake.visitTypes[0] ?? 'Cardiology Visit'
+  const target = intake.targetPerson ?? 'Caregiver'
+  const level = intake.knowledgeLevel ?? 'Beginner'
+
+  const isChild = target === 'Child'
+  const isBeginner = level === 'Beginner'
+  const isSurgery = visit.includes('Surgery') || provider === 'Surgeon'
+  const isEmergency = visit === 'Emergency Concern'
+  const isMentalHealth = provider === 'Mental Health Provider' || visit === 'Mental Health Support'
+  const them = isChild ? "my child's" : 'my'
+  const they = isChild ? 'my child' : 'me'
+  const we = isChild ? 'we' : 'I'
+
+  const pool: { text: string; category: string }[] = [
+    {
+      text: `What is the current status of ${them} condition and has anything changed since the last visit?`,
+      category: 'Diagnosis & Condition',
+    },
+    isBeginner
+      ? { text: `Can you explain ${them} diagnosis in plain language, without medical jargon?`, category: 'Diagnosis & Condition' }
+      : { text: `Are there any new research findings or treatment options ${we} should be aware of?`, category: 'Diagnosis & Condition' },
+    isSurgery
+      ? { text: `What are the risks and benefits of this surgery, and what happens if we delay?`, category: 'Surgery & Procedures' }
+      : { text: `What tests or imaging are planned for today, and when will we get results?`, category: 'Tests & Monitoring' },
+    isSurgery
+      ? { text: `What does recovery look like after the procedure — how long, and what restrictions apply?`, category: 'Surgery & Procedures' }
+      : { text: `How often should ${we} be scheduling follow-up visits going forward?`, category: 'Follow-up Care' },
+    {
+      text: `What warning signs or symptoms should prompt ${we} to call or go to the emergency room right away?`,
+      category: 'Safety & Emergency',
+    },
+    {
+      text: `Are there any activity restrictions — sports, school, travel — for ${they}?`,
+      category: 'Daily Life & Activity',
+    },
+    {
+      text: `What medications is ${they} currently on, and are there any side effects ${we} should watch for?`,
+      category: 'Medications',
+    },
+    isMentalHealth
+      ? { text: `What mental health resources or support groups do you recommend for ${isChild ? 'our family' : 'me'}?`, category: 'Mental Health & Support' }
+      : { text: `How does this condition affect long-term heart function, and what does the outlook look like?`, category: 'Long-term Outlook' },
+    {
+      text: `Are there lifestyle changes — diet, exercise, sleep — that could improve ${them} heart health?`,
+      category: 'Daily Life & Activity',
+    },
+    isEmergency
+      ? { text: `When is this symptom considered an emergency, and what is the protocol for getting immediate care?`, category: 'Safety & Emergency' }
+      : { text: `What should ${we} do to prepare for the next appointment and who should ${we} contact with questions?`, category: 'Follow-up Care' },
+  ]
+
+  return pool.slice(0, 10).map((q, i) => ({
+    tempId: `mock-${i + 1}`,
+    text: q.text,
+    filter: (q.category as VisitFilter | 'General') || 'General',
+  }))
+}
 
 const NAVY = '#192b3f'
 const LIGHT_BLUE = '#c6d9e5'
@@ -10,6 +76,38 @@ const DARK_GREEN = '#577568'
 const MUTED_GREEN = '#acb7a8'
 
 const META_STORAGE_PREFIX = 'cardea-saved-q-meta'
+const LOCAL_SAVED_PREFIX = 'cardea-saved-questions'
+
+function localSavedKey(userId: string | null): string {
+  return userId ? `${LOCAL_SAVED_PREFIX}:${userId}` : `${LOCAL_SAVED_PREFIX}:anon`
+}
+
+function loadLocalSaved(userId: string | null): SavedQuestion[] {
+  try {
+    const raw = localStorage.getItem(localSavedKey(userId))
+    if (!raw) return []
+    const parsed = JSON.parse(raw)
+    return Array.isArray(parsed) ? (parsed as SavedQuestion[]) : []
+  } catch {
+    return []
+  }
+}
+
+function persistLocalSaved(userId: string | null, rows: SavedQuestion[]) {
+  try {
+    localStorage.setItem(localSavedKey(userId), JSON.stringify(rows))
+  } catch { /* ignore */ }
+}
+
+function makeLocalSavedQuestion(text: string, userId: string | null, source: SavedQuestion['source']): SavedQuestion {
+  return {
+    id: `local-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
+    user_id: userId ?? 'anon',
+    question_id: null,
+    custom_text: text,
+    source,
+  } as SavedQuestion
+}
 
 /** Visit context chips for generation (templates + filtering). Custom question tags use bank categories instead. */
 const VISIT_CONTEXT_FILTERS = [
@@ -31,6 +129,7 @@ type SavedQuestionMeta = {
   source: 'generated' | 'custom' | 'bank'
   contextTags: string[]
   notes: string
+  generatedSourceId?: string
 }
 
 function metaStorageKey(userId: string | null): string {
@@ -49,7 +148,14 @@ function normalizeStoredMeta(raw: unknown): Record<string, SavedQuestionMeta> {
     const contextTags = Array.isArray(e.contextTags)
       ? e.contextTags.filter((t): t is string => typeof t === 'string')
       : []
-    out[id] = { source: source as SavedQuestionMeta['source'], contextTags, notes }
+    const generatedSourceId =
+      typeof e.generatedSourceId === 'string' ? e.generatedSourceId : undefined
+    out[id] = {
+      source: source as SavedQuestionMeta['source'],
+      contextTags,
+      notes,
+      ...(generatedSourceId ? { generatedSourceId } : {}),
+    }
   }
   return out
 }
@@ -255,6 +361,7 @@ function getSavedLabel(row: SavedQuestion, bank: CardiologistQuestion[]): string
 }
 
 export default function QuestionsForCardiologist() {
+  const [, setSearchParams] = useSearchParams()
   const [questions, setQuestions] = useState<CardiologistQuestion[]>([])
   const [saved, setSaved] = useState<SavedQuestion[]>([])
   const [userId, setUserId] = useState<string | null>(null)
@@ -266,7 +373,9 @@ export default function QuestionsForCardiologist() {
   const [selectedFilters, setSelectedFilters] = useState<Set<VisitFilter>>(new Set())
   const [generated, setGenerated] = useState<GeneratedItem[]>([])
   const [generating, setGenerating] = useState(false)
+  const [savingGeneratedId, setSavingGeneratedId] = useState<string | null>(null)
 
+  const [activeTab, setActiveTab] = useState<'suggested' | 'saved'>('suggested')
   const [customLine, setCustomLine] = useState('')
   const [adding, setAdding] = useState(false)
   const [showCustomForm, setShowCustomForm] = useState(false)
@@ -284,6 +393,13 @@ export default function QuestionsForCardiologist() {
   const customInputRef = useRef<HTMLInputElement>(null)
   const [expandedSavedId, setExpandedSavedId] = useState<string | null>(null)
   const [savedMeta, setSavedMeta] = useState<Record<string, SavedQuestionMeta>>({})
+  const savedGeneratedIds = useMemo(() => {
+    const ids = new Set<string>()
+    for (const meta of Object.values(savedMeta)) {
+      if (meta.generatedSourceId) ids.add(meta.generatedSourceId)
+    }
+    return ids
+  }, [savedMeta])
 
   useEffect(() => {
     let cancelled = false
@@ -339,44 +455,57 @@ export default function QuestionsForCardiologist() {
     setLoading(true)
     setError(null)
     try {
-      const questionsQuery = supabase
-        .from('cardiologist_questions')
-        .select('id, category, question_text')
-        .order('category', { ascending: true })
-
-      const savedQuery = uid
-        ? supabase.from('saved_questions').select('*').eq('user_id', uid)
-        : Promise.resolve({ data: [] as SavedQuestion[], error: null })
-
-      const [{ data: rows, error: qError }, { data: savedRows, error: sError }] = await Promise.all([
-        questionsQuery,
-        savedQuery,
+      const [corpusResult] = await Promise.all([
+        fetchCareTeamCorpusList().catch(() => ({ questions: [], categories: [] as string[] })),
+        uid
+          ? fetchLatestGeneratedQuestionsFromApi(uid).catch(() => ({
+              generationId: null,
+              expiresAt: null,
+              questions: [],
+            }))
+          : Promise.resolve({ generationId: null, expiresAt: null, questions: [] }),
       ])
 
-      if (qError) {
-        setQuestions([])
-        setError(qError.message)
+      setQuestions(
+        (corpusResult.questions ?? []).map((q) => ({
+          id: q.slug,
+          question_text: q.question,
+          category: q.question_category,
+        })),
+      )
+
+      if (uid) {
+        const { data: savedRows, error: sError } = await supabase
+          .from('saved_questions')
+          .select('*')
+          .eq('user_id', uid)
+        if (sError) {
+          setSaved(loadLocalSaved(uid))
+        } else {
+          const rows = (savedRows as SavedQuestion[]) ?? []
+          setSaved(rows)
+          // Seed savedMeta from the DB source column so color coding works
+          // across devices/sessions without relying solely on localStorage.
+          setSavedMeta((prev) => {
+            const merged = { ...prev }
+            for (const row of rows) {
+              if (row.source && !merged[row.id]) {
+                merged[row.id] = {
+                  source: row.source,
+                  contextTags: [],
+                  notes: '',
+                }
+              }
+            }
+            return merged
+          })
+        }
       } else {
-        setQuestions((rows as CardiologistQuestion[]) ?? [])
-      }
-
-      if (!qError && sError) {
-        setError((prev) => prev ?? sError.message)
-      }
-
-      if (savedRows) {
-        setSaved(savedRows as SavedQuestion[])
-      } else if (!uid) {
-        setSaved([])
-      }
-
-      if (!uid && !qError) {
-        setError((prev) => prev ?? 'Sign in to save questions for your account.')
+        setSaved(loadLocalSaved(null))
       }
     } catch (e) {
-      setQuestions([])
-      setSaved([])
-      setError(e instanceof Error ? e.message : 'Could not load questions.')
+      setSaved(loadLocalSaved(uid))
+      setError(e instanceof Error ? e.message : 'Could not load saved questions.')
     } finally {
       setLoading(false)
     }
@@ -405,79 +534,108 @@ export default function QuestionsForCardiologist() {
     })
   }
 
-  const runGenerate = () => {
+  const runGenerate = async () => {
+    setError(null)
     setGenerating(true)
-    window.setTimeout(() => {
-      const list = generateSuggestions(visitContext, selectedFilters, questions)
-      setGenerated(list)
-      setGenerating(false)
-      if (list.length > 0) {
+    try {
+      await new Promise((r) => setTimeout(r, 600))
+      const items = generateSuggestions(visitContext, selectedFilters, questions)
+      setGenerated(items)
+      if (items.length > 0) {
+        setActiveTab('suggested')
         window.setTimeout(() => {
-          document.getElementById('suggested-questions')?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+          document.getElementById('questions-panel')?.scrollIntoView({ behavior: 'smooth', block: 'start' })
         }, 50)
       }
-    }, 380)
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Could not generate questions.')
+    } finally {
+      setGenerating(false)
+    }
   }
 
-  async function saveGeneratedLine(text: string, filter: VisitFilter | 'General') {
-    if (!userId) {
-      setError('Sign in to save questions for your account.')
-      return
+  async function saveGeneratedItem(item: GeneratedItem) {
+    const text = item.text.trim()
+    if (!text || savingGeneratedId) return
+
+    setSavingGeneratedId(item.tempId)
+    setError(null)
+
+    let s: SavedQuestion | null = null
+
+    if (userId) {
+      const row = { user_id: userId, question_id: null, custom_text: text, source: 'generated' as const }
+      const { data, error: insErr } = await supabase.from('saved_questions').insert(row).select().single()
+      if (!insErr && data) {
+        s = data as SavedQuestion
+      }
     }
-    const row = { user_id: userId, question_id: null, custom_text: text.trim() }
-    const { data, error: insErr } = await supabase.from('saved_questions').insert(row).select().single()
-    if (insErr) {
-      setError(insErr.message)
-      return
-    }
-    if (data) {
-      const s = data as SavedQuestion
-      setSaved((prev) => [...prev, s])
-      setSavedMeta((prev) => {
-        const next = {
-          ...prev,
-          [s.id]: {
-            source: 'generated' as const,
-            contextTags: [filter],
-            notes: '',
-          },
-        }
-        persistAllMeta(userId, next)
+
+    if (!s) {
+      s = makeLocalSavedQuestion(text, userId, 'generated')
+      setSaved((prev) => {
+        const next = [...prev, s!]
+        persistLocalSaved(userId, next)
         return next
       })
+    } else {
+      setSaved((prev) => [...prev, s!])
     }
+
+    setSavingGeneratedId(null)
+    setSavedMeta((prev) => {
+      const next = {
+        ...prev,
+        [s!.id]: {
+          source: 'generated' as const,
+          contextTags: [item.filter],
+          notes: '',
+          generatedSourceId: item.tempId,
+        },
+      }
+      persistAllMeta(userId, next)
+      return next
+    })
   }
 
   async function saveCustomQuestion() {
-    if (!userId) {
-      setError('Sign in to save questions for your account.')
-      return
-    }
     if (!customLine.trim()) return
     setAdding(true)
-    const row = { user_id: userId, question_id: null, custom_text: customLine.trim() }
-    const { data, error: insErr } = await supabase.from('saved_questions').insert(row).select().single()
-    if (insErr) {
-      setError(insErr.message)
-      setAdding(false)
-      return
+
+    let s: SavedQuestion | null = null
+
+    if (userId) {
+      const row = { user_id: userId, question_id: null, custom_text: customLine.trim(), source: 'custom' as const }
+      const { data, error: insErr } = await supabase.from('saved_questions').insert(row).select().single()
+      if (!insErr && data) {
+        s = data as SavedQuestion
+      }
     }
-    if (data) {
-      const s = data as SavedQuestion
-      setSaved((prev) => [...prev, s])
-      setSavedMeta((prev) => {
-        const next = {
-          ...prev,
-          [s.id]: {
-            source: 'custom' as const,
-            contextTags: [...customQuestionTags],
-            notes: '',
-          },
-        }
-        persistAllMeta(userId, next)
+
+    if (!s) {
+      s = makeLocalSavedQuestion(customLine.trim(), userId, 'custom')
+      setSaved((prev) => {
+        const next = [...prev, s!]
+        persistLocalSaved(userId, next)
         return next
       })
+    } else {
+      setSaved((prev) => [...prev, s!])
     }
+
+    setSavedMeta((prev) => {
+      const next = {
+        ...prev,
+        [s!.id]: {
+          source: 'custom' as const,
+          contextTags: [...customQuestionTags],
+          notes: '',
+        },
+      }
+      persistAllMeta(userId, next)
+      return next
+    })
+
     setCustomLine('')
     setCustomQuestionTags(new Set())
     setShowCustomForm(false)
@@ -485,10 +643,16 @@ export default function QuestionsForCardiologist() {
   }
 
   async function removeQuestion(row: SavedQuestion) {
-    const { error: delErr } = await supabase.from('saved_questions').delete().eq('id', row.id)
-    if (delErr) return
+    const linkedGeneratedId = savedMeta[row.id]?.generatedSourceId
+    if (userId && !row.id.startsWith('local-')) {
+      await supabase.from('saved_questions').delete().eq('id', row.id)
+    }
 
-    setSaved((prev) => prev.filter((r) => r.id !== row.id))
+    setSaved((prev) => {
+      const next = prev.filter((r) => r.id !== row.id)
+      persistLocalSaved(userId, next)
+      return next
+    })
     setSavedMeta((prev) => {
       const next = { ...prev }
       delete next[row.id]
@@ -496,6 +660,10 @@ export default function QuestionsForCardiologist() {
       return next
     })
     if (expandedSavedId === row.id) setExpandedSavedId(null)
+  }
+
+  async function saveGeneratedLine(text: string, filter: VisitFilter | 'General') {
+    await saveGeneratedItem({ tempId: `line-${Date.now()}`, text, filter })
   }
 
   const savedBadge = useCallback(
@@ -588,15 +756,26 @@ export default function QuestionsForCardiologist() {
             {generating ? 'Generating…' : 'Generate Questions'}
           </button>
 
-          <button
-            type="button"
-            onClick={() => setShowCustomForm((open) => !open)}
-            className="flex w-full items-center justify-center gap-2 rounded-xl border-2 bg-white/90 py-3 text-sm font-semibold shadow-sm transition-colors hover:bg-white sm:justify-start sm:px-4"
-            style={{ borderColor: DARK_GREEN, color: DARK_GREEN }}
-          >
-            <Plus className="h-4 w-4 shrink-0" strokeWidth={2.5} />
-            {showCustomForm ? 'Close — add your own question' : 'Add your own question'}
-          </button>
+          <div className="grid grid-cols-2 gap-3 border-t pt-6" style={{ borderColor: 'rgba(25, 43, 63, 0.1)' }}>
+            <button
+              type="button"
+              onClick={() => setSearchParams({ view: 'standard-questions' })}
+              className="flex w-full items-center justify-center rounded-xl border-2 bg-white px-3 py-4 text-sm font-semibold shadow-sm transition-colors hover:bg-white/95 sm:text-base"
+              style={{ borderColor: NAVY, color: NAVY }}
+            >
+              View standard questions
+            </button>
+
+            <button
+              type="button"
+              onClick={() => setShowCustomForm((open) => !open)}
+              className="flex w-full items-center justify-center gap-1.5 rounded-xl border-2 bg-white px-3 py-4 text-sm font-semibold shadow-sm transition-colors hover:bg-white/95 sm:text-base"
+              style={{ borderColor: DARK_GREEN, color: DARK_GREEN }}
+            >
+              <Plus className="h-4 w-4 shrink-0" strokeWidth={2.5} />
+              {showCustomForm ? 'Close' : 'Add your own'}
+            </button>
+          </div>
 
           <AnimatePresence initial={false}>
             {showCustomForm && (
@@ -717,101 +896,229 @@ export default function QuestionsForCardiologist() {
         </div>
       )}
 
-      {/* Saved */}
-      <div className="px-3 py-8 sm:px-4">
-        <div className="mb-4 flex items-center gap-2">
-          <Bookmark className="h-5 w-5 shrink-0" style={{ color: DARK_GREEN }} />
-          <h2 className="text-lg font-semibold text-[#192b3f]">Saved questions ({saved.length})</h2>
+      {/* Tab bar + panel */}
+      <div id="questions-panel" className="border-t pt-6" style={{ borderColor: 'rgba(25, 43, 63, 0.08)' }}>
+        {/* Tabs — pill style */}
+        <div className="px-3 sm:px-4">
+          <div
+            className="mx-auto flex max-w-3xl gap-2 rounded-xl p-1.5"
+            style={{ background: 'rgba(25,43,63,0.06)' }}
+          >
+            <button
+              type="button"
+              onClick={() => setActiveTab('suggested')}
+              className="flex flex-1 items-center justify-center gap-2 rounded-lg px-4 py-2.5 text-sm font-semibold transition-all"
+              style={
+                activeTab === 'suggested'
+                  ? { background: DARK_GREEN, color: '#ffffff', boxShadow: '0 1px 6px rgba(87,117,104,0.35)' }
+                  : { color: MUTED_GREEN }
+              }
+            >
+              Suggested
+              {generated.length > 0 && (
+                <span
+                  className="rounded-full px-2 py-0.5 text-xs font-semibold"
+                  style={
+                    activeTab === 'suggested'
+                      ? { background: 'rgba(255,255,255,0.25)', color: '#fff' }
+                      : { background: 'rgba(198,217,229,0.7)', color: NAVY }
+                  }
+                >
+                  {generated.length}
+                </span>
+              )}
+            </button>
+            <button
+              type="button"
+              onClick={() => setActiveTab('saved')}
+              className="flex flex-1 items-center justify-center gap-2 rounded-lg px-4 py-2.5 text-sm font-semibold transition-all"
+              style={
+                activeTab === 'saved'
+                  ? { background: DARK_GREEN, color: '#ffffff', boxShadow: '0 1px 6px rgba(87,117,104,0.35)' }
+                  : { color: MUTED_GREEN }
+              }
+            >
+              <Bookmark className="h-4 w-4 shrink-0" />
+              Saved
+              {saved.length > 0 && (
+                <span
+                  className="rounded-full px-2 py-0.5 text-xs font-semibold"
+                  style={
+                    activeTab === 'saved'
+                      ? { background: 'rgba(255,255,255,0.25)', color: '#fff' }
+                      : { background: 'rgba(172,183,168,0.55)', color: NAVY }
+                  }
+                >
+                  {saved.length}
+                </span>
+              )}
+            </button>
+          </div>
         </div>
 
-        {saved.length === 0 ? (
-          <div
-            className="rounded-xl border border-dashed bg-white/70 py-12 text-center"
-            style={{ borderColor: LIGHT_BLUE }}
-          >
-            <p className="text-sm" style={{ color: MUTED_GREEN }}>
-              No saved questions yet. Generate suggestions or add your own below.
-            </p>
-          </div>
-        ) : (
-          <div className="space-y-3">
-            <AnimatePresence>
-              {saved.map((item, index) => {
-                const label = getSavedLabel(item, questions)
-                const badge = savedBadge(item)
-                const open = expandedSavedId === item.id
-                const notes = savedMeta[item.id]?.notes ?? ''
-
-                return (
-                  <motion.div
-                    key={item.id}
-                    layout
-                    initial={{ opacity: 0, y: 14 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0, height: 0 }}
-                    transition={{ delay: index * 0.03 }}
-                    className="overflow-hidden rounded-xl border bg-white"
-                    style={{ borderColor: 'rgba(25, 43, 63, 0.1)' }}
-                  >
-                    <div className="flex items-start gap-2 px-3 py-3 sm:px-4 sm:py-4">
-                      <button
-                        type="button"
-                        onClick={() => setExpandedSavedId(open ? null : item.id)}
-                        className="flex min-w-0 flex-1 items-start gap-2 text-left"
-                      >
-                        <ChevronDown
-                          className={`mt-0.5 h-5 w-5 shrink-0 transition-transform ${open ? 'rotate-180' : ''}`}
-                          style={{ color: MUTED_GREEN }}
-                        />
-                        <div className="min-w-0 flex-1">
-                          <p className="text-sm font-medium leading-snug text-[#192b3f] sm:text-base">{label}</p>
+        {/* Panel content */}
+        <div className="px-3 py-6 sm:px-4" style={{ background: ALMOST_WHITE, minHeight: '320px' }}>
+          {activeTab === 'suggested' ? (
+            generated.length === 0 ? (
+              <div
+                className="rounded-xl border border-dashed bg-white/70 py-16 text-center"
+                style={{ borderColor: LIGHT_BLUE }}
+              >
+                <p className="text-sm" style={{ color: MUTED_GREEN }}>
+                  Fill in the visit details above and tap <strong>Generate Questions</strong> to see suggestions.
+                </p>
+              </div>
+            ) : (
+              <ul className="mx-auto max-w-3xl space-y-3">
+                {generated.map((g) => {
+                  const alreadySaved = savedGeneratedIds.has(g.tempId)
+                  const isSaving = savingGeneratedId === g.tempId
+                  return (
+                    <li
+                      key={g.tempId}
+                      className="flex items-start gap-3 rounded-xl border p-4"
+                      style={{ borderColor: '#a8c8dc', background: 'rgba(198,217,229,0.22)' }}
+                    >
+                      <div className="min-w-0 flex-1">
+                        <p className="text-sm font-medium leading-snug text-[#192b3f]">{g.text}</p>
+                        <div className="mt-2 flex flex-wrap items-center gap-2">
                           <span
-                            className="mt-2 inline-block rounded-full px-2.5 py-0.5 text-xs font-semibold"
-                            style={{ background: 'rgba(198, 217, 229, 0.45)', color: NAVY }}
+                            className="rounded-full px-2.5 py-0.5 text-xs font-semibold"
+                            style={{ background: '#c6d9e5', color: NAVY }}
                           >
-                            {badge.label}
+                            {g.filter}
                           </span>
+                          <span className="rounded-full px-2 py-0.5 text-xs font-medium" style={{ background: 'rgba(198,217,229,0.5)', color: '#2a5070' }}>AI suggested</span>
                         </div>
-                      </button>
+                      </div>
                       <button
                         type="button"
-                        onClick={() => removeQuestion(item)}
-                        className="shrink-0 rounded-lg p-2 text-[#acb7a8] transition-colors hover:bg-red-50 hover:text-red-600"
-                        aria-label="Remove question"
+                        disabled={alreadySaved || isSaving || Boolean(savingGeneratedId)}
+                        onClick={(e) => { e.stopPropagation(); void saveGeneratedItem(g) }}
+                        className="shrink-0 rounded-lg border-2 px-3 py-1.5 text-xs font-semibold transition-colors disabled:opacity-50 sm:px-4 sm:py-2 sm:text-sm"
+                        style={{ borderColor: DARK_GREEN, color: DARK_GREEN }}
                       >
-                        <Trash2 className="h-5 w-5" strokeWidth={2} />
+                        {alreadySaved ? 'Saved' : isSaving ? 'Saving…' : '+ Save'}
                       </button>
-                    </div>
+                    </li>
+                  )
+                })}
+              </ul>
+            )
+          ) : (
+            saved.length === 0 ? (
+              <div
+                className="rounded-xl border border-dashed bg-white/70 py-16 text-center"
+                style={{ borderColor: LIGHT_BLUE }}
+              >
+                <p className="text-sm" style={{ color: MUTED_GREEN }}>
+                  No saved questions yet. Generate suggestions or add your own above.
+                </p>
+              </div>
+            ) : (
+              <div className="mx-auto max-w-3xl space-y-3">
+                <AnimatePresence>
+                  {saved.map((item, index) => {
+                    const label = getSavedLabel(item)
+                    const badge = savedBadge(item)
+                    const open = expandedSavedId === item.id
+                    const notes = savedMeta[item.id]?.notes ?? ''
+                    const source = savedMeta[item.id]?.source
 
-                    <AnimatePresence initial={false}>
-                      {open && (
-                        <motion.div
-                          initial={{ height: 0, opacity: 0 }}
-                          animate={{ height: 'auto', opacity: 1 }}
-                          exit={{ height: 0, opacity: 0 }}
-                          className="border-t"
-                          style={{ borderColor: 'rgba(25, 43, 63, 0.08)' }}
-                        >
-                          <div className="bg-[#f5f9f9]/90 px-3 py-4 sm:px-4">
-                            <label className="mb-1 block text-xs font-semibold text-[#192b3f]">Notes</label>
-                            <textarea
-                              value={notes}
-                              onChange={(e) => patchMeta(item.id, { notes: e.target.value })}
-                              placeholder="Doctor&apos;s answer, follow-up thoughts…"
-                              rows={3}
-                              className="w-full resize-y rounded-lg border px-3 py-2 text-sm text-[#192b3f] outline-none"
-                              style={{ borderColor: LIGHT_BLUE }}
-                            />
+                    const cardColors =
+                      source === 'generated'
+                        ? { border: '#a8c8dc', bg: 'rgba(198,217,229,0.22)', badgeBg: '#c6d9e5', badgeText: NAVY, sourceLabel: 'AI suggested', sourceBg: 'rgba(198,217,229,0.5)', sourceText: '#2a5070' }
+                        : source === 'custom'
+                        ? { border: 'rgba(87,117,104,0.5)', bg: 'rgba(87,117,104,0.08)', badgeBg: 'rgba(87,117,104,0.18)', badgeText: DARK_GREEN, sourceLabel: 'Self-written', sourceBg: 'rgba(87,117,104,0.12)', sourceText: DARK_GREEN }
+                        : { border: 'rgba(25,43,63,0.18)', bg: '#f9faf8', badgeBg: 'rgba(25,43,63,0.07)', badgeText: NAVY, sourceLabel: 'Standard', sourceBg: 'rgba(25,43,63,0.05)', sourceText: MUTED_GREEN }
+
+                    return (
+                      <motion.div
+                        key={item.id}
+                        initial={{ opacity: 0, y: 14 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0, height: 0 }}
+                        transition={{ delay: index * 0.03 }}
+                        className="overflow-hidden rounded-xl border"
+                        style={{ borderColor: cardColors.border, background: cardColors.bg }}
+                      >
+                        <div className="flex items-start gap-3 p-4">
+                          <button
+                            type="button"
+                            onClick={() => setExpandedSavedId(open ? null : item.id)}
+                            className="min-w-0 flex-1 text-left"
+                          >
+                            <p className="text-sm font-medium leading-snug text-[#192b3f]">{label}</p>
+                            <div className="mt-2 flex flex-wrap items-center gap-2">
+                              <span
+                                className="rounded-full px-2.5 py-0.5 text-xs font-semibold"
+                                style={{ background: cardColors.badgeBg, color: cardColors.badgeText }}
+                              >
+                                {badge.label}
+                              </span>
+                              <span
+                                className="rounded-full px-2 py-0.5 text-xs font-medium"
+                                style={{ background: cardColors.sourceBg, color: cardColors.sourceText }}
+                              >
+                                {cardColors.sourceLabel}
+                              </span>
+                            </div>
+                          </button>
+                          <div className="flex shrink-0 items-center gap-1">
+                            <button
+                              type="button"
+                              onClick={() => setExpandedSavedId(open ? null : item.id)}
+                              className="rounded-lg p-1.5 transition-colors hover:bg-black/5"
+                              aria-label="Add notes"
+                            >
+                              <ChevronDown
+                                className={`h-4 w-4 transition-transform ${open ? 'rotate-180' : ''}`}
+                                style={{ color: MUTED_GREEN }}
+                              />
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => removeQuestion(item)}
+                              className="rounded-lg p-1.5 transition-colors hover:bg-red-50 hover:text-red-600"
+                              style={{ color: MUTED_GREEN }}
+                              aria-label="Remove question"
+                            >
+                              <Trash2 className="h-4 w-4" strokeWidth={2} />
+                            </button>
                           </div>
-                        </motion.div>
-                      )}
-                    </AnimatePresence>
-                  </motion.div>
-                )
-              })}
-            </AnimatePresence>
-          </div>
-        )}
+                        </div>
+
+                        <AnimatePresence initial={false}>
+                          {open && (
+                            <motion.div
+                              initial={{ height: 0, opacity: 0 }}
+                              animate={{ height: 'auto', opacity: 1 }}
+                              exit={{ height: 0, opacity: 0 }}
+                              className="border-t"
+                              style={{ borderColor: 'rgba(25,43,63,0.08)' }}
+                            >
+                              <div className="bg-[#f5f9f9]/90 px-4 py-3">
+                                <label className="mb-1 block text-xs font-semibold text-[#192b3f]">Notes</label>
+                                <textarea
+                                  value={notes}
+                                  onChange={(e) => patchMeta(item.id, { notes: e.target.value })}
+                                  placeholder="Doctor's answer, follow-up thoughts…"
+                                  rows={3}
+                                  className="w-full resize-y rounded-lg border px-3 py-2 text-sm text-[#192b3f] outline-none"
+                                  style={{ borderColor: LIGHT_BLUE }}
+                                />
+                              </div>
+                            </motion.div>
+                          )}
+                        </AnimatePresence>
+                      </motion.div>
+                    )
+                  })}
+                </AnimatePresence>
+              </div>
+            )
+          )}
+        </div>
       </div>
 
       {/* Generated */}

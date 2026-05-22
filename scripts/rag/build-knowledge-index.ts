@@ -1,12 +1,12 @@
 /**
  * Build `data/knowledge/index.json` from all JSON chunk files under each configured
- * corpus tree (recursive). Requires OPENAI_API_KEY (embeddings). Run: npm run rag:build
+ * corpus tree (recursive). Requires OPENROUTER_API_KEY or OPENAI_API_KEY (embeddings). Run: npm run rag:build
  */
 import 'dotenv/config'
 import fs from 'node:fs/promises'
 import path from 'node:path'
 import { config as loadEnv } from 'dotenv'
-import OpenAI from 'openai'
+import { getLlmClient, getLlmApiKey, resolveLlmModel } from '../../server/lib/llmClient.js'
 import type { KnowledgeChunk, KnowledgeIndexFile, KnowledgeItem } from '../../server/lib/knowledge/types.js'
 import {
   guessSourceUrlFromText,
@@ -74,18 +74,20 @@ function toChunk(raw: RawChunk): KnowledgeChunk | null {
 }
 
 async function embedBatches(chunks: KnowledgeChunk[]): Promise<number[][]> {
-  const key = (process.env.OPENAI_API_KEY ?? '').trim()
-  if (!key) {
-    console.error('Set OPENAI_API_KEY in the environment.')
+  try {
+    getLlmApiKey()
+  } catch {
+    console.error('Set OPENROUTER_API_KEY (or OPENAI_API_KEY) in the environment.')
     process.exit(1)
   }
-  const client = new OpenAI({ apiKey: key })
+  const client = getLlmClient()
+  const embedModel = resolveLlmModel(EMBED_MODEL)
   const out: number[][] = []
   for (let i = 0; i < chunks.length; i += BATCH) {
     const slice = chunks.slice(i, i + BATCH)
     const input = slice.map((c) => c.text.slice(0, 30_000))
     process.stdout.write(`Embedding ${i + 1}–${i + slice.length} / ${chunks.length}…\n`)
-    const res = await client.embeddings.create({ model: EMBED_MODEL, input })
+    const res = await client.embeddings.create({ model: embedModel, input })
     const batch = res.data
     batch.sort((a, b) => a.index - b.index)
     for (const row of batch) {

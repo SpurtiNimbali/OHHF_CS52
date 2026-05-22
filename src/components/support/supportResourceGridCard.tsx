@@ -16,7 +16,12 @@ function GridCardInterior({
   categoryLabel,
   description,
   locationLine,
-}: GridCardInteriorProps) {
+}: {
+  name: string
+  categoryLabel: string
+  description: string | null
+  locationLine: string
+}) {
   return (
     <>
       <div

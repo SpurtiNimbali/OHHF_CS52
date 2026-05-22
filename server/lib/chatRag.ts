@@ -1,5 +1,5 @@
-import OpenAI from 'openai'
 import type { ChatCompletionMessageParam } from 'openai/resources/chat/completions.js'
+import { getLlmClient, resolveLlmModel } from './llmClient.js'
 import {
   buildFollowupUserPrompt,
   buildKnowledgeContextBlock,
@@ -8,6 +8,7 @@ import {
 import {
   buildClassifierUser,
   buildCompanionSystem,
+  buildHybridUnifiedSystem,
   buildInformationalRagSystem,
   buildWelcomeOpenerSystem,
   buildWelcomeOpenerUser,
@@ -15,6 +16,7 @@ import {
   type ConversationStage as PromptConversationStage,
   type SessionContextPrompt,
 } from '../prompts/companionPrompts.js'
+import { detectCrisisKeywords } from '../../src/lib/crisisKeywords.js'
 import { loadEmotionMap, safeDetectedEmotion, splitUnderneathIntoChipOptions } from './emotionMapLoader.js'
 import { loadKnowledgeIndex, getKnowledgeLoadError } from './knowledge/loadIndex.js'
 import { embedQueryToScores } from './knowledge/retrieve.js'
@@ -98,6 +100,309 @@ function clip(s: string, n: number): string {
   return `${t.slice(0, n)}…`
 }
 
+const HYBRID_EMOTION_MAX_WORDS = 70
+const HYBRID_INFO_MAX_WORDS = 100
+/** Standalone informational RAG (non-hybrid) word cap. */
+const INFO_RAG_MAX_WORDS = 100
+
+/** Procedure/fact wording that belongs in the informational paragraph, not emotional. */
+const HYBRID_EMOTIONAL_FACTUAL_RE =
+  /\b(after (the )?surgery|recovery room|intensive care unit|\bicu\b|breathing tube|tubes and monitors|anesthesiologist|operating room|will be taken to|monitoring and recovery|medical team will|may have some tubes|hypoplastic left heart|\bhlhs\b|congenital heart defect|left side of the heart|syndrome is a|is a complex|underdeveloped)\b/i
+
+/** User-message restatement at the start of the informational paragraph. */
+const HYBRID_INFO_RESTATE_RE =
+  /^(you are|you're|i am|i'm)\b|need to know what happens|terrified about tomorrow|want to know what happens/i
+
+/** Stock validation / mirror lines to strip from companion emotional replies. */
+const COMPANION_TEMPLATE_SENTENCE_RE =
+  /\b(completely understandable|completely valid|that kind of|it's a lot to handle|it is a lot to handle|it's tough to be in this space|incredibly challenging|someone you love so deeply|you're doing your best|amplify your feelings)\b/i
+
+/** Generic prep-talk openers that skip emotional acknowledgment (common in HYBRID para 1). */
+const COMPANION_COLD_EMOTIONAL_RE =
+  /\b(having more information can help|being informed can help|more information can help you feel|feel more prepared for the discussion|help you feel more prepared|can help you feel more prepared|being prepared can help|learning more before the appointment can help)\b/i
+
+const COMPANION_RESTATE_OPENER_RE =
+  /^(you're feeling|you are feeling|you're scared|you're stressed|you're nervous|you're running|you are scared|you are stressed)/i
+
+const INLINE_CITATION_RE = /\[(\d+)\]/g
+
+/** Protect [1]-style markers from sentence-splitting regexes during polish. */
+function shieldInlineCitations(text: string): { shielded: string; markers: string[] } {
+  const markers: string[] = []
+  const shielded = text.replace(INLINE_CITATION_RE, (m) => {
+    const idx = markers.push(m) - 1
+    return `\uE000CIT${idx}\uE001`
+  })
+  return { shielded, markers }
+}
+
+function unshieldInlineCitations(text: string, markers: string[]): string {
+  if (!markers.length) return text
+  return text.replace(/\uE000CIT(\d+)\uE001/g, (_, idx) => markers[Number(idx)] ?? _)
+}
+
+/** Remove questions and UI-pointer sentences from hybrid body paragraphs. */
+function polishHybridParagraph(text: string): string {
+  let t = text.trim()
+  const mi = t.indexOf('[MISSING INFORMATION')
+  if (mi !== -1) t = t.slice(0, mi).trimEnd()
+
+  const { shielded, markers } = shieldInlineCitations(t)
+  t = shielded
+
+  const parts = t.match(/[^.!?\n]+[.!?]?/g) ?? [t]
+  const kept: string[] = []
+  for (const part of parts) {
+    const s = part.trim()
+    if (!s) continue
+    if (/\?\s*$/.test(s)) continue
+    if (
+      /^(would you like|if you(?:'d| would) like|do you want|are you wondering|what specific|is it about|let me know|does that help|can i help you)/i.test(
+        s,
+      )
+    ) {
+      continue
+    }
+    if (/resources below|options below|tap below|chips below/i.test(s)) continue
+    kept.push(/[.!]$/.test(s) ? s : `${s}.`)
+  }
+  return unshieldInlineCitations(kept.join(' ').trim(), markers)
+}
+
+/** Drop mirror openers, template filler, and vague practice pitches from emotional prose. */
+function polishCompanionEmotionalAnswer(text: string, userMessage: string): string {
+  let t = polishHybridParagraph(text)
+  const userNorm = userMessage.trim().toLowerCase()
+  const parts = t.match(/[^.!?]+[.!?]+|[^.!?]+$/g) ?? [t]
+  const kept: string[] = []
+  for (let i = 0; i < parts.length; i++) {
+    const s = parts[i].trim()
+    if (!s) continue
+    const sn = s.toLowerCase()
+    if (COMPANION_TEMPLATE_SENTENCE_RE.test(s)) continue
+    if (COMPANION_COLD_EMOTIONAL_RE.test(s)) continue
+    if (/^if you(?:'d| would) like/i.test(s) && /micro-practice|grounding|exercise/i.test(s)) continue
+    const overlap = wordOverlapRatio(sn, userNorm)
+    if (COMPANION_RESTATE_OPENER_RE.test(s) && overlap > 0.2) continue
+    if (i === 0 && overlap > 0.32) continue
+    if (i < 2 && overlap > 0.45) continue
+    kept.push(/[.!]$/.test(s) ? s : `${s}.`)
+  }
+  t = kept.join(' ').trim()
+  if (!t) return fallbackCompanionEmotionalOpener(userMessage)
+  return t
+}
+
+function fallbackCompanionEmotionalOpener(userMessage: string): string {
+  const m = userMessage.toLowerCase()
+  if (/\b(appointment|cardiology|cardiologist|visit)\b/.test(m) && /\b(stress|worried|nervous|anxious|scared)\b/.test(m)) {
+    return 'A cardiology visit on the calendar can loom large — especially when you are already carrying a lot.'
+  }
+  if (/\b(appointment|cardiology|cardiologist)\b/.test(m)) {
+    return 'Walking into cardiology with questions on your mind is a lot; the wait alone can wear on you.'
+  }
+  if (/\b(monitor|beep|alarm|icu|hospital room)\b/.test(m)) {
+    return 'Those sounds in the room can keep your nervous system braced even when you know the team is watching closely.'
+  }
+  if (/\b(sleep|empty|exhaust|tired)\b/.test(m)) {
+    return 'Going days without real rest can leave you raw in ways that are hard to explain to anyone outside the room.'
+  }
+  if (/\b(fail|guilt|not enough)\b/.test(m)) {
+    return 'Guilt hits hard in this world — especially when you are giving everything you have.'
+  }
+  if (/\b(stress|worried|nervous|anxious|scared)\b/.test(m)) {
+    return 'The stress you are carrying before tomorrow deserves room — not a quick fix.'
+  }
+  return 'What you are carrying right now sounds heavy.'
+}
+
+/** Drop factual/procedure sentences that leaked into the emotional paragraph. */
+function polishHybridEmotionalParagraph(text: string, userMessage = ''): string {
+  let t = userMessage ? polishCompanionEmotionalAnswer(text, userMessage) : polishHybridParagraph(text)
+  const parts = t.match(/[^.!?]+[.!?]+|[^.!?]+$/g) ?? [t]
+  const kept = parts
+    .map((p) => p.trim())
+    .filter((s) => s.length > 0 && !HYBRID_EMOTIONAL_FACTUAL_RE.test(s))
+  if (kept.length > 0) t = kept.join(' ').trim()
+  return t || (userMessage ? fallbackCompanionEmotionalOpener(userMessage) : t)
+}
+
+/** Trim to max words without cutting mid-sentence (no trailing ellipsis). */
+function clipWordsAtSentence(text: string, maxWords: number): string {
+  const trimmed = text.trim()
+  const words = trimmed.split(/\s+/).filter(Boolean)
+  if (words.length <= maxWords) return trimmed
+
+  const sentences = trimmed.match(/[^.!?]+[.!?]+|[^.!?]+$/g) ?? [trimmed]
+  const kept: string[] = []
+  let count = 0
+  for (const sent of sentences) {
+    const s = sent.trim()
+    if (!s) continue
+    const w = s.split(/\s+/).filter(Boolean).length
+    if (count + w > maxWords && kept.length > 0) break
+    kept.push(s)
+    count += w
+  }
+  if (kept.length > 0) return kept.join(' ').trim()
+  return words.slice(0, maxWords).join(' ')
+}
+
+function wordOverlapRatio(a: string, b: string): number {
+  const wa = new Set(
+    a
+      .toLowerCase()
+      .split(/\s+/)
+      .filter((w) => w.length > 3),
+  )
+  const wb = new Set(
+    b
+      .toLowerCase()
+      .split(/\s+/)
+      .filter((w) => w.length > 3),
+  )
+  if (wa.size === 0) return 0
+  let inter = 0
+  for (const w of wa) if (wb.has(w)) inter++
+  return inter / wa.size
+}
+
+/** Remove opening sentences that mirror the user's message (belongs in emotional para, not info). */
+function polishHybridInformationalParagraph(text: string, userMessage: string): string {
+  let t = polishHybridParagraph(text)
+  const userNorm = userMessage.trim().toLowerCase()
+  const parts = t.match(/[^.!?]+[.!?]+|[^.!?]+$/g) ?? [t]
+  const kept = parts
+    .map((p) => p.trim())
+    .filter((s) => {
+      if (!s) return false
+      const sn = s.toLowerCase()
+      if (HYBRID_INFO_RESTATE_RE.test(sn) && wordOverlapRatio(sn, userNorm) > 0.35) return false
+      if (/^you are terrified\b/i.test(s) || /^you're terrified\b/i.test(s)) return false
+      if (/need to know what happens in the recovery room/i.test(sn)) return false
+      return true
+    })
+  if (kept.length > 0) t = kept.join(' ').trim()
+  return t
+}
+
+function splitInformationalFollowUp(raw: string): { body: string; followUp: string } {
+  const t = raw.trim()
+  const blocks = t.split(/\n\s*\n+/).map((b) => b.trim()).filter(Boolean)
+  if (blocks.length >= 2 && /\?\s*$/.test(blocks[blocks.length - 1])) {
+    return { body: blocks.slice(0, -1).join(' '), followUp: blocks[blocks.length - 1] }
+  }
+  const sentences = t.match(/[^.!?]+[.!?]+|[^.!?]+$/g) ?? [t]
+  if (sentences.length >= 2 && /\?\s*$/.test(sentences[sentences.length - 1].trim())) {
+    return {
+      body: sentences.slice(0, -1).join(' ').trim(),
+      followUp: sentences[sentences.length - 1].trim(),
+    }
+  }
+  return { body: t, followUp: '' }
+}
+
+function fallbackInformationalFollowUp(userMessage: string): string {
+  const t = userMessage.trim().toLowerCase()
+  const topics: string[] = []
+  if (/\bhlhs|hypoplastic left heart\b/.test(t)) topics.push('how HLHS affects daily care', 'what to ask at the cardiology visit')
+  else if (/\bcardiologist|cardiology appointment\b/.test(t)) topics.push('what to expect at the appointment', 'questions to bring to the visit')
+  else if (/\b(surgery|recovery|icu|recovery room)\b/.test(t)) topics.push('what happens right after surgery', 'how long recovery usually takes')
+  else if (/\b(monitor|beep|alarm)\b/.test(t)) topics.push('what those monitor alerts usually mean', 'when to alert the care team')
+  if (topics.length >= 2) {
+    return `Would you like to know more about ${topics[0]}, or ${topics[1]}?`
+  }
+  if (topics.length === 1) {
+    return `Would you like to know more about ${topics[0]}, or something else on your mind?`
+  }
+  return 'Would you like to know more about what we touched on, or a different part of this?'
+}
+
+function polishInformationalFollowUpQuestion(text: string): string {
+  let t = text.trim()
+  if (!/\?\s*$/.test(t)) t = `${t.replace(/[.!]+\s*$/, '')}?`
+  return t
+}
+
+/** Body capped at 50–100 words; optional follow-up question after (not capped). */
+function polishInformationalAnswer(
+  text: string,
+  userMessage: string,
+  opts?: { includeFollowUp?: boolean },
+): string {
+  const includeFollowUp = opts?.includeFollowUp !== false
+  const { body, followUp } = splitInformationalFollowUp(text)
+  let b = polishHybridInformationalParagraph(polishHybridParagraph(body), userMessage)
+  b = b.replace(/\n\s*\n+/g, ' ').replace(/\s+/g, ' ').trim()
+  b = clipWordsAtSentence(b, INFO_RAG_MAX_WORDS)
+  if (!includeFollowUp) return b
+  const q = followUp.trim()
+    ? polishInformationalFollowUpQuestion(followUp)
+    : fallbackInformationalFollowUp(userMessage)
+  if (!b) return q
+  return `${b}\n\n${q}`.trim()
+}
+
+type HybridSplit = { emotional: string; informational: string; closing: string }
+
+function polishHybridClosing(text: string): string {
+  let t = text.trim()
+  if (!t) return ''
+  const parts = t.match(/[^.!?]+[.!?]+|[^.!?]+$/g) ?? [t]
+  const questions = parts.map((p) => p.trim()).filter((s) => /\?\s*$/.test(s))
+  if (questions.length > 0) t = questions[questions.length - 1]
+  if (!/\?\s*$/.test(t)) t = `${t.replace(/[.!]+\s*$/, '')}?`
+  return t
+}
+
+/** Fallback when the model omits the closing line (generic, not tied to one scenario). */
+function fallbackHybridClosing(userMessage: string): string {
+  const t = userMessage.trim()
+  const named =
+    t.match(/\b(HLHS|hypoplastic left heart syndrome)\b/i)?.[1] ||
+    t.match(/\b(cardiologist|cardiology appointment|surgery|recovery room|ICU)\b/i)?.[1] ||
+    t.match(/\b([A-Z][a-z]+(?:\s+[A-Z][a-z]+){0,2})\s+(?:syndrome|defect|condition)\b/)?.[0]
+  const topic = named ? String(named).trim().toLowerCase() : 'what we discussed'
+  return `Is there something else you're worried about, or would you like more information on ${topic}?`
+}
+
+/** Split unified HYBRID reply: emotional paragraph, informational paragraph, closing question. */
+function splitHybridAnswer(raw: string): HybridSplit {
+  const t = raw.trim()
+  const blocks = t.split(/\n\s*\n+/).map((b) => b.trim()).filter(Boolean)
+  if (blocks.length >= 3) {
+    return {
+      emotional: blocks[0],
+      informational: blocks.slice(1, -1).join('\n\n'),
+      closing: blocks[blocks.length - 1],
+    }
+  }
+  if (blocks.length === 2) {
+    const second = blocks[1]
+    const sents = second.match(/[^.!?]+[.!?]+|[^.!?]+$/g) ?? [second]
+    if (sents.length >= 2 && /\?\s*$/.test(sents[sents.length - 1].trim())) {
+      return {
+        emotional: blocks[0],
+        informational: sents.slice(0, -1).join(' ').trim(),
+        closing: sents[sents.length - 1].trim(),
+      }
+    }
+    return { emotional: blocks[0], informational: blocks[1], closing: '' }
+  }
+  const sentences = t.match(/[^.!?]+[.!?]+|[^.!?]+$/g) ?? [t]
+  if (sentences.length >= 2 && /\?\s*$/.test(sentences[sentences.length - 1].trim())) {
+    const closing = sentences[sentences.length - 1].trim()
+    const body = sentences.slice(0, -1)
+    const mid = Math.min(3, Math.max(2, Math.floor(body.length / 2)))
+    return {
+      emotional: body.slice(0, mid).join(' ').trim(),
+      informational: body.slice(mid).join(' ').trim(),
+      closing,
+    }
+  }
+  return { emotional: t, informational: '', closing: '' }
+}
+
 function parseFollowups(raw: string): string[] {
   const t = raw.trim()
   try {
@@ -119,16 +424,6 @@ function parseFollowups(raw: string): string[] {
   }
 }
 
-let openai: OpenAI | null = null
-function getOpenAI(): OpenAI {
-  if (!openai) {
-    const key = (process.env.OPENAI_API_KEY ?? '').trim()
-    if (!key) throw new Error('Missing OPENAI_API_KEY')
-    openai = new OpenAI({ apiKey: key })
-  }
-  return openai
-}
-
 async function openAiChat(
   system: string,
   user: string,
@@ -136,8 +431,8 @@ async function openAiChat(
   maxTokens: number,
   temperature: number,
 ): Promise<string> {
-  const res = await getOpenAI().chat.completions.create({
-    model,
+  const res = await getLlmClient().chat.completions.create({
+    model: resolveLlmModel(model),
     messages: [
       { role: 'system', content: system },
       { role: 'user', content: user },
@@ -150,9 +445,6 @@ async function openAiChat(
 }
 
 const CLASSIFIER_MODEL = process.env.OPENAI_CLASSIFIER_MODEL?.trim() || MAIN_CHAT_MODEL
-
-const CRISIS_RE =
-  /\b(suicid|suicide|kill myself|killing myself|end\s+my\s+life|want\s+to\s+die|don'?t\s+want\s+to\s+live|hurt\s+myself|self[\s-]?harm|hurt\s+others)\b/i
 
 const STAGES: CompanionConversationStage[] = ['open', 'hear', 'reflect', 'intervene', 'invite']
 
@@ -219,8 +511,8 @@ async function classifyUserIntent(args: {
   recentHistory: string
 }): Promise<{ intent: ClassifierIntent; detectedEmotion: string | null; confidence: string }> {
   try {
-    const res = await getOpenAI().chat.completions.create({
-      model: CLASSIFIER_MODEL,
+    const res = await getLlmClient().chat.completions.create({
+      model: resolveLlmModel(CLASSIFIER_MODEL),
       temperature: 0.05,
       max_tokens: 200,
       response_format: { type: 'json_object' },
@@ -285,7 +577,7 @@ function stageToPrompt(s: CompanionConversationStage): PromptConversationStage {
 }
 
 function emotionalIntent(intent: ClassifierIntent): boolean {
-  return intent === 'EMOTIONAL' || intent === 'HYBRID' || intent === 'AMBIGUOUS'
+  return intent === 'EMOTIONAL' || intent === 'AMBIGUOUS'
 }
 
 function intentToRedirect(intent: ClassifierIntent): CompanionUiRedirect | null {
@@ -316,8 +608,8 @@ async function openAiMessages(
   maxTokens: number,
   temperature: number,
 ): Promise<string> {
-  const res = await getOpenAI().chat.completions.create({
-    model,
+  const res = await getLlmClient().chat.completions.create({
+    model: resolveLlmModel(model),
     messages,
     max_tokens: maxTokens,
     temperature,
@@ -343,8 +635,8 @@ async function suggestFollowUps(userMessage: string, answerSansMissing: string):
 }
 
 async function embedQuery(text: string): Promise<number[]> {
-  const model = process.env.OPENAI_EMBEDDING_MODEL ?? 'text-embedding-3-small'
-  const res = await getOpenAI().embeddings.create({ model, input: text })
+  const model = resolveLlmModel(process.env.OPENAI_EMBEDDING_MODEL ?? 'text-embedding-3-small')
+  const res = await getLlmClient().embeddings.create({ model, input: text })
   const v = res.data[0]?.embedding
   if (!v?.length) throw new Error('Empty embedding response')
   return v
@@ -368,7 +660,7 @@ export async function runCompanionChat(req: CompanionChatRequest): Promise<Compa
   const selectedUnderneath = req.selectedUnderneath ?? null
   const historyStr = conversationHistorySnippet(hist)
 
-  if (CRISIS_RE.test(trimmed)) {
+  if (detectCrisisKeywords(trimmed)) {
     const answer = crisisAnswer()
     const suggested = await suggestFollowUps(trimmed, answer)
     return {
@@ -411,7 +703,10 @@ export async function runCompanionChat(req: CompanionChatRequest): Promise<Compa
       ),
       { role: 'user', content: trimmed },
     ]
-    const answer = await openAiMessages(messages, MAIN_CHAT_MODEL, 550, 0.45)
+    const answer = polishCompanionEmotionalAnswer(
+      await openAiMessages(messages, MAIN_CHAT_MODEL, 550, 0.45),
+      trimmed,
+    )
     const suggested = await suggestFollowUps(trimmed, stripMissingBlock(answer))
     return {
       answer,
@@ -452,7 +747,7 @@ export async function runCompanionChat(req: CompanionChatRequest): Promise<Compa
       selectedEmotion: row.id,
       selectedUnderneath: underneath,
       branchHint:
-        `They named what's underneath (${underneath}) while focused on emotion "${row.feeling}" (${row.id}). Modalities described as ${row.modalities.join(', ')} (${row.modalityReason}). Potential benefits clinicians note: ${row.benefits.join('; ')}. Validate their reality without stock phrases — use their wording. Invite the paired micro-practice with one grounded sentence only; do NOT ask permission to try it; do NOT list numbered steps in prose (the ExerciseCard shows steps). Mention the exercise title naturally if it's one short clause.`,
+        `They named what's underneath (${underneath}) while focused on emotion "${row.feeling}" (${row.id}). Modalities described as ${row.modalities.join(', ')} (${row.modalityReason}). Potential benefits clinicians note: ${row.benefits.join('; ')}. Validate their reality without stock phrases — paraphrase in plain language; do not quote their message back. In one grounded sentence, name the micro-practice below ("${row.exercise.name}") and what it helps with — do NOT ask what steps they could take or what they need; do NOT ask permission to try it; do NOT list numbered steps in prose (the ExerciseCard shows steps).`,
     })
 
     const messages: ChatCompletionMessageParam[] = [
@@ -465,7 +760,10 @@ export async function runCompanionChat(req: CompanionChatRequest): Promise<Compa
       ),
       { role: 'user', content: trimmed },
     ]
-    const answer = await openAiMessages(messages, MAIN_CHAT_MODEL, 900, 0.45)
+    const answer = polishCompanionEmotionalAnswer(
+      await openAiMessages(messages, MAIN_CHAT_MODEL, 900, 0.45),
+      trimmed,
+    )
     const suggested = await suggestFollowUps(trimmed, stripMissingBlock(answer))
 
     const exercisePayload: CompanionExercisePayload = {
@@ -544,6 +842,78 @@ export async function runCompanionChat(req: CompanionChatRequest): Promise<Compa
     }
   }
 
+  if (cls.intent === 'HYBRID') {
+    const items = await loadKnowledgeIndex()
+    if (items.length === 0) {
+      const hint = getKnowledgeLoadError()
+      throw new Error(`Knowledge index unavailable${hint ? `: ${hint}` : ''}. Run: npm run rag:build`)
+    }
+
+    const qEmb = await embedQuery(trimmed)
+    const retrieved = embedQueryToScores(qEmb, items, TOP_K)
+    const forPrompt = retrieved.map((r) => ({
+      title: r.title,
+      sourceUrl: r.sourceUrl,
+      text: clip(r.text, CHUNK_CHAR_BUDGET),
+    }))
+    const contextBlock = buildKnowledgeContextBlock(forPrompt)
+
+    const classifierEmotion = safeDetectedEmotion(cls.detectedEmotion)
+    const checkinEm = safeDetectedEmotion(session.emotionCheckIn)
+    const emotionId = classifierEmotion ?? checkinEm ?? 'unknown'
+
+    const hybridSys = buildHybridUnifiedSystem({
+      session: sessionToPrompt(session),
+      conversationHistory: historyStr,
+      knowledgeContextBlock: contextBlock,
+      userMessage: trimmed,
+    })
+    const hybridMessages: ChatCompletionMessageParam[] = [
+      { role: 'system', content: hybridSys },
+      ...hist.map(
+        (h): ChatCompletionMessageParam => ({
+          role: h.role === 'assistant' ? 'assistant' : 'user',
+          content: h.content,
+        }),
+      ),
+      { role: 'user', content: trimmed },
+    ]
+    const hybridRaw = await openAiMessages(hybridMessages, MAIN_CHAT_MODEL, 580, 0.32)
+    const { emotional: emoBlock, informational: infoBlock, closing: closingBlock } =
+      splitHybridAnswer(hybridRaw)
+    const emotionalPara = clipWordsAtSentence(
+      polishHybridEmotionalParagraph(emoBlock, trimmed),
+      HYBRID_EMOTION_MAX_WORDS,
+    )
+    const informationalPara = polishInformationalAnswer(infoBlock, trimmed, { includeFollowUp: false })
+    let closingPara = polishHybridClosing(closingBlock)
+    if (!closingPara) closingPara = fallbackHybridClosing(trimmed)
+    const answer = [emotionalPara, informationalPara, closingPara].filter(Boolean).join('\n\n').trim()
+    const citations: ChatCitation[] = retrieved.map((r) => ({
+      chunkId: r.id,
+      title: r.title,
+      sourceUrl: r.sourceUrl,
+      excerpt: clip(r.text, 220),
+    }))
+    const suggestedQuestions = await suggestFollowUps(trimmed, stripMissingBlock(answer))
+
+    return {
+      answer,
+      nextStage: 'open',
+      emotionChips: null,
+      exercise: null,
+      toolCards: null,
+      uiRedirect: null,
+      citations,
+      suggestedQuestions,
+      uiRedirects: [],
+      retrieved,
+      crisis: false,
+      detectedEmotion: emotionId,
+      classifierIntent: 'HYBRID',
+    }
+  }
+
   const informationalBranch = !emotionalIntent(cls.intent)
 
   if (!informationalBranch && inChipStages) {
@@ -564,16 +934,16 @@ export async function runCompanionChat(req: CompanionChatRequest): Promise<Compa
       conversationStage: stageToPrompt(conversationStage),
       selectedEmotion: null,
       selectedUnderneath: null,
-      branchHint: `They're sharing emotionally (classifier=${cls.intent}). First line: reuse their emotion words verbatim if they named any ("scared and stressed", etc.). Acknowledge plainly in a calm, therapist-like register — contained warmth, no pep talk. Mention today's check-in (${session.emotionCheckIn ?? 'none'}) only when it genuinely fits.
+      branchHint: `They're sharing emotionally (classifier=${cls.intent}). Write like a calm, specific human — not a therapy script. Do NOT open by restating their message ("You're feeling X and Y…"). Start with a fresh sentence about what this moment is like for a parent. Mention today's check-in (${session.emotionCheckIn ?? 'none'}) only if it fits naturally.
 
-CHIP ROW (reference for YOU only — rendered as separate tap pills under this reply). Do NOT paste, quote, comma-list, or re-ask these themes in your message; the UI already shows them. Users should not read the same inventory twice.
+CHIP ROW (for UI only — do not list these themes in prose):
 ${chipBlock}
 
-ANTI-REPETITION (critical):
-- Use 2–3 short paragraphs total.
-- Paragraph 1–2: reflect their reality; optionally offer one gentle wondering sentence about what might be underneath the feeling (sensations, stakes, fears) — **without** a multiple-choice pattern (no "is it A, B, or C?" and do not name categories that mirror the chip line items: appointments, medications, logistics, information, responsibilities, worry, etc.).
-- Final paragraph: **one** short sentence that only points at the tap row — e.g. ask which option below fits best, or invite them to type their own words. Do not enumerate or paraphrase the chip strings in prose.
-- Never stack two questions that probe the same "what's underneath" lane (e.g. no "what makes this heavy — logistics vs information?" followed by "which option: appointments, meds…").`,
+SHAPE THIS REPLY (vary from prior turns in CONVERSATION HISTORY):
+- 1–3 short paragraphs; no fixed template. Often 2 is enough.
+- Include at most: one grounded acknowledgment, OR one concrete coping idea as a statement, OR one line pointing to the pills below — pick what helps this message; skip what sounds canned.
+- Do NOT ask what small steps they could take. Do NOT use "wondering what's underneath" questions — pills handle that.
+- If you point to the row below, one casual sentence max (wording can vary: "see which tag fits", "tap what resonates", etc.).`,
     })
 
     const messages: ChatCompletionMessageParam[] = [
@@ -590,7 +960,10 @@ ANTI-REPETITION (critical):
       },
     ]
 
-    const answer = await openAiMessages(messages, MAIN_CHAT_MODEL, 750, 0.38)
+    const answer = polishCompanionEmotionalAnswer(
+      await openAiMessages(messages, MAIN_CHAT_MODEL, 750, 0.44),
+      trimmed,
+    )
 
     const suggested = await suggestFollowUps(trimmed, stripMissingBlock(answer))
 
@@ -640,16 +1013,17 @@ ANTI-REPETITION (critical):
     extraHint,
   })
 
-  const answer = await openAiChat(
+  const rawInformational = await openAiChat(
     sysInformational,
     [
       trimmed,
-      'Reply in prose paragraphs referencing [1],[2],… labels only where supported by those excerpts.',
+      'Part 1: exactly ONE paragraph, 50–100 words, no question marks. REQUIRED: include at least one inline citation [1], [2], … after excerpt-backed claims in part 1 (numbers match the knowledge excerpts). Part 2 after a blank line: one follow-up question — use parentheses for topics, not [brackets].',
     ].join('\n'),
     MAIN_CHAT_MODEL,
-    1200,
-    0.3,
+    280,
+    0.28,
   )
+  const answer = polishInformationalAnswer(rawInformational, trimmed)
 
   const citations: ChatCitation[] = retrieved.map((r) => ({
     chunkId: r.id,
