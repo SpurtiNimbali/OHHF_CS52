@@ -7,6 +7,10 @@ import {
   BookOpen,
   Brain,
   ChevronRight,
+  Coffee,
+  Ear,
+  Eye,
+  Hand,
   Heart,
   Moon,
   RefreshCw,
@@ -63,6 +67,7 @@ type WellnessEmotion =
 type ToolId =
   | 'breathing'
   | 'grounding'
+  | 'physical-regulation'
   | 'cold-reset'
   | 'move-it-out'
   | 'body-scan'
@@ -151,6 +156,7 @@ const TOOL_META: Record<ToolId, {
   'cold-reset': { title: 'Cold reset', short: 'slow your stress response', category: 'Regulate body', icon: Snowflake },
   'move-it-out': { title: 'Move it out', short: '60 seconds of release', category: 'Regulate body', icon: Activity },
   'body-scan': { title: 'Body scan', short: 'soften head to toe', category: 'Regulate body', icon: Brain },
+  'physical-regulation': { title: 'Physical regulation', short: 'cold · movement · body scan', category: 'Regulate body', icon: Activity },
   'mood-check-in': { title: 'Daily mood check-in', short: 'two questions, one minute', category: 'Understand', icon: Heart },
   'name-it': { title: 'Name it to tame it', short: 'pick feeling words', category: 'Understand', icon: Tag },
   'feelings-wheel': { title: 'Feelings wheel', short: 'start when you are unsure', category: 'Understand', icon: Sparkles },
@@ -553,226 +559,487 @@ function ToolActions({
   )
 }
 
-function Timer({ seconds, label }: { seconds: number; label?: string }) {
-  const [remaining, setRemaining] = useState(seconds)
-  const [running, setRunning] = useState(false)
+type BodyRegion = 'head' | 'shoulders' | 'chest' | 'belly' | 'hips' | 'arms' | 'hands' | 'thighs' | 'calves' | 'feet'
 
-  useEffect(() => {
-    if (!running || remaining <= 0) return
-    const id = window.setTimeout(() => setRemaining((n) => n - 1), 1000)
-    return () => window.clearTimeout(id)
-  }, [remaining, running])
-
+function BodySilhouette({ highlighted = [], accentColor = CARDEA_DARK_GREEN }: {
+  highlighted?: BodyRegion[]
+  accentColor?: string
+}) {
+  const BASE = '#C8D5E0'
+  const f = (r: BodyRegion) => highlighted.includes(r) ? accentColor : BASE
   return (
-    <div className="flex flex-col items-center gap-2 py-4">
-      <div className="text-5xl font-bold tracking-wide text-[#062A4A]">{remaining}s</div>
-      {label ? <p className="text-center text-sm" style={{ color: CARDEA_MUTED }}>{label}</p> : null}
-      <button
-        type="button"
-        onClick={() => {
-          if (remaining === 0) {
-            setRemaining(seconds)
-            setRunning(true)
-            return
-          }
-          setRunning((r) => !r)
-        }}
-        className="rounded-xl border px-4 py-2 text-sm font-semibold"
-        style={{ borderColor: CARDEA_DARK_GREEN, color: CARDEA_DARK_GREEN }}
-      >
-        {running ? 'Pause' : remaining === 0 ? 'Start again' : 'Start'}
-      </button>
-    </div>
+    <svg viewBox="0 0 80 185" style={{ width: 64, flexShrink: 0 }} aria-hidden>
+      <style>{`.bp{transition:fill .4s ease}`}</style>
+      <ellipse className="bp" cx="40" cy="15" rx="13" ry="13" fill={f('head')} />
+      <rect className="bp" x="37" y="27" width="6" height="8" rx="2" fill={f('head')} />
+      <ellipse className="bp" cx="19" cy="42" rx="11" ry="7" fill={f('shoulders')} />
+      <ellipse className="bp" cx="61" cy="42" rx="11" ry="7" fill={f('shoulders')} />
+      <rect className="bp" x="24" y="36" width="32" height="30" rx="4" fill={f('chest')} />
+      <rect className="bp" x="25" y="65" width="30" height="22" rx="4" fill={f('belly')} />
+      <path className="bp" d="M25 86 L55 86 L52 102 L28 102 Z" fill={f('hips')} />
+      <rect className="bp" x="8" y="36" width="12" height="58" rx="6" fill={f('arms')} />
+      <rect className="bp" x="60" y="36" width="12" height="58" rx="6" fill={f('arms')} />
+      <ellipse className="bp" cx="14" cy="101" rx="7" ry="8" fill={f('hands')} />
+      <ellipse className="bp" cx="66" cy="101" rx="7" ry="8" fill={f('hands')} />
+      <rect className="bp" x="25" y="102" width="14" height="34" rx="5" fill={f('thighs')} />
+      <rect className="bp" x="41" y="102" width="14" height="34" rx="5" fill={f('thighs')} />
+      <rect className="bp" x="25" y="135" width="12" height="28" rx="5" fill={f('calves')} />
+      <rect className="bp" x="43" y="135" width="12" height="28" rx="5" fill={f('calves')} />
+      <ellipse className="bp" cx="31" cy="167" rx="11" ry="5" fill={f('feet')} />
+      <ellipse className="bp" cx="49" cy="167" rx="11" ry="5" fill={f('feet')} />
+    </svg>
   )
 }
 
 function BreathingTool() {
   const patterns = [
-    { id: 'box', label: 'box', in: 4, hold: 4, out: 4 },
-    { id: '478', label: '4-7-8', in: 4, hold: 7, out: 8 },
-    { id: 'sigh', label: 'physiological sigh', in: 2, hold: 1, out: 6 },
+    { id: 'box', label: 'Box 4-4-4-4', phases: [4, 4, 4, 4] as number[], names: ['Breathe in', 'Hold', 'Breathe out', 'Hold'] },
+    { id: '478', label: '4-7-8', phases: [4, 7, 8, 0] as number[], names: ['Breathe in', 'Hold', 'Breathe out', ''] },
+    { id: 'sigh', label: 'Physiological sigh', phases: [2, 1, 6, 0] as number[], names: ['Breathe in', 'Hold', 'Breathe out', ''] },
   ]
-  const [pattern, setPattern] = useState(patterns[0])
-  const [phase, setPhase] = useState<'in' | 'hold' | 'out'>('in')
-  const [round, setRound] = useState(1)
-  const [running, setRunning] = useState(true)
-  const duration = phase === 'in' ? pattern.in : phase === 'hold' ? pattern.hold : pattern.out
+  const [patternIdx, setPatternIdx] = useState(0)
+  const [tick, setTick] = useState(0)
+  const [running, setRunning] = useState(false)
+
+  const pattern = patterns[patternIdx]
+  const activePhases = (pattern?.phases ?? []).filter((d) => d > 0)
+  const activeNames = (pattern?.names ?? []).filter((_, i) => (pattern?.phases[i] ?? 0) > 0)
+  const cycleDuration = activePhases.reduce((a, b) => a + b, 0) || 1
+  const tickInCycle = tick % cycleDuration
+
+  let phaseIdx = 0
+  let accumulated = 0
+  for (let i = 0; i < activePhases.length; i++) {
+    const d = activePhases[i] ?? 0
+    if (tickInCycle < accumulated + d) { phaseIdx = i; break }
+    accumulated += d
+  }
+
+  const phaseElapsed = tickInCycle - accumulated
+  const phaseDuration = activePhases[phaseIdx] ?? 1
+  const remaining = phaseDuration - phaseElapsed
+  const cycleCount = Math.floor(tick / cycleDuration)
+  const phaseLabel = activeNames[phaseIdx] ?? ''
+  const orbScale = phaseLabel === 'Breathe in' ? 1.14 : phaseLabel === 'Breathe out' ? 0.82 : 1.02
+  const mm = Math.floor(tick / 60).toString().padStart(2, '0')
+  const ss = (tick % 60).toString().padStart(2, '0')
+  const heartColor = !running ? '#fda4af'
+    : phaseLabel === 'Breathe in' ? '#f472b6'
+    : phaseLabel === 'Hold' ? '#a78bfa'
+    : '#60a5fa'
+  const patternDescriptions = [
+    { title: 'Box Breathing', desc: 'Equal 4-count cycles: inhale, hold, exhale, hold. Used by Navy SEALs to reset focus and calm the nervous system under pressure.' },
+    { title: '4-7-8 Breathing', desc: 'Longer hold and extended exhale activate your parasympathetic rest response. Great for anxiety, racing thoughts, or winding down for sleep.' },
+    { title: 'Physiological Sigh', desc: 'Double inhale + long exhale. Stanford-researched as the fastest known way to reduce acute physiological stress in real time.' },
+  ]
 
   useEffect(() => {
     if (!running) return
-    const id = window.setTimeout(() => {
-      if (phase === 'in') setPhase(pattern.hold > 0 ? 'hold' : 'out')
-      else if (phase === 'hold') setPhase('out')
-      else {
-        setRound((r) => (r >= 5 ? 1 : r + 1))
-        setPhase('in')
-      }
-    }, duration * 1000)
+    const id = window.setTimeout(() => setTick((t) => t + 1), 1000)
     return () => window.clearTimeout(id)
-  }, [duration, pattern.hold, phase, running])
+  }, [running, tick])
 
-  const label = phase === 'in' ? 'breathe in' : phase === 'hold' ? 'hold' : 'breathe out'
-  const scale = phase === 'out' ? 0.72 : 1.12
+  function reset() { setTick(0); setRunning(false) }
 
   return (
     <div>
-      <div className="mb-4 flex flex-wrap gap-2">
-        {patterns.map((p) => (
-          <button
-            key={p.id}
-            type="button"
-            onClick={() => {
-              setPattern(p)
-              setPhase('in')
-              setRound(1)
-              setRunning(true)
-            }}
-            className={`rounded-full px-3 py-1.5 text-xs font-semibold ${pattern.id === p.id ? 'text-white' : 'bg-[#f5f9f9]'}`}
-            style={{ background: pattern.id === p.id ? CARDEA_DARK_GREEN : undefined, color: pattern.id === p.id ? '#fff' : CARDEA_NAVY }}
-          >
-            {p.label}
-          </button>
+      <div className="mb-3 flex flex-wrap gap-2">
+        {patterns.map((p, i) => (
+          <button key={p.id} type="button"
+            onClick={() => { setPatternIdx(i); setTick(0); setRunning(false) }}
+            className="rounded-full px-3 py-1.5 text-xs font-semibold transition-colors"
+            style={{ background: patternIdx === i ? '#db2777' : CARDEA_ALMOST_WHITE, color: patternIdx === i ? '#fff' : CARDEA_NAVY }}
+          >{p.label}</button>
         ))}
       </div>
-      <div className="flex flex-col items-center gap-5 py-4">
-        <div className="relative flex h-64 w-64 items-center justify-center">
-          <div className="absolute inset-0 rounded-full bg-[#c6d9e5]/35" />
-          <div
-            className="flex h-44 w-44 items-center justify-center rounded-full text-xl font-semibold tracking-[0.08em] text-white"
-            style={{
-              background: CARDEA_DARK_GREEN,
-              transform: `scale(${scale})`,
-              transition: `transform ${duration}s ease-in-out`,
-            }}
-          >
-            {label}
-          </div>
-        </div>
-        <p className="text-sm" style={{ color: CARDEA_MUTED }}>
-          round {round} of 5
+
+      {/* Pattern description */}
+      <div className="mb-4 rounded-xl p-3" style={{ background: '#FFF0F5' }}>
+        <p className="text-xs font-bold mb-0.5" style={{ color: '#db2777' }}>
+          {patternDescriptions[patternIdx]?.title}
         </p>
-        <button
-          type="button"
-          onClick={() => setRunning((r) => !r)}
-          className="rounded-xl border px-4 py-2 text-sm font-semibold"
-          style={{ borderColor: CARDEA_DARK_GREEN, color: CARDEA_DARK_GREEN }}
-        >
-          {running ? 'Pause' : 'Resume'}
-        </button>
+        <p className="text-xs leading-relaxed" style={{ color: CARDEA_NAVY }}>
+          {patternDescriptions[patternIdx]?.desc}
+        </p>
+      </div>
+
+      <div className="flex flex-col items-center gap-4 py-2">
+        <div className="relative flex h-52 w-52 items-center justify-center">
+          {/* Phase-synced ambient glow */}
+          <div className="absolute inset-0 rounded-full" style={{
+            background: running ? `radial-gradient(circle, ${heartColor}18 0%, transparent 70%)` : undefined,
+            boxShadow: running ? `0 0 52px 20px ${heartColor}33` : undefined,
+            transition: 'box-shadow 1.2s ease, background 1s ease',
+          }} />
+          {/* Heart — color transitions with each phase */}
+          <Heart
+            fill={heartColor}
+            strokeWidth={0}
+            aria-hidden
+            style={{
+              width: 130,
+              height: 130,
+              transform: `scale(${orbScale})`,
+              transition: `transform ${phaseDuration}s ease-in-out, fill 0.8s ease`,
+              filter: running ? `drop-shadow(0 0 20px ${heartColor}99)` : undefined,
+            }}
+          />
+        </div>
+
+        <div className="text-center">
+          <p className="text-xs font-bold uppercase tracking-[0.18em]" style={{ color: heartColor, transition: 'color 0.8s ease' }}>{phaseLabel}</p>
+          <p className="text-5xl font-bold tabular-nums leading-tight" style={{ color: CARDEA_NAVY }}>{remaining}</p>
+        </div>
+
+        <div className="flex gap-6 text-xs font-medium" style={{ color: CARDEA_MUTED }}>
+          <span>Cycle {cycleCount + 1}</span>
+          <span>{mm}:{ss} elapsed</span>
+        </div>
+
+        <div className="flex gap-3">
+          <button type="button" onClick={() => setRunning((r) => !r)}
+            className="rounded-xl px-5 py-2.5 text-sm font-semibold text-white" style={{ background: '#db2777' }}>
+            {running ? 'Pause' : tick === 0 ? 'Start' : 'Resume'}
+          </button>
+          <button type="button" onClick={reset}
+            className="rounded-xl border px-5 py-2.5 text-sm font-semibold" style={{ borderColor: 'rgba(25,43,63,0.16)', color: CARDEA_NAVY }}>
+            Reset
+          </button>
+        </div>
       </div>
     </div>
   )
 }
 
 function GroundingTool() {
-  const steps = [
-    { count: 5, sense: 'see' },
-    { count: 4, sense: 'feel' },
-    { count: 3, sense: 'hear' },
-    { count: 2, sense: 'smell' },
-    { count: 1, sense: 'taste' },
+  const STEPS = [
+    { count: 5, sense: 'see', verb: 'you can see', color: '#3B82F6', bg: '#EFF6FF', Icon: Eye },
+    { count: 4, sense: 'touch', verb: 'you can touch', color: CARDEA_DARK_GREEN, bg: '#f0fdf4', Icon: Hand },
+    { count: 3, sense: 'hear', verb: 'you can hear', color: '#7C3AED', bg: '#f5f3ff', Icon: Ear },
+    { count: 2, sense: 'smell', verb: 'you can smell', color: '#D97706', bg: '#fffbeb', Icon: Wind },
+    { count: 1, sense: 'taste', verb: 'you can taste', color: '#C2410C', bg: '#fff7ed', Icon: Coffee },
   ]
   const [idx, setIdx] = useState(0)
-  const cur = steps[idx]
+  const [entries, setEntries] = useState<Record<number, string>>({})
+  const [done, setDone] = useState(false)
+
+  const cur = STEPS[idx]
+  const accentColor = cur?.color ?? CARDEA_DARK_GREEN
+  const accentBg = cur?.bg ?? CARDEA_ALMOST_WHITE
+  const CurIcon = cur?.Icon
+
+  if (done) {
+    return (
+      <div className="space-y-4">
+        <div className="rounded-2xl p-6 text-center" style={{ background: `${CARDEA_DARK_GREEN}12` }}>
+          <p className="text-xl font-semibold mb-1" style={{ color: CARDEA_NAVY }}>You're grounded.</p>
+          <p className="text-sm" style={{ color: CARDEA_MUTED }}>your body just found the room.</p>
+        </div>
+        {STEPS.map((s, i) => {
+          const SIcon = s.Icon
+          return entries[i] ? (
+            <div key={i} className="rounded-2xl border bg-white p-4" style={{ borderColor: `${s.color}35` }}>
+              <div className="flex items-center gap-2 mb-2">
+                <SIcon className="h-4 w-4" style={{ color: s.color }} aria-hidden />
+                <span className="text-xs font-bold uppercase tracking-[0.14em]" style={{ color: s.color }}>
+                  {s.count} things to {s.sense}
+                </span>
+              </div>
+              <p className="text-sm leading-relaxed" style={{ color: CARDEA_NAVY }}>{entries[i]}</p>
+            </div>
+          ) : null
+        })}
+        <button type="button"
+          onClick={() => { setIdx(0); setEntries({}); setDone(false) }}
+          className="rounded-xl border px-4 py-2 text-sm font-semibold"
+          style={{ borderColor: CARDEA_DARK_GREEN, color: CARDEA_DARK_GREEN }}>
+          Start again
+        </button>
+      </div>
+    )
+  }
+
   return (
     <div className="space-y-4">
-      {cur ? (
-        <>
-          <div className="rounded-2xl bg-[#f5f9f9] p-5 text-center">
-            <div className="text-6xl font-bold text-[#062A4A]">{cur.count}</div>
-            <p className="mt-2 text-lg font-semibold text-[#192b3f]">
-              things you can {cur.sense}
-            </p>
-            <p className="mt-2 text-sm" style={{ color: CARDEA_MUTED }}>
-              say them quietly. no typing needed.
-            </p>
+      <div>
+        <div className="mb-1.5 flex justify-between text-xs font-medium" style={{ color: CARDEA_MUTED }}>
+          <span>Step {idx + 1} of {STEPS.length}</span>
+          <span>{cur?.sense ?? ''}</span>
+        </div>
+        <div className="h-2 rounded-full overflow-hidden" style={{ background: CARDEA_LIGHT_BLUE }}>
+          <div className="h-full rounded-full transition-all duration-500"
+            style={{ width: `${(idx / STEPS.length) * 100}%`, background: accentColor }} />
+        </div>
+      </div>
+
+      {cur && CurIcon && (
+        <div className="rounded-2xl p-5" style={{ background: accentBg }}>
+          <div className="flex items-center gap-4 mb-4">
+            <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full"
+              style={{ background: `${accentColor}20` }}>
+              <CurIcon className="h-6 w-6" style={{ color: accentColor }} aria-hidden />
+            </div>
+            <div>
+              <span className="text-5xl font-bold leading-none" style={{ color: accentColor }}>{cur.count}</span>
+              <p className="text-base font-semibold mt-1" style={{ color: CARDEA_NAVY }}>things {cur.verb}</p>
+            </div>
           </div>
-          <button
-            type="button"
-            onClick={() => setIdx((i) => i + 1)}
-            className="rounded-xl px-5 py-2.5 text-sm font-semibold text-white"
-            style={{ background: CARDEA_DARK_GREEN }}
-          >
-            Next
-          </button>
-        </>
-      ) : (
-        <p className="rounded-2xl bg-[#f5f9f9] p-5 text-center text-sm text-[#192b3f]">
-          you just helped your body find the room.
-        </p>
+          <p className="text-sm mb-3" style={{ color: CARDEA_MUTED }}>name them softly. typing is optional.</p>
+          <textarea
+            value={entries[idx] ?? ''}
+            onChange={(e) => setEntries((prev) => ({ ...prev, [idx]: e.target.value }))}
+            placeholder={`What can you ${cur.sense}?`}
+            rows={2}
+            className="w-full rounded-xl border bg-white p-3 text-sm outline-none resize-none"
+            style={{ borderColor: `${accentColor}40`, color: CARDEA_NAVY }}
+          />
+        </div>
       )}
+
+      <button type="button"
+        onClick={() => { if (idx < STEPS.length - 1) setIdx((i) => i + 1); else setDone(true) }}
+        className="rounded-xl px-5 py-2.5 text-sm font-semibold text-white"
+        style={{ background: accentColor }}>
+        {idx < STEPS.length - 1 ? 'Next →' : 'Complete'}
+      </button>
     </div>
   )
 }
 
 function ColdResetTool() {
+  const STEPS = [
+    { label: 'Cold water on face', desc: 'Splash cold water over your face, or briefly submerge.' },
+    { label: 'Cold water on wrists', desc: 'Run cold water over the inside of both wrists.' },
+    { label: 'Hold ice or cold pack', desc: 'Hold ice wrapped in a cloth against your face or wrists.' },
+  ]
+  const COLD_STEP_REGIONS: BodyRegion[][] = [
+    ['head'],
+    ['hands'],
+    ['hands'],
+  ]
+  const DURATION = 60
+  const [selectedStep, setSelectedStep] = useState<number | null>(null)
+  const [tick, setTick] = useState(0)
+  const [running, setRunning] = useState(false)
+  const remaining = DURATION - tick
+  const done = tick >= DURATION
+  const progress = tick / DURATION
+  const circumference = 2 * Math.PI * 54
+  const strokeDashoffset = circumference * (1 - progress)
+
+  useEffect(() => {
+    if (!running || tick >= DURATION) return
+    const id = window.setTimeout(() => setTick((t) => t + 1), 1000)
+    return () => window.clearTimeout(id)
+  }, [running, tick])
+
+  function selectStep(i: number) { setSelectedStep(i); setTick(0); setRunning(false) }
+
   return (
     <div className="space-y-4">
       <p className="text-sm leading-relaxed" style={{ color: CARDEA_MUTED }}>
-        cold can cue your vagus nerve and slow your stress response.
+        Cold activates your vagus nerve, slowing your heart rate and calming your stress response within seconds.
       </p>
-      {['cold water on your face', 'cold water on wrists', 'hold ice wrapped in cloth'].map((item) => (
-        <div key={item} className="rounded-2xl border bg-white p-4" style={{ borderColor: 'rgba(25, 43, 63, 0.08)' }}>
-          <p className="font-semibold text-[#192b3f]">{item}</p>
-          <Timer seconds={60} label="stop if it feels unsafe." />
+      <div className="grid gap-3">
+        {STEPS.map((s, i) => (
+          <button key={i} type="button" onClick={() => selectStep(i)}
+            className="rounded-2xl border p-4 text-left transition-all"
+            style={{
+              borderColor: selectedStep === i ? CARDEA_DARK_GREEN : 'rgba(25,43,63,0.1)',
+              background: selectedStep === i ? `${CARDEA_DARK_GREEN}10` : '#fff',
+            }}>
+            <div className="flex items-center gap-3">
+              <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full"
+                style={{ background: selectedStep === i ? '#dbeafe' : CARDEA_ALMOST_WHITE }}>
+                <span className="text-xs font-bold" style={{ color: '#2563eb' }}>{i + 1}</span>
+              </div>
+              <div>
+                <p className="font-semibold text-sm" style={{ color: CARDEA_NAVY }}>{s.label}</p>
+                <p className="text-xs mt-0.5" style={{ color: CARDEA_MUTED }}>{s.desc}</p>
+              </div>
+            </div>
+          </button>
+        ))}
+      </div>
+
+      {selectedStep !== null && (
+        <div className="flex flex-col items-center gap-4 py-2">
+          <div className="flex items-center gap-6">
+            <BodySilhouette
+              highlighted={COLD_STEP_REGIONS[selectedStep] ?? []}
+              accentColor="#60a5fa"
+            />
+            <div className="flex flex-col items-center gap-3">
+              <div className="relative flex h-32 w-32 items-center justify-center">
+                <svg className="absolute inset-0 h-full w-full -rotate-90" viewBox="0 0 120 120" aria-hidden>
+                  <circle cx="60" cy="60" r="54" fill="none" stroke={CARDEA_LIGHT_BLUE} strokeWidth="6" opacity={0.35} />
+                  <circle cx="60" cy="60" r="54" fill="none"
+                    stroke={done ? '#22c55e' : '#60a5fa'} strokeWidth="6"
+                    strokeLinecap="round" strokeDasharray={circumference} strokeDashoffset={strokeDashoffset}
+                    style={{ transition: 'stroke-dashoffset 1s linear' }} />
+                </svg>
+                <div className="text-center">
+                  <span className="text-3xl font-bold" style={{ color: CARDEA_NAVY }}>{done ? '✓' : remaining}</span>
+                  {!done && <span className="block text-xs" style={{ color: CARDEA_MUTED }}>sec</span>}
+                </div>
+              </div>
+              {done
+                ? <p className="text-sm font-semibold" style={{ color: CARDEA_DARK_GREEN }}>Done. Notice how your body feels.</p>
+                : <p className="text-xs text-center" style={{ color: CARDEA_MUTED }}>stop if it feels unsafe.</p>
+              }
+            </div>
+          </div>
+          <button type="button"
+            onClick={() => { if (done) { setTick(0); setRunning(true) } else setRunning((r) => !r) }}
+            className="rounded-xl px-5 py-2.5 text-sm font-semibold text-white"
+            style={{ background: CARDEA_DARK_GREEN }}>
+            {done ? 'Again' : running ? 'Pause' : 'Start'}
+          </button>
         </div>
-      ))}
+      )}
     </div>
   )
 }
 
 function MoveItOutTool() {
-  const cues = ['shake out hands', 'stomp slowly', 'push a wall', 'roll shoulders']
-  const [started, setStarted] = useState(false)
-  const [t, setT] = useState(60)
+  const CUES = [
+    { text: 'Shake out your hands', emoji: '🤲' },
+    { text: 'Stomp slowly in place', emoji: '🦶' },
+    { text: 'Push against a wall', emoji: '🧱' },
+    { text: 'Roll your shoulders back', emoji: '🔄' },
+  ]
+  const DURATION = 60
+  const [tick, setTick] = useState(0)
+  const [running, setRunning] = useState(false)
+  const remaining = DURATION - tick
+  const done = tick >= DURATION
+  const segmentDuration = DURATION / CUES.length
+  const cueIdx = Math.min(Math.floor(tick / segmentDuration), CUES.length - 1)
+  const currentCue = CUES[cueIdx]
+
   useEffect(() => {
-    if (!started || t <= 0) return
-    const id = window.setTimeout(() => setT((n) => n - 1), 1000)
+    if (!running || tick >= DURATION) return
+    const id = window.setTimeout(() => setTick((t) => t + 1), 1000)
     return () => window.clearTimeout(id)
-  }, [started, t])
-  const cue = cues[Math.min(Math.floor((60 - t) / 15), cues.length - 1)]
+  }, [running, tick])
+
   return (
-    <div className="text-center">
-      <div className="my-5 text-7xl font-bold text-[#577568]">{t}</div>
-      <p className="mb-5 text-xl font-semibold text-[#192b3f]">{started ? cue : 'ready when you are'}</p>
-      <button
-        type="button"
-        onClick={() => {
-          if (t === 0) setT(60)
-          setStarted((s) => !s)
-        }}
-        className="rounded-xl px-5 py-2.5 text-sm font-semibold text-white"
-        style={{ background: CARDEA_DARK_GREEN }}
-      >
-        {started ? 'Pause' : t === 0 ? 'Again' : 'Start'}
+    <div className="space-y-5 text-center">
+      <div className="rounded-2xl p-6" style={{ background: `${CARDEA_DARK_GREEN}10` }}>
+        <div className="text-6xl mb-3">{running || done ? (currentCue?.emoji ?? '✓') : '🌿'}</div>
+        <p className="text-xl font-semibold" style={{ color: CARDEA_NAVY }}>
+          {done ? "That's it. How does your body feel?" : running ? (currentCue?.text ?? '') : 'Ready when you are'}
+        </p>
+        {running && !done && (
+          <p className="text-xs mt-2" style={{ color: CARDEA_MUTED }}>
+            next move in {Math.ceil(segmentDuration - (tick % segmentDuration))}s
+          </p>
+        )}
+      </div>
+      <div className="text-5xl font-bold tabular-nums" style={{ color: CARDEA_DARK_GREEN }}>
+        {done ? '✓' : remaining}
+      </div>
+      {!done && <p className="text-xs" style={{ color: CARDEA_MUTED }}>seconds left</p>}
+      <button type="button"
+        onClick={() => { if (done) { setTick(0); setRunning(true) } else setRunning((r) => !r) }}
+        className="rounded-xl px-6 py-3 text-sm font-semibold text-white"
+        style={{ background: CARDEA_DARK_GREEN }}>
+        {done ? 'Again' : running ? 'Pause' : tick === 0 ? 'Start' : 'Resume'}
       </button>
     </div>
   )
 }
 
 function BodyScanTool() {
-  const steps = [
-    'notice your feet. let them be heavy.',
-    'notice your belly. soften your breath.',
-    'notice your shoulders. let them drop.',
-    'notice your jaw. unclench gently.',
-    'take one slow breath out.',
+  const STEPS = [
+    'Notice your scalp and forehead. Let any tension soften.',
+    'Bring attention to your jaw and neck. Unclench gently.',
+    'Notice your shoulders. Let them drop away from your ears.',
+    'Move to your arms and hands. Uncurl your fingers.',
+    'Bring attention to your chest. Let each breath expand it softly.',
+    'Notice your belly. Let it rise and fall freely.',
+    'Move to your lower back. Soften on each exhale.',
+    'Bring attention to your thighs and hips. Let them sink.',
+    'Notice your calves and feet. Let them be heavy against the floor.',
   ]
-  const [idx, setIdx] = useState(0)
+  const STEP_DURATION = 20
+  const TOTAL = STEPS.length * STEP_DURATION
+  const [tick, setTick] = useState(0)
+  const [running, setRunning] = useState(false)
+  const done = tick >= TOTAL
+  const stepIdx = Math.min(Math.floor(tick / STEP_DURATION), STEPS.length - 1)
+  const stepElapsed = tick - stepIdx * STEP_DURATION
+  const stepRemaining = STEP_DURATION - stepElapsed
+  const stepProgress = stepElapsed / STEP_DURATION
+  const bodyProgress = ((stepIdx + stepElapsed / STEP_DURATION) / STEPS.length) * 100
+  const circumference = 2 * Math.PI * 40
+  const strokeDashoffset = circumference * (1 - (done ? 1 : stepProgress))
+
+  useEffect(() => {
+    if (!running || tick >= TOTAL) return
+    const id = window.setTimeout(() => setTick((t) => t + 1), 1000)
+    return () => window.clearTimeout(id)
+  }, [running, tick, TOTAL])
+
+  function reset() { setTick(0); setRunning(false) }
+
   return (
-    <div className="text-center">
-      <div className="mx-auto my-6 flex h-40 w-40 items-center justify-center rounded-full bg-[#577568]/10">
-        <div className="h-28 w-28 rounded-full bg-[#577568]/20" />
+    <div className="space-y-5">
+      <div>
+        <div className="mb-1.5 flex justify-between text-xs font-medium" style={{ color: CARDEA_MUTED }}>
+          <span>Head</span>
+          <span>Feet</span>
+        </div>
+        <div className="h-2 rounded-full overflow-hidden" style={{ background: CARDEA_LIGHT_BLUE }}>
+          <div className="h-full rounded-full transition-all duration-1000"
+            style={{ width: `${done ? 100 : bodyProgress}%`, background: CARDEA_DARK_GREEN }} />
+        </div>
+        <p className="mt-1 text-xs text-right" style={{ color: CARDEA_MUTED }}>~3 min total</p>
       </div>
-      <p className="mx-auto max-w-md text-xl leading-relaxed text-[#192b3f]">{steps[idx]}</p>
-      <button
-        type="button"
-        onClick={() => setIdx((i) => Math.min(i + 1, steps.length - 1))}
-        className="mt-6 rounded-xl px-5 py-2.5 text-sm font-semibold text-white"
-        style={{ background: CARDEA_DARK_GREEN }}
-      >
-        {idx >= steps.length - 1 ? 'Stay here' : 'Next'}
-      </button>
+
+      <div className="flex items-center gap-5">
+        <div className="relative flex h-24 w-24 shrink-0 items-center justify-center">
+          <svg className="absolute inset-0 h-full w-full -rotate-90" viewBox="0 0 100 100" aria-hidden>
+            <circle cx="50" cy="50" r="40" fill="none" stroke={CARDEA_LIGHT_BLUE} strokeWidth="7" opacity={0.4} />
+            <circle cx="50" cy="50" r="40" fill="none" stroke={CARDEA_DARK_GREEN} strokeWidth="7"
+              strokeLinecap="round" strokeDasharray={circumference} strokeDashoffset={strokeDashoffset}
+              style={{ transition: 'stroke-dashoffset 1s linear' }} />
+          </svg>
+          <div className="text-center">
+            <span className="text-xl font-bold" style={{ color: CARDEA_NAVY }}>{done ? '✓' : stepRemaining}</span>
+            {!done && <span className="block text-[10px]" style={{ color: CARDEA_MUTED }}>sec</span>}
+          </div>
+        </div>
+        <div>
+          <p className="text-xs font-bold uppercase tracking-[0.14em] mb-1" style={{ color: CARDEA_MUTED }}>
+            Step {stepIdx + 1} of {STEPS.length}
+          </p>
+          <p className="text-base leading-snug font-semibold" style={{ color: CARDEA_NAVY }}>
+            {done ? 'Scan complete. Rest here.' : STEPS[stepIdx]}
+          </p>
+        </div>
+      </div>
+
+      <div className="flex gap-3">
+        <button type="button"
+          onClick={() => { if (done) reset(); else setRunning((r) => !r) }}
+          className="rounded-xl px-5 py-2.5 text-sm font-semibold text-white"
+          style={{ background: CARDEA_DARK_GREEN }}>
+          {done ? 'Start again' : running ? 'Pause' : tick === 0 ? 'Start' : 'Resume'}
+        </button>
+        {tick > 0 && !done && (
+          <button type="button" onClick={reset}
+            className="rounded-xl border px-5 py-2.5 text-sm font-semibold"
+            style={{ borderColor: 'rgba(25,43,63,0.16)', color: CARDEA_NAVY }}>
+            Restart
+          </button>
+        )}
+      </div>
+      {running && !done && (
+        <p className="text-xs text-center" style={{ color: CARDEA_MUTED }}>
+          breathe naturally. each breath softens you a little more.
+        </p>
+      )}
     </div>
   )
 }
@@ -1314,6 +1581,44 @@ function CrisisResetTool() {
   )
 }
 
+function PhysicalRegulationTool() {
+  const TABS = [
+    { id: 'cold' as const, label: 'Cold Reset', Icon: Snowflake },
+    { id: 'move' as const, label: 'Move It Out', Icon: Activity },
+    { id: 'scan' as const, label: 'Body Scan', Icon: Brain },
+  ]
+  type TabId = 'cold' | 'move' | 'scan'
+  const [activeTab, setActiveTab] = useState<TabId>('cold')
+
+  return (
+    <div className="space-y-4">
+      <div className="flex gap-1 rounded-2xl p-1" style={{ background: CARDEA_ALMOST_WHITE }}>
+        {TABS.map((tab) => {
+          const TabIcon = tab.Icon
+          const isActive = activeTab === tab.id
+          return (
+            <button key={tab.id} type="button"
+              onClick={() => setActiveTab(tab.id)}
+              className="flex flex-1 items-center justify-center gap-1.5 rounded-xl px-2 py-2.5 text-xs font-semibold transition-all"
+              style={{
+                background: isActive ? '#fff' : 'transparent',
+                color: isActive ? CARDEA_NAVY : CARDEA_MUTED,
+                boxShadow: isActive ? '0 1px 4px rgba(25,43,63,0.08)' : undefined,
+              }}
+            >
+              <TabIcon className="h-3.5 w-3.5 shrink-0" aria-hidden />
+              {tab.label}
+            </button>
+          )
+        })}
+      </div>
+      {activeTab === 'cold' && <ColdResetTool />}
+      {activeTab === 'move' && <MoveItOutTool />}
+      {activeTab === 'scan' && <BodyScanTool />}
+    </div>
+  )
+}
+
 function ToolContent({
   toolId,
   onOpenTool,
@@ -1329,6 +1634,7 @@ function ToolContent({
 }) {
   if (toolId === 'breathing') return <BreathingTool />
   if (toolId === 'grounding') return <GroundingTool />
+  if (toolId === 'physical-regulation') return <PhysicalRegulationTool />
   if (toolId === 'cold-reset') return <ColdResetTool />
   if (toolId === 'move-it-out') return <MoveItOutTool />
   if (toolId === 'body-scan') return <BodyScanTool />
@@ -1820,7 +2126,7 @@ export default function WellnessTools() {
 
         <Section id="regulate" label="Regulate your body">
           <div className="grid gap-3 md:grid-cols-2">
-            {(['breathing', 'grounding', 'cold-reset', 'move-it-out', 'body-scan'] as ToolId[]).map((toolId) => (
+            {(['breathing', 'grounding', 'physical-regulation'] as ToolId[]).map((toolId) => (
               <ToolTile
                 key={toolId}
                 toolId={toolId}
@@ -1886,10 +2192,10 @@ export default function WellnessTools() {
             <button
               type="button"
               onClick={() => setActiveTool(null)}
-              className="mb-4 text-sm font-semibold"
-              style={{ color: CARDEA_MUTED }}
+              className="mb-4 rounded-full px-4 py-2 text-sm font-semibold text-white"
+              style={{ background: CARDEA_NAVY }}
             >
-              close
+              ← Close
             </button>
             <p className="mb-2 text-xs font-bold uppercase tracking-[0.18em]" style={{ color: CARDEA_MUTED }}>
               {activeMeta.category}
