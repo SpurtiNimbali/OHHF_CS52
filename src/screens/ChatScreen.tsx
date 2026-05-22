@@ -6,7 +6,7 @@ import { isMoodCheckInChatState } from '../mood/moodCheckInNav'
 import { markMoodEntryIfChat } from '../lib/moodEntries'
 import ReactMarkdown from 'react-markdown'
 import type { Components } from 'react-markdown'
-import { MessageCircle, Heart, Shield, ArrowUp, ArrowLeft, ClipboardList, BookOpen, Users } from 'lucide-react'
+import { MessageCircle, Heart, Shield, ArrowUp, ArrowLeft, CircleHelp, BookOpen, Users } from 'lucide-react'
 
 // ── Brand tokens ──────────────────────────────────────────────────────────────
 
@@ -227,7 +227,7 @@ function WelcomeState({ onChip }: { onChip: (label: string) => void }) {
         fontFamily: FONT,
       }}
     >
-      {/* Heart pill — brand light-blue tint */}
+      {/* Chat avatar — round speech bubble */}
       <motion.div
         initial={{ scale: 0.85, opacity: 0 }}
         animate={{ scale: 1, opacity: 1 }}
@@ -236,14 +236,14 @@ function WelcomeState({ onChip }: { onChip: (label: string) => void }) {
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
-          width: 80,
+          width: 56,
           height: 56,
-          borderRadius: 32,
+          borderRadius: '50%',
           background: LIGHT_BLUE,
           marginBottom: 24,
         }}
       >
-        <Heart style={{ width: 28, height: 28, color: NAVY }} strokeWidth={1.5} />
+        <MessageCircle style={{ width: 28, height: 28, color: NAVY }} strokeWidth={1.5} />
       </motion.div>
 
       <motion.h2
@@ -393,14 +393,14 @@ const INTENT_RESOURCE_UI: Record<
     title: string
     description: string
     buttonLabel: string
-    Icon: typeof ClipboardList
+    Icon: typeof CircleHelp
   }
 > = {
   cardiologist_questions: {
     title: 'Questions for your care team',
     description: 'Save and organize prompts for cardiology visits and other appointments.',
     buttonLabel: 'Open question library',
-    Icon: ClipboardList,
+    Icon: CircleHelp,
   },
   glossary: {
     title: 'Medical glossary',
@@ -544,7 +544,7 @@ function MessageBubble({
     >
       {!isUser && (
         <div style={{ flexShrink: 0, width: 32, height: 32, borderRadius: '50%', background: LIGHT_BLUE, display: 'flex', alignItems: 'center', justifyContent: 'center', marginTop: 2 }}>
-          <Heart style={{ width: 14, height: 14, color: NAVY }} strokeWidth={2} />
+          <MessageCircle style={{ width: 16, height: 16, color: NAVY }} strokeWidth={2} />
         </div>
       )}
       <div style={{ display: 'flex', flexDirection: 'column', gap: 6, maxWidth: '75%', alignItems: isUser ? 'flex-end' : 'flex-start', width: isUser ? undefined : '100%' }}>
@@ -772,7 +772,7 @@ function LoadingBubble() {
       style={{ display: 'flex', gap: 12 }}
     >
       <div style={{ flexShrink: 0, width: 32, height: 32, borderRadius: '50%', background: LIGHT_BLUE, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-        <Heart style={{ width: 14, height: 14, color: NAVY }} strokeWidth={2} />
+        <MessageCircle style={{ width: 16, height: 16, color: NAVY }} strokeWidth={2} />
       </div>
       <div style={{ display: 'flex', alignItems: 'center', gap: 5, padding: '10px 16px', background: '#fff', border: `1.5px solid ${LIGHT_BLUE}`, borderRadius: '16px 16px 16px 4px', boxShadow: '0 1px 4px rgba(25,43,63,0.06)' }}>
         {[0, 1, 2].map((i) => (

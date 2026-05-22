@@ -57,9 +57,24 @@ function readStoredMood(): MoodId | null {
   return null
 }
 
+/** Calendar day key for wellness UI (tool "used" markers, etc.) — follows mood storage date while mood is set. */
+function getWellnessDayKey(moodId: MoodId | null): string {
+  const today = moodLocalDateKey()
+  if (!moodId) return today
+  try {
+    const storedDate = localStorage.getItem(STORAGE_DATE_KEY)
+    if (storedDate) return storedDate
+  } catch {
+    /* ignore */
+  }
+  return today
+}
+
 export type MoodContextValue = {
   moodId: MoodId | null
   setMoodId: (id: MoodId | null) => void
+  /** Local YYYY-MM-DD for today's wellness session; resets when mood resets (not at midnight while tab stays open). */
+  wellnessDayKey: string
   variant: MoodUiVariant | null
   theme: MoodTheme
 }
@@ -110,7 +125,13 @@ export function MoodProvider({ children }: { children: ReactNode }) {
   const value = useMemo<MoodContextValue>(() => {
     const variant = moodId ? moodVariantById(moodId) : null
     const theme = resolvedMoodTheme(moodId)
-    return { moodId, setMoodId, variant, theme }
+    return {
+      moodId,
+      setMoodId,
+      wellnessDayKey: getWellnessDayKey(moodId),
+      variant,
+      theme,
+    }
   }, [moodId, setMoodId])
 
   return <MoodContext.Provider value={value}>{children}</MoodContext.Provider>

@@ -26,6 +26,7 @@ import {
   getMoodChatPrefill,
   moodShellBackgroundClasses,
   type MoodId,
+  moodLocalDateKey,
   useMood,
 } from '../mood'
 import {
@@ -305,19 +306,15 @@ function MoodCheckInColorLegend() {
   )
 }
 
-function isSameLocalDay(a: Date, b: Date): boolean {
-  return (
-    a.getFullYear() === b.getFullYear() &&
-    a.getMonth() === b.getMonth() &&
-    a.getDate() === b.getDate()
-  )
-}
-
-function toolUseCount(toolLog: ToolUseEntry[], toolId: ToolId, emotion: WellnessEmotion | null) {
-  const today = new Date()
+function toolUseCount(
+  toolLog: ToolUseEntry[],
+  toolId: ToolId,
+  emotion: WellnessEmotion | null,
+  wellnessDayKey: string,
+) {
   return toolLog.filter((entry) => {
     const usedAt = new Date(entry.date)
-    if (Number.isNaN(usedAt.getTime()) || !isSameLocalDay(usedAt, today)) return false
+    if (Number.isNaN(usedAt.getTime()) || moodLocalDateKey(usedAt) !== wellnessDayKey) return false
     return entry.toolId === toolId && (!emotion || entry.emotion === emotion)
   }).length
 }
@@ -1688,7 +1685,7 @@ function MoodCheckInTool({ onSaved }: { onSaved?: () => void }) {
 
 export default function WellnessTools() {
   const navigate = useNavigate()
-  const { moodId, setMoodId, theme } = useMood()
+  const { moodId, setMoodId, theme, wellnessDayKey } = useMood()
   const checkInEmotion = wellnessEmotionFromMoodId(moodId)
   const [activeTool, setActiveTool] = useState<ToolId | null>(null)
   const [moodLog, setMoodLog] = useLocalState<MoodLogEntry[]>(STORAGE.moods, [])
@@ -1980,12 +1977,12 @@ export default function WellnessTools() {
                 <ToolTile
                   toolId={selectedMeta.primary}
                   onOpen={(id) => void openTool(id, { saveCheckIn: true })}
-                  count={toolUseCount(toolLog, selectedMeta.primary, checkInEmotion)}
+                  count={toolUseCount(toolLog, selectedMeta.primary, checkInEmotion, wellnessDayKey)}
                 />
                 <ToolTile
                   toolId={selectedMeta.secondary}
                   onOpen={(id) => void openTool(id, { saveCheckIn: true })}
-                  count={toolUseCount(toolLog, selectedMeta.secondary, checkInEmotion)}
+                  count={toolUseCount(toolLog, selectedMeta.secondary, checkInEmotion, wellnessDayKey)}
                   accent="rgba(172, 183, 168, 0.45)"
                 />
               </div>
@@ -2046,7 +2043,7 @@ export default function WellnessTools() {
             <ToolTile
               toolId="micro-journal"
               onOpen={(id) => void openTool(id, { saveCheckIn: true })}
-              count={toolUseCount(toolLog, 'micro-journal', checkInEmotion)}
+              count={toolUseCount(toolLog, 'micro-journal', checkInEmotion, wellnessDayKey)}
             />
           </div>
         </Section>
@@ -2103,7 +2100,7 @@ export default function WellnessTools() {
                 key={toolId}
                 toolId={toolId}
                 onOpen={openTool}
-                count={toolUseCount(toolLog, toolId, checkInEmotion)}
+                count={toolUseCount(toolLog, toolId, checkInEmotion, wellnessDayKey)}
               />
             ))}
           </div>
@@ -2116,7 +2113,7 @@ export default function WellnessTools() {
                 key={toolId}
                 toolId={toolId}
                 onOpen={openTool}
-                count={toolUseCount(toolLog, toolId, checkInEmotion)}
+                count={toolUseCount(toolLog, toolId, checkInEmotion, wellnessDayKey)}
               />
             ))}
           </div>
@@ -2133,7 +2130,7 @@ export default function WellnessTools() {
                 key={toolId}
                 toolId={toolId}
                 onOpen={openTool}
-                count={toolUseCount(toolLog, toolId, checkInEmotion)}
+                count={toolUseCount(toolLog, toolId, checkInEmotion, wellnessDayKey)}
               />
             ))}
           </div>

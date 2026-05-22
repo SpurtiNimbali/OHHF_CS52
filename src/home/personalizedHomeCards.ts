@@ -5,6 +5,7 @@
 
 import {
   BookOpen,
+  CircleHelp,
   Heart,
   MessageCircle,
   Sparkles,
@@ -52,7 +53,7 @@ export const HOME_CARD_CATALOG: HomeCardDefinition[] = [
   },
   {
     id: 'visit-questions',
-    icon: Heart,
+    icon: CircleHelp,
     title: 'Questions for your visit',
     descriptionDefault: 'Save prompts to bring to your healthcare appointments.',
     to: '/resources?view=questions',

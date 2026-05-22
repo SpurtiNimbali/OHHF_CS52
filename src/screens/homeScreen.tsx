@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { motion } from 'motion/react'
-import { BookOpen, Heart, MessageCircle, Sparkles, Wind } from 'lucide-react'
+import { BookOpen, CircleHelp, Heart, MessageCircle, Sparkles, Wind } from 'lucide-react'
 import { HomeResourceLinkCard } from '../components/home/HomeResourceLinkCard'
 import { HomeMoodChipButton } from '../components/home/HomeMoodChipButton'
 import { ResourcesRightNav } from '../components/ResourcesRightNav'
@@ -80,7 +80,7 @@ const BASE_CARDS: ResourceCard[] = [
   },
   {
     id: 'questions',
-    icon: Heart,
+    icon: CircleHelp,
     title: 'Questions for your visit',
     description: 'Save prompts to bring to your healthcare appointments.',
     iconWrapClass: 'bg-[#FFAAA5]',
