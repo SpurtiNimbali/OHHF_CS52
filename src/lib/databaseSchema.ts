@@ -48,6 +48,21 @@ USING (auth.jwt() ->> 'role' = 'staff' OR auth.jwt() ->> 'role' = 'admin');
 
 */
 
+export const MOOD_JOURNAL_ENTRIES_RLS = `
+-- Run in Supabase SQL Editor if mood/journal saves fail with RLS errors.
+-- See supabase/migrations/20260521230000_mood_journal_entries_rls.sql
+
+ALTER TABLE public.mood_entries ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.journal_entries ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "mood_entries_select_own" ON public.mood_entries FOR SELECT TO authenticated USING (auth.uid() = user_id);
+CREATE POLICY "mood_entries_insert_own" ON public.mood_entries FOR INSERT TO authenticated WITH CHECK (auth.uid() = user_id);
+CREATE POLICY "mood_entries_update_own" ON public.mood_entries FOR UPDATE TO authenticated USING (auth.uid() = user_id) WITH CHECK (auth.uid() = user_id);
+
+CREATE POLICY "journal_entries_select_own" ON public.journal_entries FOR SELECT TO authenticated USING (auth.uid() = user_id);
+CREATE POLICY "journal_entries_insert_own" ON public.journal_entries FOR INSERT TO authenticated WITH CHECK (auth.uid() = user_id);
+`
+
 export const FLAGGED_MESSAGES_SCHEMA = `
 CREATE TABLE IF NOT EXISTS flagged_messages (
   id BIGSERIAL PRIMARY KEY,

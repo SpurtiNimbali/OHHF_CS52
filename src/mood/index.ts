@@ -9,6 +9,8 @@ export {
   moodShellBackgroundClasses,
   moodColorWithAlpha,
 } from './moodVariants'
-export { getMoodMessage, getChatPromptHint } from './moodCopy'
+export { getMoodMessage, getChatPromptHint, getMoodChatPrefill } from './moodCopy'
+export type { MoodCheckInChatState } from './moodCheckInNav'
+export { isMoodCheckInChatState } from './moodCheckInNav'
 export { MoodProvider, useMood, type MoodContextValue } from './MoodContext'
 export { MoodHeartFill } from './MoodHeartFill'

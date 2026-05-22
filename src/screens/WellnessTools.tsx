@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState, type ReactNode } from 'react'
+import { useCallback, useEffect, useMemo, useState, type ReactNode } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import {
   Activity,
@@ -24,12 +24,26 @@ import { motion } from 'motion/react'
 import {
   MOOD_VARIANTS,
   MoodHeartFill,
+  getMoodChatPrefill,
   moodShellBackgroundClasses,
   type MoodId,
   useMood,
 } from '../mood'
 import {
-  CARDEA_ALMOST_WHITE,
+  clearMoodCheckInSession,
+  ensureMoodEntryForChat,
+  fetchMoodEntries,
+  insertMoodEntry,
+  markMoodCheckInSaved,
+  type MoodEntryRow,
+} from '../lib/moodEntries'
+import {
+  fetchJournalEntries,
+  insertJournalEntry,
+  type JournalEntryRow,
+} from '../lib/journalEntries'
+import { ensureAuthUserId, isSupabaseConfigured } from '../lib/supabase'
+import {
   CARDEA_DARK_GREEN,
   CARDEA_FONT_PRIMARY,
   CARDEA_LIGHT_BLUE,
@@ -83,14 +97,6 @@ type ToolUseEntry = {
   emotion: WellnessEmotion | null
 }
 
-type JournalEntry = {
-  id: string
-  date: string
-  prompt: string
-  text: string
-  source: string
-}
-
 type Reframe = {
   id: string
   from: string
@@ -115,7 +121,6 @@ type StoredValue<T> = T | (() => T)
 const STORAGE = {
   moods: 'cardea-wellness-mood-log',
   tools: 'cardea-wellness-tool-log',
-  journals: 'cardea-wellness-journals',
   reframes: 'cardea-wellness-reframes',
   reflections: 'cardea-wellness-parent-reflections',
   safePlace: 'cardea-wellness-safe-place',
@@ -186,6 +191,22 @@ const journalPrompts = [
   'what feels hardest today?',
   'what can wait until later?',
 ]
+
+const JOURNAL_PROMPT_ROTATE_MS = 12_000
+
+function useRotatingJournalPrompt(lockedPrompt?: string) {
+  const [idx, setIdx] = useState(() => new Date().getDate() % journalPrompts.length)
+
+  useEffect(() => {
+    if (lockedPrompt) return
+    const timer = window.setInterval(() => {
+      setIdx((i) => (i + 1) % journalPrompts.length)
+    }, JOURNAL_PROMPT_ROTATE_MS)
+    return () => window.clearInterval(timer)
+  }, [lockedPrompt])
+
+  return lockedPrompt ?? journalPrompts[idx]
+}
 
 const presetReframes: Array<[string, string]> = [
   ['I have to handle everything', 'I can take one next step'],
@@ -1025,58 +1046,121 @@ function BodyScanTool() {
 
 function MicroJournalTool({
   initialPrompt,
-  source = 'micro-journal',
+  onEntriesChanged,
 }: {
   initialPrompt?: string
-  source?: string
+  onEntriesChanged?: () => void
 }) {
-  const [entries, setEntries] = useLocalState<JournalEntry[]>(STORAGE.journals, [])
-  const [promptIdx, setPromptIdx] = useState(() => new Date().getDate() % journalPrompts.length)
+  const prompt = useRotatingJournalPrompt(initialPrompt)
   const [text, setText] = useState('')
   const [saved, setSaved] = useState(false)
-  const prompt = initialPrompt ?? journalPrompts[promptIdx]
+  const [saveError, setSaveError] = useState<string | null>(null)
+  const [saving, setSaving] = useState(false)
+  const [history, setHistory] = useState<JournalEntryRow[]>([])
+  const [historyLoading, setHistoryLoading] = useState(true)
+
+  const reloadHistory = useCallback(async () => {
+    setHistoryLoading(true)
+    const rows = await fetchJournalEntries(40)
+    setHistory(rows)
+    setHistoryLoading(false)
+  }, [])
+
+  useEffect(() => {
+    void reloadHistory()
+  }, [reloadHistory])
+
+  async function handleSave() {
+    const trimmed = text.trim()
+    if (!trimmed || saving) return
+    setSaving(true)
+    setSaveError(null)
+    const { entry, error } = await insertJournalEntry(prompt, trimmed)
+    if (error) {
+      setSaveError(error)
+      setSaving(false)
+      return
+    }
+    setText('')
+    setSaved(true)
+    if (entry) {
+      setHistory((prev) => [entry, ...prev.filter((r) => r.id !== entry.id)].slice(0, 40))
+    } else {
+      await reloadHistory()
+    }
+    onEntriesChanged?.()
+    window.setTimeout(() => setSaved(false), 1600)
+    setSaving(false)
+  }
+
   return (
-    <div>
-      <div className="mb-3 flex items-start justify-between gap-3">
-        <p className="font-semibold text-[#192b3f]">{prompt}</p>
-        {!initialPrompt ? (
-          <button
-            type="button"
-            onClick={() => setPromptIdx((i) => (i + 1) % journalPrompts.length)}
-            className="text-xs font-semibold uppercase tracking-[0.14em]"
-            style={{ color: CARDEA_MUTED }}
-          >
-            another
-          </button>
-        ) : null}
-      </div>
+    <div className="space-y-6">
+      <p className="text-base leading-relaxed text-[#192b3f]">{prompt}</p>
+
       <textarea
         value={text}
         onChange={(e) => setText(e.target.value)}
-        placeholder="a short note to yourself..."
-        className="min-h-[160px] w-full rounded-2xl border bg-[#f5f9f9] p-4 text-sm leading-relaxed outline-none"
+        placeholder="write here..."
+        rows={6}
+        className="w-full resize-y rounded-2xl border bg-[#f5f9f9] px-4 py-3 text-sm leading-relaxed outline-none"
         style={{ borderColor: CARDEA_LIGHT_BLUE, color: CARDEA_NAVY }}
       />
-      <div className="mt-3 flex items-center justify-between gap-3">
-        <p className="text-xs" style={{ color: CARDEA_MUTED }}>
-          {entries.length} saved
-        </p>
+
+      {saveError ? (
+        <p className="text-sm leading-relaxed text-[#9B1C31]">{saveError}</p>
+      ) : null}
+
+      <div className="flex items-center justify-end gap-3">
+        {saved ? (
+          <span className="text-sm" style={{ color: CARDEA_DARK_GREEN }}>
+            saved.
+          </span>
+        ) : null}
         <button
           type="button"
-          disabled={!text.trim()}
-          onClick={() => {
-            setEntries([{ id: makeId('journal'), date: new Date().toISOString(), prompt, text: text.trim(), source }, ...entries])
-            setText('')
-            setSaved(true)
-            window.setTimeout(() => setSaved(false), 1600)
-          }}
+          disabled={!text.trim() || saving}
+          onClick={() => void handleSave()}
           className="rounded-xl px-5 py-2.5 text-sm font-semibold text-white disabled:opacity-40"
           style={{ background: CARDEA_NAVY }}
         >
           Save
         </button>
       </div>
-      {saved ? <p className="mt-2 text-sm font-semibold" style={{ color: CARDEA_DARK_GREEN }}>Saved.</p> : null}
+
+      <div className="border-t pt-5" style={{ borderColor: 'rgba(25,43,63,0.08)' }}>
+        <p className="mb-3 text-xs font-bold uppercase tracking-[0.16em]" style={{ color: CARDEA_MUTED }}>
+          history
+        </p>
+        {historyLoading ? (
+          <p className="text-sm" style={{ color: CARDEA_MUTED }}>
+            loading…
+          </p>
+        ) : history.length === 0 ? (
+          <p className="text-sm leading-relaxed" style={{ color: CARDEA_MUTED }}>
+            No entries yet. What you save will show up here.
+          </p>
+        ) : (
+          <ul className="space-y-4">
+            {history.map((row) => (
+              <li
+                key={row.id}
+                className="rounded-2xl border bg-[#f5f9f9] px-4 py-3"
+                style={{ borderColor: 'rgba(25,43,63,0.08)' }}
+              >
+                <p className="text-xs" style={{ color: CARDEA_MUTED }}>
+                  {formatEntryDateTime(row.timestamp)}
+                </p>
+                <p className="mt-1 text-sm leading-relaxed" style={{ color: CARDEA_MUTED }}>
+                  {row.prompt}
+                </p>
+                <p className="mt-2 whitespace-pre-wrap text-sm leading-relaxed text-[#3A525A]">
+                  {row.entry}
+                </p>
+              </li>
+            ))}
+          </ul>
+        )}
+      </div>
     </div>
   )
 }
@@ -1264,40 +1348,55 @@ function StopSkillTool() {
   )
 }
 
-function PastEntriesSection({ moodLog }: { moodLog: MoodLogEntry[] }) {
-  const [journalEntries] = useLocalState<JournalEntry[]>(STORAGE.journals, [])
+function PastEntriesSection({
+  moodEntries,
+  journalRefreshKey = 0,
+}: {
+  moodEntries: MoodEntryRow[]
+  journalRefreshKey?: number
+}) {
+  const [journalRows, setJournalRows] = useState<JournalEntryRow[]>([])
   const [reflections] = useLocalState<Reflection[]>(STORAGE.reflections, [])
   const [reframes] = useLocalState<Reframe[]>(STORAGE.reframes, [])
   const [safePlace] = useLocalState<SafePlace | null>(STORAGE.safePlace, null)
 
-  const entries = useMemo(() => {
-    const moodEntries = moodLog
-      .filter((entry) => entry.note?.trim())
-      .map((entry) => {
-        const mood = moodVariantFor(entry.emotion)
-        const emotion = WELLNESS_EMOTIONS.find((item) => item.moodId === entry.emotion)
-        return {
-          id: entry.id,
-          date: entry.date,
-          type: 'Mood check-in',
-          title: emotion?.label ?? mood.label,
-          text: entry.note?.trim() ?? '',
-        }
-      })
+  useEffect(() => {
+    let cancelled = false
+    ;(async () => {
+      const rows = await fetchJournalEntries(50)
+      if (!cancelled) setJournalRows(rows)
+    })()
+    return () => {
+      cancelled = true
+    }
+  }, [journalRefreshKey])
 
-    const journals = journalEntries.map((entry) => ({
-      id: entry.id,
-      date: entry.date,
-      type: entry.source === 'night-reset' ? 'Night reset' : 'Micro-journal',
-      title: entry.prompt,
-      text: entry.text,
+  const entries = useMemo(() => {
+    const moodItems = moodEntries.map((row) => {
+      const mood = moodVariantFor(row.mood)
+      const emotion = WELLNESS_EMOTIONS.find((item) => item.moodId === row.mood)
+      return {
+        id: row.id,
+        date: row.timestamp,
+        type: 'Mood check-in',
+        prompt: '',
+        text: emotion?.label ?? mood.label,
+      }
+    })
+
+    const journals = journalRows.map((row) => ({
+      id: row.id,
+      date: row.timestamp,
+      type: 'Micro-journal',
+      prompt: row.prompt,
+      text: row.entry,
     }))
 
     const parentReflections = reflections.map((entry) => ({
       id: entry.id,
       date: entry.date,
       type: 'Parent reflection',
-      title: entry.prompt,
+      prompt: entry.prompt,
       text: entry.text,
     }))
 
@@ -1305,7 +1404,7 @@ function PastEntriesSection({ moodLog }: { moodLog: MoodLogEntry[] }) {
       id: entry.id,
       date: entry.date,
       type: 'Reframe',
-      title: entry.from,
+      prompt: entry.from,
       text: entry.to,
     }))
 
@@ -1315,19 +1414,19 @@ function PastEntriesSection({ moodLog }: { moodLog: MoodLogEntry[] }) {
             id: 'safe-place',
             date: safePlace.date,
             type: 'Safe place',
-            title: 'Saved safe place',
+            prompt: 'safe place',
             text: safePlace.text,
           }]
         : []
 
     return [
-      ...moodEntries,
+      ...moodItems,
       ...journals,
       ...parentReflections,
       ...savedReframes,
       ...safePlaceEntry,
     ].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
-  }, [journalEntries, moodLog, reframes, reflections, safePlace])
+  }, [journalRows, moodEntries, reframes, reflections, safePlace])
 
   return (
     <div className="rounded-3xl bg-white/85 p-5 shadow-sm">
@@ -1354,8 +1453,16 @@ function PastEntriesSection({ moodLog }: { moodLog: MoodLogEntry[] }) {
                   {formatEntryDateTime(entry.date)}
                 </span>
               </div>
-              <p className="text-sm font-semibold text-[#192b3f]">{entry.title}</p>
-              <p className="mt-2 whitespace-pre-wrap text-sm leading-relaxed text-[#3A525A]">{entry.text}</p>
+              {entry.prompt ? (
+                <p className="text-sm leading-relaxed" style={{ color: CARDEA_MUTED }}>
+                  {entry.prompt}
+                </p>
+              ) : null}
+              {entry.text ? (
+                <p className={`whitespace-pre-wrap text-sm leading-relaxed text-[#3A525A] ${entry.prompt ? 'mt-2' : ''}`}>
+                  {entry.text}
+                </p>
+              ) : null}
             </article>
           ))}
         </div>
@@ -1432,7 +1539,7 @@ function NightResetTool() {
           <span key={i} className="h-1.5 flex-1 rounded-full" style={{ background: i <= idx ? CARDEA_DARK_GREEN : CARDEA_LIGHT_BLUE }} />
         ))}
       </div>
-      <MicroJournalTool initialPrompt={prompts[idx]} source="night-reset" />
+      <MicroJournalTool initialPrompt={prompts[idx]} />
       <button
         type="button"
         onClick={() => setIdx((i) => Math.min(i + 1, prompts.length - 1))}
@@ -1516,10 +1623,14 @@ function ToolContent({
   toolId,
   onOpenTool,
   journalPrompt,
+  onMoodEntriesChanged,
+  onJournalEntriesChanged,
 }: {
   toolId: ToolId
   onOpenTool: (toolId: ToolId) => void
   journalPrompt: string | null
+  onMoodEntriesChanged?: () => void
+  onJournalEntriesChanged?: () => void
 }) {
   if (toolId === 'breathing') return <BreathingTool />
   if (toolId === 'grounding') return <GroundingTool />
@@ -1527,10 +1638,17 @@ function ToolContent({
   if (toolId === 'cold-reset') return <ColdResetTool />
   if (toolId === 'move-it-out') return <MoveItOutTool />
   if (toolId === 'body-scan') return <BodyScanTool />
-  if (toolId === 'mood-check-in') return <MoodCheckInTool />
+  if (toolId === 'mood-check-in') return <MoodCheckInTool onSaved={onMoodEntriesChanged} />
   if (toolId === 'name-it') return <NameItTool onOpenTool={onOpenTool} />
   if (toolId === 'feelings-wheel') return <FeelingsWheelTool onOpenTool={onOpenTool} />
-  if (toolId === 'micro-journal') return <MicroJournalTool initialPrompt={journalPrompt ?? undefined} />
+  if (toolId === 'micro-journal') {
+    return (
+      <MicroJournalTool
+        initialPrompt={journalPrompt ?? undefined}
+        onEntriesChanged={onJournalEntriesChanged}
+      />
+    )
+  }
   if (toolId === 'reframes') return <ReframesTool />
   if (toolId === 'safe-place') return <SafePlaceTool />
   if (toolId === 'stop-skill') return <StopSkillTool />
@@ -1544,11 +1662,12 @@ function onOpenToolWithPrompt(onOpenTool: (toolId: ToolId) => void, prompt: stri
   onOpenTool('micro-journal')
 }
 
-function MoodCheckInTool() {
+function MoodCheckInTool({ onSaved }: { onSaved?: () => void }) {
   const [mood, setMood] = useState<WellnessEmotion | null>(null)
   const [underneath, setUnderneath] = useState('')
   const [history, setHistory] = useLocalState<MoodLogEntry[]>(STORAGE.moods, [])
   const [saved, setSaved] = useState(false)
+  const [saveError, setSaveError] = useState<string | null>(null)
   return (
     <div className="space-y-4">
       <div className="flex flex-wrap gap-2">
@@ -1576,16 +1695,35 @@ function MoodCheckInTool() {
         disabled={!mood}
         onClick={() => {
           if (!mood) return
-          setHistory([{ id: makeId('mood'), date: new Date().toISOString(), emotion: mood }, ...history].slice(0, 80))
-          setUnderneath('')
-          setSaved(true)
-          window.setTimeout(() => setSaved(false), 1600)
+          const meta = WELLNESS_EMOTIONS.find((e) => e.id === mood)
+          const moodId = meta?.moodId ?? mood
+          setHistory([
+            {
+              id: makeId('mood'),
+              date: new Date().toISOString(),
+              emotion: moodId,
+              note: underneath.trim() || undefined,
+            },
+            ...history,
+          ].slice(0, 80))
+          setSaveError(null)
+          void insertMoodEntry(moodId).then(({ entry, error }) => {
+            if (error) {
+              setSaveError(error)
+              return
+            }
+            if (entry) onSaved?.()
+            setUnderneath('')
+            setSaved(true)
+            window.setTimeout(() => setSaved(false), 1600)
+          })
         }}
         className="rounded-xl px-4 py-2 text-sm font-semibold text-white disabled:opacity-40"
         style={{ background: CARDEA_DARK_GREEN }}
       >
         Save check-in
       </button>
+      {saveError ? <p className="text-sm text-[#9B1C31]">{saveError}</p> : null}
       {saved ? <p className="text-sm" style={{ color: CARDEA_DARK_GREEN }}>saved.</p> : null}
     </div>
   )
@@ -1597,9 +1735,29 @@ export default function WellnessTools() {
   const [selectedEmotion, setSelectedEmotion] = useState<WellnessEmotion | null>(null)
   const [activeTool, setActiveTool] = useState<ToolId | null>(null)
   const [moodLog, setMoodLog] = useLocalState<MoodLogEntry[]>(STORAGE.moods, [])
+  const [moodEntries, setMoodEntries] = useState<MoodEntryRow[]>([])
   const [toolLog, setToolLog] = useLocalState<ToolUseEntry[]>(STORAGE.tools, [])
   const [journalPrompt, setJournalPrompt] = useState<string | null>(null)
   const [checkInSaved, setCheckInSaved] = useState(false)
+  const [checkInError, setCheckInError] = useState<string | null>(null)
+  const [journalRefreshKey, setJournalRefreshKey] = useState(0)
+
+  const reloadMoodEntries = useCallback(async () => {
+    const rows = await fetchMoodEntries(10)
+    setMoodEntries(rows)
+  }, [])
+
+  useEffect(() => {
+    let cancelled = false
+    ;(async () => {
+      await ensureAuthUserId()
+      if (cancelled) return
+      await reloadMoodEntries()
+    })()
+    return () => {
+      cancelled = true
+    }
+  }, [reloadMoodEntries])
 
   useEffect(() => {
     const pending = sessionStorage.getItem('cardea-wellness-pending-journal-prompt')
@@ -1614,7 +1772,18 @@ export default function WellnessTools() {
     () => resolveSuggestedExercises(selectedEmotion, moodId),
     [moodId, selectedEmotion],
   )
-  const recentMoods = useMemo(() => moodLog.slice(0, 10).reverse(), [moodLog])
+  const recentMoods = useMemo(() => {
+    if (moodEntries.length > 0) {
+      return [...moodEntries]
+        .sort((a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime())
+        .map((row) => ({
+          id: row.id,
+          date: row.timestamp,
+          emotion: row.mood,
+        }))
+    }
+    return moodLog.slice(0, 10).reverse()
+  }, [moodEntries, moodLog])
   const recentMoodSummaries = useMemo(
     () =>
       recentMoods.map((entry) => {
@@ -1634,8 +1803,9 @@ export default function WellnessTools() {
     return `linear-gradient(90deg, ${colors.join(', ')})`
   }, [recentMoodSummaries])
 
-  function saveMoodCheckIn() {
+  async function saveMoodCheckIn() {
     if (!selectedMeta) return
+    setCheckInError(null)
     setMoodLog([
       {
         id: makeId('mood'),
@@ -1644,8 +1814,50 @@ export default function WellnessTools() {
       },
       ...moodLog,
     ].slice(0, 80))
+    const { entry, error } = await insertMoodEntry(selectedMeta.moodId)
+    if (error) {
+      setCheckInError(error)
+      return
+    }
+    if (entry) {
+      markMoodCheckInSaved(selectedMeta.moodId, entry.id)
+      setMoodEntries((prev) => [entry, ...prev.filter((r) => r.id !== entry.id)].slice(0, 10))
+    } else {
+      await reloadMoodEntries()
+    }
     setCheckInSaved(true)
     window.setTimeout(() => setCheckInSaved(false), 1800)
+  }
+
+  async function openMoodChat() {
+    if (!selectedMeta) return
+    setCheckInError(null)
+    setMoodLog([
+      {
+        id: makeId('mood'),
+        date: new Date().toISOString(),
+        emotion: selectedMeta.moodId,
+      },
+      ...moodLog,
+    ].slice(0, 80))
+    const { entry, entryId: moodEntryId, error } = await ensureMoodEntryForChat(selectedMeta.moodId)
+    if (error) {
+      setCheckInError(error)
+      return
+    }
+    if (entry) {
+      markMoodCheckInSaved(selectedMeta.moodId, entry.id)
+      setMoodEntries((prev) => [entry, ...prev.filter((r) => r.id !== entry.id)].slice(0, 10))
+    } else {
+      await reloadMoodEntries()
+    }
+    navigate('/chat', {
+      state: {
+        prefill: getMoodChatPrefill(selectedMeta.moodId),
+        moodId: selectedMeta.moodId,
+        moodEntryId,
+      },
+    })
   }
 
   function openTool(toolId: ToolId) {
@@ -1660,6 +1872,8 @@ export default function WellnessTools() {
     setSelectedEmotion(emotion.id)
     setMoodId(emotion.moodId)
     setCheckInSaved(false)
+    setCheckInError(null)
+    clearMoodCheckInSession()
     setJournalPrompt(null)
     setActiveTool(null)
   }
@@ -1764,13 +1978,17 @@ export default function WellnessTools() {
               </p>
               <button
                 type="button"
-                onClick={() => navigate('/chat')}
-                className="inline-flex items-center gap-2 rounded-xl px-4 py-2.5 text-sm font-semibold text-white"
+                disabled={!selectedMeta}
+                onClick={() => void openMoodChat()}
+                className="inline-flex items-center gap-2 rounded-xl px-4 py-2.5 text-sm font-semibold text-white disabled:cursor-not-allowed disabled:opacity-40"
                 style={{ background: CARDEA_DARK_GREEN }}
               >
                 Open chat
                 <ArrowRight className="h-4 w-4" aria-hidden />
               </button>
+              {checkInError ? (
+                <p className="mt-2 text-xs leading-relaxed text-[#9B1C31]">{checkInError}</p>
+              ) : null}
               <div className="mt-3 flex flex-wrap items-center justify-between gap-3">
                 <p className="text-xs leading-relaxed" style={{ color: CARDEA_MUTED }}>
                   two questions. one minute.
@@ -1784,7 +2002,7 @@ export default function WellnessTools() {
                   <button
                     type="button"
                     disabled={!selectedMeta}
-                    onClick={saveMoodCheckIn}
+                    onClick={() => void saveMoodCheckIn()}
                     className="rounded-full px-4 py-2 text-xs font-semibold text-white disabled:opacity-40"
                     style={{ background: CARDEA_DARK_GREEN }}
                   >
@@ -1802,28 +2020,31 @@ export default function WellnessTools() {
             ) : null}
           </div>
 
-          {recentMoods.length > 2 ? (
+          {recentMoods.length === 0 ? (
+            <p className="mt-4 text-sm leading-relaxed" style={{ color: CARDEA_MUTED }}>
+              No mood check-ins yet. Save one above and it will appear here.
+            </p>
+          ) : null}
+
+          {recentMoods.length > 0 ? (
             <div className="mt-4 rounded-3xl bg-white/80 p-5 shadow-sm">
               <p className="mb-3 text-xs font-bold uppercase tracking-[0.18em]" style={{ color: CARDEA_MUTED }}>recent check-ins</p>
               <div
-                className="relative flex h-3 rounded-full bg-[#f5f9f9] shadow-inner"
+                className="relative flex h-4 rounded-full bg-[#f5f9f9] shadow-inner"
                 style={{ background: recentMoodGradient }}
-                title={recentMoodSummaries
-                  .map((entry) => `${entry.dateTime}: ${entry.label}`)
-                  .join(' → ')}
               >
-                <div className="h-full w-full rounded-full bg-gradient-to-r from-white/20 via-transparent to-white/20" />
+                <div className="pointer-events-none h-full w-full rounded-full bg-gradient-to-r from-white/20 via-transparent to-white/20" />
                 <div className="absolute inset-0 flex rounded-full">
                   {recentMoodSummaries.map((entry) => (
                     <div
                       key={entry.id}
-                      className="group relative flex-1"
-                      title={entry.note ? `${entry.dateTime}: ${entry.note}` : `${entry.dateTime}: ${entry.label}`}
+                      className="group relative flex-1 cursor-default"
+                      aria-label={`${entry.label}, ${entry.dateTime}`}
                     >
                       <span className="sr-only">
                         {entry.dateTime}: {entry.label}
                       </span>
-                      <div className="pointer-events-none absolute left-1/2 top-5 z-10 w-max max-w-[220px] -translate-x-1/2 rounded-xl bg-white px-3 py-2 text-xs opacity-0 shadow-lg ring-1 ring-[rgba(25,43,63,0.08)] transition-opacity group-hover:opacity-100 group-focus-within:opacity-100">
+                      <div className="pointer-events-none absolute bottom-full left-1/2 z-10 mb-2 w-max max-w-[220px] -translate-x-1/2 rounded-xl bg-white px-3 py-2 text-xs opacity-0 shadow-lg ring-1 ring-[rgba(25,43,63,0.08)] transition-opacity group-hover:opacity-100 group-focus-within:opacity-100">
                         <div className="flex items-center gap-2">
                           <span
                             className="h-2.5 w-2.5 shrink-0 rounded-full"
@@ -1835,21 +2056,14 @@ export default function WellnessTools() {
                         <div className="mt-1 whitespace-nowrap" style={{ color: CARDEA_MUTED }}>
                           {entry.dateTime}
                         </div>
-                        {entry.note && (
-                          <div className="mt-1 max-w-[190px] whitespace-normal leading-snug text-[#3A525A]">
-                            {entry.note}
-                          </div>
-                        )}
                       </div>
                     </div>
                   ))}
                 </div>
               </div>
-              <div className="mt-2 flex justify-between gap-3 text-[11px]" style={{ color: CARDEA_MUTED }}>
-                <span>{recentMoodSummaries[0]?.dateTime}</span>
-                <span>{recentMoodSummaries[recentMoodSummaries.length - 1]?.dateTime}</span>
-              </div>
-              <p className="mt-2 text-xs" style={{ color: CARDEA_MUTED }}>no judgment. just a gentle picture.</p>
+              <p className="mt-2 text-xs" style={{ color: CARDEA_MUTED }}>
+                Hover a segment to see that check-in. No judgment — just a gentle picture.
+              </p>
             </div>
           ) : null}
 
@@ -1957,7 +2171,7 @@ export default function WellnessTools() {
         </Section>
 
         <Section id="journal" label="Past entries">
-          <PastEntriesSection moodLog={moodLog} />
+          <PastEntriesSection moodEntries={moodEntries} journalRefreshKey={journalRefreshKey} />
         </Section>
 
         <footer className="mb-6 mt-16 flex flex-col items-center gap-2 text-center">
@@ -1990,7 +2204,13 @@ export default function WellnessTools() {
               {activeMeta.title}
             </h2>
             <p className="mb-5 text-sm" style={{ color: CARDEA_MUTED }}>{activeMeta.short}</p>
-            <ToolContent toolId={activeTool} onOpenTool={openTool} journalPrompt={journalPrompt} />
+            <ToolContent
+              toolId={activeTool}
+              onOpenTool={openTool}
+              journalPrompt={journalPrompt}
+              onMoodEntriesChanged={reloadMoodEntries}
+              onJournalEntriesChanged={() => setJournalRefreshKey((k) => k + 1)}
+            />
             <ToolActions
               onDone={() => {
                 setJournalPrompt(null)

@@ -43,3 +43,12 @@ export function getChatPromptHint(moodId: MoodId | null): string {
   if (!moodId) return DEFAULT_HINT
   return CHAT_HINTS[moodId]
 }
+
+/** Conversation starter for chat prefill (quoted line from mood hint, when present). */
+export function getMoodChatPrefill(moodId: MoodId): string {
+  const hint = CHAT_HINTS[moodId]
+  const quoted = hint.match(/[“"]([^”"]+)[”"]/)
+  if (quoted?.[1]) return quoted[1]
+  const stripped = hint.replace(/^Try:\s*/i, '').split(' — ')[0]?.trim()
+  return stripped || hint
+}
