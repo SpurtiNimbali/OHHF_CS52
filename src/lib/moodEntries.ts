@@ -3,6 +3,9 @@ import { MOOD_IDS } from '../mood/moodVariants'
 import { supabase, ensureAuthUserId, formatSupabaseClientError, isSupabaseConfigured } from './supabase'
 import { authFetch, getAccessToken } from './authenticatedApi'
 
+/** Number of mood check-ins shown in the wellness gradient timeline. */
+export const RECENT_MOOD_CHECKINS_LIMIT = 7
+
 export type MoodEntryRow = {
   id: string
   user_id: string
@@ -183,7 +186,7 @@ export async function saveMoodCheckInIfNeeded(
 ): Promise<{ entry: MoodEntryRow | null; error: string | null; alreadySaved: boolean }> {
   const saved = getSavedMoodCheckIn()
   if (saved?.moodId === mood && saved.entryId) {
-    const rows = await fetchMoodEntries(10)
+    const rows = await fetchMoodEntries(RECENT_MOOD_CHECKINS_LIMIT)
     const existing = rows.find((r) => r.id === saved.entryId && r.mood === mood)
     if (existing) {
       return { entry: existing, error: null, alreadySaved: true }
@@ -248,7 +251,7 @@ async function fetchMoodEntriesApi(limit: number): Promise<MoodEntryRow[]> {
   }
 }
 
-export async function fetchMoodEntries(limit = 10): Promise<MoodEntryRow[]> {
+export async function fetchMoodEntries(limit = RECENT_MOOD_CHECKINS_LIMIT): Promise<MoodEntryRow[]> {
   if (!isSupabaseConfigured) return []
   const userId = await ensureAuthUserId()
   if (!userId) return []

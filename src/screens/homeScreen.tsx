@@ -386,6 +386,10 @@ export function HomeScreen() {
               ))}
             </div>
 
+            <p className="mt-2 text-xs leading-relaxed" style={{ color: CARDEA_MUTED }}>
+              Feeling more than one? Pick Unsure.
+            </p>
+
             <div className="mt-4 rounded-2xl border bg-[#f5f9f9] p-4" style={{ borderColor: 'rgba(25,43,63,0.08)' }}>
               <p className="mb-3 text-sm font-semibold text-[#192b3f]">
                 Want to explore what&apos;s underneath it?

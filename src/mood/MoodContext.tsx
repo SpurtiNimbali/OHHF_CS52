@@ -2,10 +2,12 @@ import {
   createContext,
   useCallback,
   useContext,
+  useEffect,
   useMemo,
   useState,
   type ReactNode,
 } from 'react'
+import { clearMoodCheckInSession } from '../lib/moodEntries'
 import type { MoodId } from './moodVariants'
 import {
   moodVariantById,
@@ -16,13 +18,39 @@ import {
 } from './moodVariants'
 
 const STORAGE_KEY = 'cardea-mood-id'
+const STORAGE_DATE_KEY = 'cardea-mood-date'
 
 const VALID: ReadonlySet<string> = new Set(MOOD_IDS)
 
+/** Local calendar day (YYYY-MM-DD) for daily mood reset. */
+export function moodLocalDateKey(date = new Date()): string {
+  const y = date.getFullYear()
+  const m = String(date.getMonth() + 1).padStart(2, '0')
+  const d = String(date.getDate()).padStart(2, '0')
+  return `${y}-${m}-${d}`
+}
+
+function clearStoredMood() {
+  try {
+    localStorage.removeItem(STORAGE_KEY)
+    localStorage.removeItem(STORAGE_DATE_KEY)
+  } catch {
+    /* ignore */
+  }
+  clearMoodCheckInSession()
+}
+
 function readStoredMood(): MoodId | null {
   try {
+    const today = moodLocalDateKey()
+    const storedDate = localStorage.getItem(STORAGE_DATE_KEY)
     const raw = localStorage.getItem(STORAGE_KEY)
+    if (!storedDate || storedDate !== today) {
+      if (raw || storedDate) clearStoredMood()
+      return null
+    }
     if (raw && VALID.has(raw)) return raw as MoodId
+    clearStoredMood()
   } catch {
     /* ignore */
   }
@@ -41,11 +69,39 @@ const MoodContext = createContext<MoodContextValue | null>(null)
 export function MoodProvider({ children }: { children: ReactNode }) {
   const [moodId, setMoodIdState] = useState<MoodId | null>(readStoredMood)
 
+  /** Re-read storage when the user returns to the app — not on a midnight timer while the tab stays open. */
+  useEffect(() => {
+    const applyStoredMoodForToday = () => {
+      setMoodIdState(readStoredMood())
+    }
+
+    const onVisibility = () => {
+      if (document.visibilityState === 'visible') {
+        applyStoredMoodForToday()
+      }
+    }
+
+    const onPageShow = (event: PageTransitionEvent) => {
+      if (event.persisted) applyStoredMoodForToday()
+    }
+
+    document.addEventListener('visibilitychange', onVisibility)
+    window.addEventListener('pageshow', onPageShow)
+    return () => {
+      document.removeEventListener('visibilitychange', onVisibility)
+      window.removeEventListener('pageshow', onPageShow)
+    }
+  }, [])
+
   const setMoodId = useCallback((id: MoodId | null) => {
     setMoodIdState(id)
     try {
-      if (id) localStorage.setItem(STORAGE_KEY, id)
-      else localStorage.removeItem(STORAGE_KEY)
+      if (id) {
+        localStorage.setItem(STORAGE_KEY, id)
+        localStorage.setItem(STORAGE_DATE_KEY, moodLocalDateKey())
+      } else {
+        clearStoredMood()
+      }
     } catch {
       /* ignore */
     }
