@@ -12,7 +12,6 @@ import {
   Eye,
   Hand,
   Heart,
-  Moon,
   RefreshCw,
   Snowflake,
   Sparkles,
@@ -70,17 +69,12 @@ type ToolId =
   | 'breathing'
   | 'grounding'
   | 'physical-regulation'
-  | 'cold-reset'
-  | 'move-it-out'
-  | 'body-scan'
   | 'mood-check-in'
   | 'name-it'
   | 'micro-journal'
   | 'reframes'
   | 'safe-place'
-  | 'stop-skill'
   | 'today-nudge'
-  | 'night-reset'
   | 'crisis-reset'
 
 type MoodLogEntry = {
@@ -135,13 +129,13 @@ const WELLNESS_EMOTIONS: Array<{
   secondary: ToolId
 }> = [
   { id: 'happy', moodId: 'happy', label: 'Happy', primary: 'today-nudge', secondary: 'micro-journal' },
-  { id: 'calm', moodId: 'calm', label: 'Calm', primary: 'body-scan', secondary: 'today-nudge' },
+  { id: 'calm', moodId: 'calm', label: 'Calm', primary: 'physical-regulation', secondary: 'today-nudge' },
   { id: 'hopeful', moodId: 'hopeful', label: 'Hopeful', primary: 'reframes', secondary: 'today-nudge' },
   { id: 'overwhelmed', moodId: 'overwhelmed', label: 'Overwhelmed', primary: 'grounding', secondary: 'breathing' },
-  { id: 'exhausted', moodId: 'exhausted', label: 'Exhausted', primary: 'cold-reset', secondary: 'micro-journal' },
-  { id: 'angry', moodId: 'angry', label: 'Angry', primary: 'cold-reset', secondary: 'stop-skill' },
+  { id: 'exhausted', moodId: 'exhausted', label: 'Exhausted', primary: 'physical-regulation', secondary: 'micro-journal' },
+  { id: 'angry', moodId: 'angry', label: 'Angry', primary: 'physical-regulation', secondary: 'breathing' },
   { id: 'scared', moodId: 'scared', label: 'Scared', primary: 'reframes', secondary: 'safe-place' },
-  { id: 'sad', moodId: 'sad', label: 'Sad', primary: 'micro-journal', secondary: 'body-scan' },
+  { id: 'sad', moodId: 'sad', label: 'Sad', primary: 'micro-journal', secondary: 'physical-regulation' },
   { id: 'disconnected', moodId: 'disconnected', label: 'Disconnected', primary: 'today-nudge', secondary: 'micro-journal' },
   { id: 'numb', moodId: 'numb', label: 'Unsure', primary: 'name-it', secondary: 'micro-journal' },
 ]
@@ -155,23 +149,18 @@ function wellnessEmotionFromMoodId(moodId: MoodId | null): WellnessEmotion | nul
 const TOOL_META: Record<ToolId, {
   title: string
   short: string
-  category: 'Regulate body' | 'Understand' | 'Shift mindset' | 'Connect' | 'Wind down' | 'Crisis'
+  category: 'Regulate body' | 'Understand' | 'Shift mindset' | 'Connect' | 'Crisis'
   icon: typeof Wind
 }> = {
   breathing: { title: 'Guided breathing', short: '3 calming patterns', category: 'Regulate body', icon: Wind },
   grounding: { title: '5-4-3-2-1 grounding', short: 'settle into your senses', category: 'Regulate body', icon: Sparkles },
-  'cold-reset': { title: 'Cold reset', short: 'slow your stress response', category: 'Regulate body', icon: Snowflake },
-  'move-it-out': { title: 'Move it out', short: '60 seconds of release', category: 'Regulate body', icon: Activity },
-  'body-scan': { title: 'Body scan', short: 'soften head to toe', category: 'Regulate body', icon: Brain },
   'physical-regulation': { title: 'Physical regulation', short: 'cold · movement · body scan', category: 'Regulate body', icon: Activity },
   'mood-check-in': { title: 'Daily mood check-in', short: 'two questions, one minute', category: 'Understand', icon: Heart },
   'name-it': { title: 'Name it to tame it', short: 'pick feeling words', category: 'Understand', icon: Tag },
   'micro-journal': { title: 'Micro-journal', short: 'how are you feeling today?', category: 'Understand', icon: BookOpen },
   reframes: { title: 'Reframes', short: 'a kinder thought', category: 'Shift mindset', icon: RefreshCw },
   'safe-place': { title: 'Safe place visualization', short: '90 seconds of steadiness', category: 'Shift mindset', icon: Heart },
-  'stop-skill': { title: 'STOP skill', short: 'pause before the next step', category: 'Shift mindset', icon: AlertCircle },
   'today-nudge': { title: "Today's nudge", short: 'feel closer in one small way', category: 'Connect', icon: Heart },
-  'night-reset': { title: 'Night reset', short: 'set the day down', category: 'Wind down', icon: Moon },
   'crisis-reset': { title: 'I need help right now', short: 'a guided reset and resources', category: 'Crisis', icon: AlertCircle },
 }
 
@@ -430,15 +419,15 @@ const SUGGESTED_TONES: RegulateTone[] = ['forest', 'sky', 'outline', 'sage']
  */
 function resolveSuggestedExercises(emotion: WellnessEmotion | null, moodId: MoodId | null): ToolId[] {
   const key = emotion ?? moodId
-  if (key === 'overwhelmed') return ['breathing', 'grounding', 'reframes', 'night-reset']
-  if (key === 'exhausted') return ['cold-reset', 'body-scan', 'night-reset', 'safe-place']
-  if (key === 'angry') return ['cold-reset', 'move-it-out', 'stop-skill', 'breathing']
+  if (key === 'overwhelmed') return ['breathing', 'grounding', 'reframes', 'physical-regulation']
+  if (key === 'exhausted') return ['physical-regulation', 'safe-place', 'micro-journal', 'breathing']
+  if (key === 'angry') return ['physical-regulation', 'breathing', 'reframes', 'grounding']
   if (key === 'scared') return ['breathing', 'grounding', 'safe-place', 'reframes']
-  if (key === 'sad') return ['body-scan', 'breathing', 'safe-place', 'night-reset']
-  if (key === 'disconnected' || key === 'numb') return ['body-scan', 'grounding', 'safe-place', 'night-reset']
-  if (key === 'happy' || key === 'hopeful') return ['move-it-out', 'reframes', 'breathing', 'night-reset']
-  if (key === 'calm') return ['breathing', 'body-scan', 'safe-place', 'night-reset']
-  return ['breathing', 'grounding', 'reframes', 'night-reset']
+  if (key === 'sad') return ['micro-journal', 'breathing', 'safe-place', 'physical-regulation']
+  if (key === 'disconnected' || key === 'numb') return ['physical-regulation', 'grounding', 'safe-place', 'name-it']
+  if (key === 'happy' || key === 'hopeful') return ['today-nudge', 'reframes', 'breathing', 'physical-regulation']
+  if (key === 'calm') return ['breathing', 'physical-regulation', 'safe-place', 'today-nudge']
+  return ['breathing', 'grounding', 'reframes', 'safe-place']
 }
 
 function SuggestedExerciseCard({
@@ -1013,15 +1002,8 @@ function BodyScanTool() {
   )
 }
 
-function MicroJournalTool({
-  guidedPrompt,
-  onEntriesChanged,
-}: {
-  /** Optional cue for night-reset steps only; default micro-journal has no prompt. */
-  guidedPrompt?: string
-  onEntriesChanged?: () => void
-}) {
-  const savePrompt = guidedPrompt ?? MICRO_JOURNAL_STORED_PROMPT
+function MicroJournalTool({ onEntriesChanged }: { onEntriesChanged?: () => void }) {
+  const savePrompt = MICRO_JOURNAL_STORED_PROMPT
   const [text, setText] = useState('')
   const [saved, setSaved] = useState(false)
   const [saveError, setSaveError] = useState<string | null>(null)
@@ -1065,13 +1047,7 @@ function MicroJournalTool({
 
   return (
     <div className="space-y-6">
-      {guidedPrompt ? (
-        <p className="text-sm leading-relaxed" style={{ color: CARDEA_MUTED }}>
-          {guidedPrompt}
-        </p>
-      ) : (
-        <p className="text-base leading-relaxed text-[#192b3f]">{MICRO_JOURNAL_STORED_PROMPT}</p>
-      )}
+      <p className="text-base leading-relaxed text-[#192b3f]">{MICRO_JOURNAL_STORED_PROMPT}</p>
 
       <textarea
         value={text}
@@ -1164,9 +1140,9 @@ function NameItTool({ onOpenTool }: { onOpenTool: (toolId: ToolId) => void }) {
     selected.some((w) => ['scared', 'panicked', 'dreading', 'helpless'].includes(w))
       ? 'safe-place'
       : selected.some((w) => ['frustrated', 'resentful', 'powerless', 'overwhelmed'].includes(w))
-        ? 'stop-skill'
+        ? 'reframes'
         : selected.some((w) => ['drained', 'foggy', 'depleted', 'numb'].includes(w))
-          ? 'body-scan'
+          ? 'physical-regulation'
           : 'micro-journal'
 
   return (
@@ -1296,25 +1272,6 @@ function SafePlaceTool() {
   )
 }
 
-function StopSkillTool() {
-  const steps = [
-    ['Stop', 'pause where you are.'],
-    ['Take a breath', 'one slow inhale. one longer exhale.'],
-    ['Observe', 'notice body, thought, and urge.'],
-    ['Proceed', 'choose the next kind step.'],
-  ]
-  return (
-    <div className="grid gap-3 sm:grid-cols-2">
-      {steps.map(([title, body]) => (
-        <div key={title} className="rounded-2xl bg-[#f5f9f9] p-4">
-          <p className="text-lg font-semibold text-[#192b3f]">{title}</p>
-          <p className="mt-1 text-sm" style={{ color: CARDEA_MUTED }}>{body}</p>
-        </div>
-      ))}
-    </div>
-  )
-}
-
 function PastEntriesSection({
   moodEntries,
   journalRefreshKey = 0,
@@ -1438,83 +1395,95 @@ function PastEntriesSection({
   )
 }
 
-function TodayNudgeTool({ onJournal }: { onJournal: () => void }) {
+function TodayNudgeCard() {
   const [idx, setIdx] = useState(() => new Date().getDate() % nudges.length)
-  const [reflections, setReflections] = useLocalState<Reflection[]>(STORAGE.reflections, [])
-  const [openPrompt, setOpenPrompt] = useState<string | null>(null)
-  const [text, setText] = useState('')
   return (
-    <div className="space-y-4">
-      <div className="relative overflow-hidden rounded-2xl p-6 text-white" style={{ background: `linear-gradient(135deg, ${CARDEA_NAVY}, #2c4566 62%, ${CARDEA_DARK_GREEN})` }}>
-        <div className="mb-3 flex items-center gap-3">
-          <span className="flex h-10 w-10 items-center justify-center rounded-full bg-white/10">
-            <Heart className="h-5 w-5 text-[#c6d9e5]" />
-          </span>
-          <div>
-            <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-[#c6d9e5]/80">today&apos;s nudge</p>
-            <h3 className="text-xl font-semibold text-white">a small invitation</h3>
-          </div>
-          <button type="button" onClick={() => setIdx((i) => (i + 1) % nudges.length)} className="ml-auto text-xs font-semibold text-[#c6d9e5]">
-            another
-          </button>
+    <div
+      className="relative overflow-hidden rounded-2xl p-6 text-white"
+      style={{ background: `linear-gradient(135deg, ${CARDEA_NAVY}, #2c4566 62%, ${CARDEA_DARK_GREEN})` }}
+    >
+      <div className="mb-3 flex items-center gap-3">
+        <span className="flex h-10 w-10 items-center justify-center rounded-full bg-white/10">
+          <Heart className="h-5 w-5 text-[#c6d9e5]" />
+        </span>
+        <div>
+          <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-[#c6d9e5]/80">today&apos;s nudge</p>
+          <h3 className="text-xl font-semibold text-white">a small invitation</h3>
         </div>
-        <p className="text-lg leading-relaxed text-[#c6d9e5]">{nudges[idx]}</p>
+        <button
+          type="button"
+          onClick={() => setIdx((i) => (i + 1) % nudges.length)}
+          className="ml-auto text-xs font-semibold text-[#c6d9e5]"
+        >
+          another
+        </button>
       </div>
-      <div className="grid gap-3 md:grid-cols-3">
-        {reflectionPrompts.map((prompt) => (
-          <div key={prompt} className="rounded-2xl border bg-white p-4 shadow-sm" style={{ borderColor: CARDEA_LIGHT_BLUE }}>
-            <p className="mb-3 text-sm font-semibold text-[#192b3f]">{prompt}</p>
-            {openPrompt === prompt ? (
-              <>
-                <textarea value={text} onChange={(e) => setText(e.target.value)} className="min-h-[90px] w-full rounded-xl border bg-[#f5f9f9] p-3 text-sm" />
-                <button
-                  type="button"
-                  onClick={() => {
-                    if (!text.trim()) return
-                    setReflections([{ id: makeId('reflection'), prompt, text: text.trim(), date: new Date().toISOString() }, ...reflections])
-                    setText('')
-                    setOpenPrompt(null)
-                  }}
-                  className="mt-2 rounded-lg px-3 py-1.5 text-xs font-semibold text-white"
-                  style={{ background: CARDEA_DARK_GREEN }}
-                >
-                  Save
-                </button>
-              </>
-            ) : (
-              <button type="button" onClick={() => setOpenPrompt(prompt)} className="text-xs font-semibold" style={{ color: CARDEA_DARK_GREEN }}>
-                Reflect →
-              </button>
-            )}
-            <button type="button" onClick={onJournal} className="ml-3 text-xs font-semibold" style={{ color: CARDEA_MUTED }}>
-              journal
-            </button>
-          </div>
-        ))}
-      </div>
+      <p className="text-lg leading-relaxed text-[#c6d9e5]">{nudges[idx]}</p>
     </div>
   )
 }
 
-function NightResetTool() {
-  const prompts = ['one win from today', 'one thing to release', 'one intention for tomorrow']
-  const [idx, setIdx] = useState(0)
+function ReflectionPromptsPanel({ onJournal }: { onJournal: () => void }) {
+  const [reflections, setReflections] = useLocalState<Reflection[]>(STORAGE.reflections, [])
+  const [openPrompt, setOpenPrompt] = useState<string | null>(null)
+  const [text, setText] = useState('')
+  return (
+    <div className="grid gap-3 md:grid-cols-3">
+      {reflectionPrompts.map((prompt) => (
+        <div
+          key={prompt}
+          className="rounded-2xl border bg-white p-4 shadow-sm"
+          style={{ borderColor: CARDEA_LIGHT_BLUE }}
+        >
+          <p className="mb-3 text-sm font-semibold text-[#192b3f]">{prompt}</p>
+          {openPrompt === prompt ? (
+            <>
+              <textarea
+                value={text}
+                onChange={(e) => setText(e.target.value)}
+                className="min-h-[90px] w-full rounded-xl border bg-[#f5f9f9] p-3 text-sm"
+              />
+              <button
+                type="button"
+                onClick={() => {
+                  if (!text.trim()) return
+                  setReflections([
+                    { id: makeId('reflection'), prompt, text: text.trim(), date: new Date().toISOString() },
+                    ...reflections,
+                  ])
+                  setText('')
+                  setOpenPrompt(null)
+                }}
+                className="mt-2 rounded-lg px-3 py-1.5 text-xs font-semibold text-white"
+                style={{ background: CARDEA_DARK_GREEN }}
+              >
+                Save
+              </button>
+            </>
+          ) : (
+            <button
+              type="button"
+              onClick={() => setOpenPrompt(prompt)}
+              className="text-xs font-semibold"
+              style={{ color: CARDEA_DARK_GREEN }}
+            >
+              Reflect →
+            </button>
+          )}
+          <button type="button" onClick={onJournal} className="ml-3 text-xs font-semibold" style={{ color: CARDEA_MUTED }}>
+            journal
+          </button>
+        </div>
+      ))}
+    </div>
+  )
+}
+
+function TodayNudgeTool({ onJournal }: { onJournal: () => void }) {
   return (
     <div className="space-y-4">
-      <div className="flex gap-2">
-        {prompts.map((_, i) => (
-          <span key={i} className="h-1.5 flex-1 rounded-full" style={{ background: i <= idx ? CARDEA_DARK_GREEN : CARDEA_LIGHT_BLUE }} />
-        ))}
-      </div>
-      <MicroJournalTool guidedPrompt={prompts[idx]} />
-      <button
-        type="button"
-        onClick={() => setIdx((i) => Math.min(i + 1, prompts.length - 1))}
-        className="rounded-xl border px-4 py-2 text-sm font-semibold"
-        style={{ borderColor: CARDEA_DARK_GREEN, color: CARDEA_DARK_GREEN }}
-      >
-        {idx >= prompts.length - 1 ? 'Stay here' : 'Next prompt'}
-      </button>
+      <TodayNudgeCard />
+      <ReflectionPromptsPanel onJournal={onJournal} />
     </div>
   )
 }
@@ -1600,9 +1569,6 @@ function ToolContent({
   if (toolId === 'breathing') return <BreathingTool />
   if (toolId === 'grounding') return <GroundingTool />
   if (toolId === 'physical-regulation') return <PhysicalRegulationTool />
-  if (toolId === 'cold-reset') return <ColdResetTool />
-  if (toolId === 'move-it-out') return <MoveItOutTool />
-  if (toolId === 'body-scan') return <BodyScanTool />
   if (toolId === 'mood-check-in') return <MoodCheckInTool onSaved={onMoodEntriesChanged} />
   if (toolId === 'name-it') return <NameItTool onOpenTool={onOpenTool} />
   if (toolId === 'micro-journal') {
@@ -1610,9 +1576,7 @@ function ToolContent({
   }
   if (toolId === 'reframes') return <ReframesTool />
   if (toolId === 'safe-place') return <SafePlaceTool />
-  if (toolId === 'stop-skill') return <StopSkillTool />
   if (toolId === 'today-nudge') return <TodayNudgeTool onJournal={() => onOpenTool('micro-journal')} />
-  if (toolId === 'night-reset') return <NightResetTool />
   return <CrisisResetTool />
 }
 
@@ -2108,7 +2072,7 @@ export default function WellnessTools() {
 
         <Section id="mindset" label="Shift your mindset">
           <div className="grid gap-3 md:grid-cols-2">
-            {(['reframes', 'safe-place', 'stop-skill'] as ToolId[]).map((toolId) => (
+            {(['reframes', 'safe-place'] as ToolId[]).map((toolId) => (
               <ToolTile
                 key={toolId}
                 toolId={toolId}
@@ -2120,19 +2084,14 @@ export default function WellnessTools() {
         </Section>
 
         <Section id="parent" label="Be the parent">
-          <TodayNudgeTool onJournal={() => openTool('micro-journal')} />
-        </Section>
-
-        <Section id="winddown" label="Wind down">
-          <div className="grid gap-3 md:grid-cols-2">
-            {(['night-reset', 'body-scan'] as ToolId[]).map((toolId) => (
-              <ToolTile
-                key={toolId}
-                toolId={toolId}
-                onOpen={openTool}
-                count={toolUseCount(toolLog, toolId, checkInEmotion, wellnessDayKey)}
-              />
-            ))}
+          <div className="space-y-6">
+            <TodayNudgeCard />
+            <div>
+              <p className="mb-3 text-xs font-bold uppercase tracking-[0.18em]" style={{ color: CARDEA_MUTED }}>
+                Reflection prompts
+              </p>
+              <ReflectionPromptsPanel onJournal={() => openTool('micro-journal')} />
+            </div>
           </div>
         </Section>
 
