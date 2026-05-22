@@ -13,7 +13,8 @@
     "pipeline:export": "py -3 scripts/supabase_data_scripts/data_pipeline/run_pipeline.py",
     "server:dev": "tsx watch server/index.ts",
     "rag:build": "tsx scripts/rag/build-knowledge-index.ts",
-    "chat:ask": "tsx scripts/chat-once.ts"
+    "chat:ask": "tsx scripts/chat-once.ts",
+    "test:crisis": "tsx scripts/test-crisis-keywords.ts"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.95.1",

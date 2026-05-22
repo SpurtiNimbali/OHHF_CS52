@@ -162,13 +162,13 @@ export default function FindSupport() {
 
     const scored = categoryFiltered.flatMap((r) => {
       const zip = String(r.zipcode ?? '').toLowerCase()
-      const location = String(r.location ?? '').toLowerCase()
-      const hasLocation = zip || location
+      const city = String(r.location ?? '').toLowerCase()
+      const hasLocation = zip || city
 
-      if (location === query || zip === query) return [{ r, score: 0 }]
-      if (location.startsWith(query)) return [{ r, score: 1 }]
+      if (city === query || zip === query) return [{ r, score: 0 }]
+      if (city.startsWith(query)) return [{ r, score: 1 }]
       if (query.length >= 3 && zip.startsWith(query.slice(0, 3))) return [{ r, score: 2 }]
-      if (location.includes(query) || zip.includes(query)) return [{ r, score: 3 }]
+      if (city.includes(query) || zip.includes(query)) return [{ r, score: 3 }]
       if (!hasLocation) return [{ r, score: 4 }]
       return []
     })

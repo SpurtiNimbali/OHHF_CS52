@@ -4,19 +4,18 @@ import type { SupportResource } from '../../lib/supabase'
 import { CARDEA_DARK_GREEN, CARDEA_MUTED, CARDEA_NAVY } from '../../ui/cardeaTokens'
 import { CategoryBadge } from '../ui/categoryBadge'
 
-type GridCardInteriorProps = {
-  name: string
-  categoryLabel: string
-  description: string
-  locationLine: string
-}
 
 function GridCardInterior({
   name,
   categoryLabel,
   description,
   locationLine,
-}: GridCardInteriorProps) {
+}: {
+  name: string
+  categoryLabel: string
+  description: string | null
+  locationLine: string
+}) {
   return (
     <>
       <div
