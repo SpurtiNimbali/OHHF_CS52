@@ -124,11 +124,31 @@ const COMPANION_COLD_EMOTIONAL_RE =
 const COMPANION_RESTATE_OPENER_RE =
   /^(you're feeling|you are feeling|you're scared|you're stressed|you're nervous|you're running|you are scared|you are stressed)/i
 
+const INLINE_CITATION_RE = /\[(\d+)\]/g
+
+/** Protect [1]-style markers from sentence-splitting regexes during polish. */
+function shieldInlineCitations(text: string): { shielded: string; markers: string[] } {
+  const markers: string[] = []
+  const shielded = text.replace(INLINE_CITATION_RE, (m) => {
+    const idx = markers.push(m) - 1
+    return `\uE000CIT${idx}\uE001`
+  })
+  return { shielded, markers }
+}
+
+function unshieldInlineCitations(text: string, markers: string[]): string {
+  if (!markers.length) return text
+  return text.replace(/\uE000CIT(\d+)\uE001/g, (_, idx) => markers[Number(idx)] ?? _)
+}
+
 /** Remove questions and UI-pointer sentences from hybrid body paragraphs. */
 function polishHybridParagraph(text: string): string {
   let t = text.trim()
   const mi = t.indexOf('[MISSING INFORMATION')
   if (mi !== -1) t = t.slice(0, mi).trimEnd()
+
+  const { shielded, markers } = shieldInlineCitations(t)
+  t = shielded
 
   const parts = t.match(/[^.!?\n]+[.!?]?/g) ?? [t]
   const kept: string[] = []
@@ -146,7 +166,7 @@ function polishHybridParagraph(text: string): string {
     if (/resources below|options below|tap below|chips below/i.test(s)) continue
     kept.push(/[.!]$/.test(s) ? s : `${s}.`)
   }
-  return kept.join(' ').trim()
+  return unshieldInlineCitations(kept.join(' ').trim(), markers)
 }
 
 /** Drop mirror openers, template filler, and vague practice pitches from emotional prose. */
@@ -993,19 +1013,17 @@ SHAPE THIS REPLY (vary from prior turns in CONVERSATION HISTORY):
     extraHint,
   })
 
-  const answer = polishInformationalAnswer(
-    await openAiChat(
-      sysInformational,
-      [
-        trimmed,
-        'Part 1: exactly ONE paragraph, 50–100 words, no question marks. Part 2 after a blank line: one follow-up question (e.g. would you like to know more about X or Y). Use [1],[2],… only where excerpts support part 1.',
-      ].join('\n'),
-      MAIN_CHAT_MODEL,
-      240,
-      0.28,
-    ),
-    trimmed,
+  const rawInformational = await openAiChat(
+    sysInformational,
+    [
+      trimmed,
+      'Part 1: exactly ONE paragraph, 50–100 words, no question marks. REQUIRED: include at least one inline citation [1], [2], … after excerpt-backed claims in part 1 (numbers match the knowledge excerpts). Part 2 after a blank line: one follow-up question — use parentheses for topics, not [brackets].',
+    ].join('\n'),
+    MAIN_CHAT_MODEL,
+    280,
+    0.28,
   )
+  const answer = polishInformationalAnswer(rawInformational, trimmed)
 
   const citations: ChatCitation[] = retrieved.map((r) => ({
     chunkId: r.id,

@@ -65,6 +65,7 @@ type SavedQuestionMeta = {
   source: 'generated' | 'custom' | 'bank'
   contextTags: string[]
   notes: string
+  generatedSourceId?: string
 }
 
 function metaStorageKey(userId: string | null): string {
@@ -83,7 +84,14 @@ function normalizeStoredMeta(raw: unknown): Record<string, SavedQuestionMeta> {
     const contextTags = Array.isArray(e.contextTags)
       ? e.contextTags.filter((t): t is string => typeof t === 'string')
       : []
-    out[id] = { source: source as SavedQuestionMeta['source'], contextTags, notes }
+    const generatedSourceId =
+      typeof e.generatedSourceId === 'string' ? e.generatedSourceId : undefined
+    out[id] = {
+      source: source as SavedQuestionMeta['source'],
+      contextTags,
+      notes,
+      ...(generatedSourceId ? { generatedSourceId } : {}),
+    }
   }
   return out
 }
@@ -301,6 +309,7 @@ export default function QuestionsForCardiologist() {
   const [selectedFilters, setSelectedFilters] = useState<Set<VisitFilter>>(new Set())
   const [generated, setGenerated] = useState<GeneratedItem[]>([])
   const [generating, setGenerating] = useState(false)
+  const [savingGeneratedId, setSavingGeneratedId] = useState<string | null>(null)
 
   const [activeTab, setActiveTab] = useState<'suggested' | 'saved'>('suggested')
   const [customLine, setCustomLine] = useState('')
@@ -320,6 +329,13 @@ export default function QuestionsForCardiologist() {
   const customInputRef = useRef<HTMLInputElement>(null)
   const [expandedSavedId, setExpandedSavedId] = useState<string | null>(null)
   const [savedMeta, setSavedMeta] = useState<Record<string, SavedQuestionMeta>>({})
+  const savedGeneratedIds = useMemo(() => {
+    const ids = new Set<string>()
+    for (const meta of Object.values(savedMeta)) {
+      if (meta.generatedSourceId) ids.add(meta.generatedSourceId)
+    }
+    return ids
+  }, [savedMeta])
 
   useEffect(() => {
     let cancelled = false
@@ -554,6 +570,10 @@ export default function QuestionsForCardiologist() {
       return next
     })
     if (expandedSavedId === row.id) setExpandedSavedId(null)
+  }
+
+  async function saveGeneratedLine(text: string, filter: VisitFilter | 'General') {
+    await saveGeneratedItem({ tempId: `line-${Date.now()}`, text, filter })
   }
 
   const savedBadge = useCallback(

@@ -8,11 +8,11 @@
 
 ## 1. It's My Heart
 
-**Source:** https://www.childrensheartfoundation.org/file_download/afc69f23-39fb-40e5-93f3-8e143dc3114a
+**Source:** https://www.childrensheartfoundation.org/about-chds/resources.html
 
 Title: It's My Heart
 
-URL Source: https://www.childrensheartfoundation.org/file_download/afc69f23-39fb-40e5-93f3-8e143dc3114a
+URL Source: https://www.childrensheartfoundation.org/about-chds/resources.html
 
 Number of Pages: 190
 
