@@ -43,8 +43,9 @@ import {
   insertJournalEntry,
   type JournalEntryRow,
 } from '../lib/journalEntries'
-import { ensureAuthUserId, isSupabaseConfigured } from '../lib/supabase'
+import { ensureAuthUserId } from '../lib/supabase'
 import {
+  CARDEA_ALMOST_WHITE,
   CARDEA_DARK_GREEN,
   CARDEA_FONT_PRIMARY,
   CARDEA_LIGHT_BLUE,
@@ -52,6 +53,10 @@ import {
   CARDEA_NAVY,
 } from '../ui/cardeaTokens'
 import { ResourcesRightNav } from '../components/ResourcesRightNav'
+import { ReframesTool } from '../components/wellness/ReframesTool'
+import { SafePlaceTool } from '../components/wellness/SafePlaceTool'
+import { fetchMyReframes } from '../lib/userReframes'
+import { fetchSafePlaces } from '../lib/safePlaces'
 
 type WellnessEmotion =
   | 'happy'
@@ -92,21 +97,9 @@ type ToolUseEntry = {
   emotion: WellnessEmotion | null
 }
 
-type Reframe = {
-  id: string
-  from: string
-  to: string
-  date: string
-}
-
 type Reflection = {
   id: string
   prompt: string
-  text: string
-  date: string
-}
-
-type SafePlace = {
   text: string
   date: string
 }
@@ -116,9 +109,7 @@ type StoredValue<T> = T | (() => T)
 const STORAGE = {
   moods: 'cardea-wellness-mood-log',
   tools: 'cardea-wellness-tool-log',
-  reframes: 'cardea-wellness-reframes',
   reflections: 'cardea-wellness-parent-reflections',
-  safePlace: 'cardea-wellness-safe-place',
 }
 
 const WELLNESS_EMOTIONS: Array<{
@@ -190,15 +181,6 @@ function isStandardMicroJournalPrompt(prompt: string) {
     prompt === 'Write down your feelings'
   )
 }
-
-const presetReframes: Array<[string, string]> = [
-  ['I have to handle everything', 'I can take one next step'],
-  ["I can't fall apart", 'I can feel this and keep going'],
-  ["I'm failing", "This is hard, and I'm trying"],
-  ['I should be stronger', 'strength includes asking for help'],
-  ["I'm so behind", 'I am doing what I can'],
-  ["I can't do this", 'I have done hard things today'],
-]
 
 const emotionFamilies: Record<string, string[]> = {
   joy: ['happy', 'grateful', 'proud', 'playful', 'relieved'],
@@ -1190,88 +1172,6 @@ function NameItTool({ onOpenTool }: { onOpenTool: (toolId: ToolId) => void }) {
   )
 }
 
-function ReframesTool() {
-  const [reframes, setReframes] = useLocalState<Reframe[]>(STORAGE.reframes, [])
-  const [index, setIndex] = useState(0)
-  const [from, setFrom] = useState('')
-  const [to, setTo] = useState('')
-  const all = [...reframes.map((r) => [r.from, r.to] as [string, string]), ...presetReframes]
-  const current = all[index % all.length]
-  return (
-    <div>
-      <div className="grid gap-3 sm:grid-cols-[1fr_auto_1fr] sm:items-center">
-        <div className="rounded-2xl bg-[#f5f9f9] p-4">
-          <p className="mb-1 text-[10px] font-bold uppercase tracking-[0.16em]" style={{ color: CARDEA_MUTED }}>the thought</p>
-          <p className="text-lg text-[#3A525A] line-through">{current[0]}</p>
-        </div>
-        <ArrowRight className="mx-auto hidden h-5 w-5 text-[#acb7a8] sm:block" />
-        <div className="rounded-2xl bg-[#577568]/10 p-4">
-          <p className="mb-1 text-[10px] font-bold uppercase tracking-[0.16em]" style={{ color: CARDEA_DARK_GREEN }}>try instead</p>
-          <p className="text-lg font-semibold text-[#192b3f]">{current[1]}</p>
-        </div>
-      </div>
-      <button
-        type="button"
-        onClick={() => setIndex((i) => i + 1)}
-        className="mt-4 rounded-xl px-4 py-2 text-sm font-semibold text-white"
-        style={{ background: CARDEA_NAVY }}
-      >
-        Next reframe
-      </button>
-      <div className="mt-6 border-t pt-5" style={{ borderColor: 'rgba(25, 43, 63, 0.08)' }}>
-        <p className="mb-3 text-sm font-semibold text-[#192b3f]">write your own</p>
-        <div className="grid gap-2 sm:grid-cols-2">
-          <input value={from} onChange={(e) => setFrom(e.target.value)} placeholder="the thought" className="rounded-xl border bg-[#f5f9f9] px-3 py-2 text-sm outline-none" />
-          <input value={to} onChange={(e) => setTo(e.target.value)} placeholder="a kinder way" className="rounded-xl border bg-[#f5f9f9] px-3 py-2 text-sm outline-none" />
-        </div>
-        <button
-          type="button"
-          disabled={!from.trim() || !to.trim()}
-          onClick={() => {
-            setReframes([{ id: makeId('reframe'), from: from.trim(), to: to.trim(), date: new Date().toISOString() }, ...reframes])
-            setFrom('')
-            setTo('')
-          }}
-          className="mt-3 rounded-xl px-4 py-2 text-sm font-semibold text-white disabled:opacity-40"
-          style={{ background: CARDEA_DARK_GREEN }}
-        >
-          Save reframe
-        </button>
-      </div>
-    </div>
-  )
-}
-
-function SafePlaceTool() {
-  const [safePlace, setSafePlace] = useLocalState<SafePlace | null>(STORAGE.safePlace, null)
-  const [draft, setDraft] = useState(safePlace?.text ?? '')
-  return (
-    <div className="space-y-4">
-      <div className="rounded-2xl bg-[#f5f9f9] p-5 text-sm leading-relaxed text-[#192b3f]">
-        picture a place where your body loosens. notice the light. notice the sounds.
-        let your shoulders drop. stay for three slow breaths.
-      </div>
-      <textarea
-        value={draft}
-        onChange={(e) => setDraft(e.target.value)}
-        placeholder="write your safe place once..."
-        className="min-h-[120px] w-full rounded-2xl border bg-white p-4 text-sm outline-none"
-        style={{ borderColor: CARDEA_LIGHT_BLUE }}
-      />
-      <button
-        type="button"
-        disabled={!draft.trim()}
-        onClick={() => setSafePlace({ text: draft.trim(), date: new Date().toISOString() })}
-        className="rounded-xl px-4 py-2 text-sm font-semibold text-white disabled:opacity-40"
-        style={{ background: CARDEA_DARK_GREEN }}
-      >
-        Save safe place
-      </button>
-      {safePlace ? <p className="text-xs" style={{ color: CARDEA_MUTED }}>saved for next time.</p> : null}
-    </div>
-  )
-}
-
 function PastEntriesSection({
   moodEntries,
   journalRefreshKey = 0,
@@ -1281,14 +1181,22 @@ function PastEntriesSection({
 }) {
   const [journalRows, setJournalRows] = useState<JournalEntryRow[]>([])
   const [reflections] = useLocalState<Reflection[]>(STORAGE.reflections, [])
-  const [reframes] = useLocalState<Reframe[]>(STORAGE.reframes, [])
-  const [safePlace] = useLocalState<SafePlace | null>(STORAGE.safePlace, null)
+  const [userReframes, setUserReframes] = useState<Awaited<ReturnType<typeof fetchMyReframes>>>([])
+  const [safePlaces, setSafePlaces] = useState<Awaited<ReturnType<typeof fetchSafePlaces>>>([])
 
   useEffect(() => {
     let cancelled = false
     ;(async () => {
-      const rows = await fetchJournalEntries(50)
-      if (!cancelled) setJournalRows(rows)
+      const [rows, reframes, places] = await Promise.all([
+        fetchJournalEntries(50),
+        fetchMyReframes(50),
+        fetchSafePlaces(50),
+      ])
+      if (!cancelled) {
+        setJournalRows(rows)
+        setUserReframes(reframes)
+        setSafePlaces(places)
+      }
     })()
     return () => {
       cancelled = true
@@ -1324,33 +1232,30 @@ function PastEntriesSection({
       text: entry.text,
     }))
 
-    const savedReframes = reframes.map((entry) => ({
+    const savedReframes = userReframes.map((entry) => ({
       id: entry.id,
-      date: entry.date,
+      date: entry.timestamp,
       type: 'Reframe',
-      prompt: entry.from,
-      text: entry.to,
+      prompt: entry.thought,
+      text: entry.reframe,
     }))
 
-    const safePlaceEntry =
-      safePlace?.text.trim()
-        ? [{
-            id: 'safe-place',
-            date: safePlace.date,
-            type: 'Safe place',
-            prompt: 'safe place',
-            text: safePlace.text,
-          }]
-        : []
+    const safePlaceEntries = safePlaces.map((place) => ({
+      id: place.id,
+      date: place.timestamp,
+      type: 'Safe place',
+      prompt: place.name,
+      text: place.description,
+    }))
 
     return [
       ...moodItems,
       ...journals,
       ...parentReflections,
       ...savedReframes,
-      ...safePlaceEntry,
+      ...safePlaceEntries,
     ].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
-  }, [journalRows, moodEntries, reframes, reflections, safePlace])
+  }, [journalRows, moodEntries, userReframes, reflections, safePlaces])
 
   return (
     <div className="rounded-3xl bg-white/85 p-5 shadow-sm">
