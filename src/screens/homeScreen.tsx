@@ -1,16 +1,16 @@
 import { useMemo, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { motion } from 'motion/react'
-import { BookOpen, Heart, MessageCircle, Sparkles, Wind } from 'lucide-react'
+import { Heart, Sparkles } from 'lucide-react'
 import { HomeResourceLinkCard } from '../components/home/HomeResourceLinkCard'
+import { HomeFeelingReminderCard } from '../components/home/HomeFeelingReminderCard'
 import { HomeMoodChipButton } from '../components/home/HomeMoodChipButton'
 import { ResourcesRightNav } from '../components/ResourcesRightNav'
+import { pickHomeCardsForMood } from '../home'
 import {
   MOOD_VARIANTS,
   type MoodId,
-  getChatPromptHint,
   getMoodChatPrefill,
-  getMoodMessage,
   moodShellBackgroundClasses,
   MoodHeartFill,
   useMood,
@@ -24,16 +24,6 @@ import {
 import { CARDEA_FONT_PRIMARY, CARDEA_MUTED, CARDEA_NAVY } from '../ui/cardeaTokens'
 
 const WELLNESS_MOOD_LOG_KEY = 'cardea-wellness-mood-log'
-
-type ResourceCard = {
-  id: string
-  icon: typeof Heart
-  title: string
-  description: string
-  iconWrapClass: string
-  iconClass: string
-  to: string
-}
 
 type HomeMoodLogEntry = {
   id: string
@@ -68,82 +58,14 @@ function appendMoodCheckIn(emotion: MoodId, note: string) {
   }
 }
 
-const BASE_CARDS: ResourceCard[] = [
-  {
-    id: 'learn',
-    icon: BookOpen,
-    title: 'Learning & resources',
-    description: 'Glossary, education, and tools for your heart health journey.',
-    iconWrapClass: 'bg-[#A8E6CF]',
-    iconClass: 'text-[#2d5f4f]',
-    to: '/resources',
-  },
-  {
-    id: 'questions',
-    icon: Heart,
-    title: 'Questions for your visit',
-    description: 'Save prompts to bring to your healthcare appointments.',
-    iconWrapClass: 'bg-[#FFAAA5]',
-    iconClass: 'text-[#8B3A36]',
-    to: '/resources?view=questions',
-  },
-  {
-    id: 'support',
-    icon: MessageCircle,
-    title: 'Chat prompts & support',
-    description: '',
-    iconWrapClass: 'bg-[#A8C5E6]',
-    iconClass: 'text-[#2d4f6f]',
-    to: '/resources?view=support',
-  },
-  {
-    id: 'wellness',
-    icon: Wind,
-    title: 'Wellness tools',
-    description: 'Grounding, breathing, journaling, and gentle reset tools.',
-    iconWrapClass: 'bg-[#D5AAFF]',
-    iconClass: 'text-[#5B3A70]',
-    to: '/wellness',
-  },
-]
-
-/** Prioritize Chat prompts when moods tend to benefit from immediate connection copy */
-const SUPPORT_FIRST_MOODS: ReadonlySet<MoodId> = new Set([
-  'overwhelmed',
-  'exhausted',
-  'angry',
-  'scared',
-  'sad',
-  'numb',
-])
-
-function orderCardsForMood(moodId: MoodId | null): ResourceCard[] {
-  const supportHint = getChatPromptHint(moodId)
-  const withHints = BASE_CARDS.map((c) =>
-    c.id === 'support' ? { ...c, description: supportHint } : c,
-  )
-  if (!moodId) return withHints
-  if (SUPPORT_FIRST_MOODS.has(moodId)) {
-    const support = withHints.find((c) => c.id === 'support')!
-    const rest = withHints.filter((c) => c.id !== 'support')
-    return [support, ...rest]
-  }
-  if (moodId === 'calm') {
-    const learn = withHints.find((c) => c.id === 'learn')!
-    const rest = withHints.filter((c) => c.id !== 'learn')
-    return [learn, ...rest]
-  }
-  return withHints
-}
-
 export function HomeScreen() {
   const navigate = useNavigate()
-  const { moodId, setMoodId, theme, variant } = useMood()
+  const { moodId, setMoodId, theme } = useMood()
   const [checkInSaved, setCheckInSaved] = useState(false)
   const [checkInError, setCheckInError] = useState<string | null>(null)
   const [showMoodCheckIn, setShowMoodCheckIn] = useState(false)
 
-  const personalizedCards = useMemo(() => orderCardsForMood(moodId), [moodId])
+  const personalizedCards = useMemo(() => pickHomeCardsForMood(moodId), [moodId])
 
   async function saveMoodCheckIn() {
     if (!moodId) return
@@ -281,45 +203,55 @@ export function HomeScreen() {
                 <motion.div
                   key={`${resource.id}-${moodId ?? 'default'}`}
                   layout
-                  initial={{ opacity: 0, x: -12 }}
+                  initial={{ opacity: 0, x: resource.id === 'feeling-mood' ? 0 : -12 }}
                   animate={{ opacity: 1, x: 0 }}
                   transition={{ delay: 0.28 + index * 0.06 }}
-                  whileHover={{ x: 4 }}
-                  className="will-change-transform"
+                  whileHover={resource.id === 'feeling-mood' ? undefined : { x: 4 }}
+                  className={resource.id === 'feeling-mood' ? undefined : 'will-change-transform'}
                 >
-                  <HomeResourceLinkCard
-                    to={resource.to}
-                    Icon={resource.icon}
-                    title={resource.title}
-                    description={resource.description}
-                    iconWrapClass={resource.iconWrapClass}
-                    iconClass={resource.iconClass}
-                  />
+                  {resource.id === 'feeling-mood' ? (
+                    <HomeFeelingReminderCard
+                      title={resource.title}
+                      message={resource.description}
+                      reminderBgClass={theme.reminderBg}
+                      heartStroke={theme.heartStroke}
+                    />
+                  ) : (
+                    <HomeResourceLinkCard
+                      to={resource.to}
+                      Icon={resource.icon}
+                      title={resource.title}
+                      description={resource.description}
+                      iconWrapClass={resource.iconWrapClass}
+                      iconClass={resource.iconClass}
+                    />
+                  )}
                 </motion.div>
               ))}
             </div>
           </motion.section>
 
-          <motion.section
-            initial={{ opacity: 0, y: 18 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.45 }}
-            className={`rounded-2xl p-6 shadow-md relative overflow-hidden transition-all duration-700 ${theme.reminderBg}`}
-          >
-            <div className="flex items-start gap-3 relative z-10">
-              <Sparkles className="w-6 h-6 shrink-0" style={{ color: theme.heartStroke }} strokeWidth={2} />
-              <div>
-                <h3 className="font-semibold text-[#062A4A] text-sm mb-1" style={{ fontFamily: CARDEA_FONT_PRIMARY }}>
-                  {variant ? `Feeling ${variant.label}` : 'Today’s gentle reminder'}
-                </h3>
-                <p className="text-sm leading-relaxed text-[#3A525A]" style={{ fontFamily: CARDEA_FONT_PRIMARY }}>
-                  {moodId
-                    ? getMoodMessage(moodId)
-                    : "It's okay to take things one step at a time. Small progress is still progress on your heart health journey."}
-                </p>
+          {!moodId ? (
+            <motion.section
+              initial={{ opacity: 0, y: 18 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.45 }}
+              className={`rounded-2xl p-6 shadow-md relative overflow-hidden transition-all duration-700 ${theme.reminderBg}`}
+            >
+              <div className="flex items-start gap-3 relative z-10">
+                <Sparkles className="w-6 h-6 shrink-0" style={{ color: theme.heartStroke }} strokeWidth={2} />
+                <div>
+                  <h3 className="font-semibold text-[#062A4A] text-sm mb-1" style={{ fontFamily: CARDEA_FONT_PRIMARY }}>
+                    Today’s gentle reminder
+                  </h3>
+                  <p className="text-sm leading-relaxed text-[#3A525A]" style={{ fontFamily: CARDEA_FONT_PRIMARY }}>
+                    It&apos;s okay to take things one step at a time. Small progress is still progress on your heart
+                    health journey.
+                  </p>
+                </div>
               </div>
-            </div>
-          </motion.section>
+            </motion.section>
+          ) : null}
 
           <p className="text-center text-xs" style={{ color: CARDEA_MUTED }}>
             <Link to="/" className="underline underline-offset-2 hover:text-[#192b3f] transition-colors">

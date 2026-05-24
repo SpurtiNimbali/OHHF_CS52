@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState, type ReactNode } from 'react'
-import { Link, useNavigate } from 'react-router-dom'
+import { Link, useNavigate, useSearchParams } from 'react-router-dom'
 import {
   Activity,
   AlertCircle,
@@ -25,7 +25,10 @@ import {
   MOOD_VARIANTS,
   MoodHeartFill,
   getMoodChatPrefill,
+  isWellnessToolId,
+  MOOD_WELLNESS_PRIMARY_SECONDARY,
   moodShellBackgroundClasses,
+  resolveSuggestedExercisesForMood,
   type MoodId,
   useMood,
 } from '../mood'
@@ -132,18 +135,16 @@ const WELLNESS_EMOTIONS: Array<{
   label: string
   primary: ToolId
   secondary: ToolId
-}> = [
-  { id: 'happy', moodId: 'happy', label: 'Happy', primary: 'today-nudge', secondary: 'micro-journal' },
-  { id: 'calm', moodId: 'calm', label: 'Calm', primary: 'body-scan', secondary: 'today-nudge' },
-  { id: 'hopeful', moodId: 'hopeful', label: 'Hopeful', primary: 'reframes', secondary: 'today-nudge' },
-  { id: 'overwhelmed', moodId: 'overwhelmed', label: 'Overwhelmed', primary: 'grounding', secondary: 'breathing' },
-  { id: 'exhausted', moodId: 'exhausted', label: 'Exhausted', primary: 'cold-reset', secondary: 'micro-journal' },
-  { id: 'angry', moodId: 'angry', label: 'Angry', primary: 'cold-reset', secondary: 'stop-skill' },
-  { id: 'scared', moodId: 'scared', label: 'Scared', primary: 'reframes', secondary: 'safe-place' },
-  { id: 'sad', moodId: 'sad', label: 'Sad', primary: 'micro-journal', secondary: 'name-it' },
-  { id: 'disconnected', moodId: 'disconnected', label: 'Disconnected', primary: 'today-nudge', secondary: 'micro-journal' },
-  { id: 'numb', moodId: 'numb', label: 'Unsure', primary: 'feelings-wheel', secondary: 'body-scan' },
-]
+}> = MOOD_VARIANTS.map((m) => {
+  const tools = MOOD_WELLNESS_PRIMARY_SECONDARY[m.id]
+  return {
+    id: m.id as WellnessEmotion,
+    moodId: m.id,
+    label: m.label,
+    primary: tools.primary as ToolId,
+    secondary: tools.secondary as ToolId,
+  }
+})
 
 const TOOL_META: Record<ToolId, {
   title: string
@@ -414,23 +415,6 @@ const SUGGESTED_CARD_TONES: Record<
 }
 
 const SUGGESTED_TONES: RegulateTone[] = ['forest', 'sky', 'outline', 'sage']
-
-/**
- * AI-ready card resolver. Keep the return shape stable so this can later be
- * replaced with model/server recommendations without changing the UI.
- */
-function resolveSuggestedExercises(emotion: WellnessEmotion | null, moodId: MoodId | null): ToolId[] {
-  const key = emotion ?? moodId
-  if (key === 'overwhelmed') return ['breathing', 'grounding', 'reframes', 'night-reset']
-  if (key === 'exhausted') return ['cold-reset', 'body-scan', 'night-reset', 'safe-place']
-  if (key === 'angry') return ['cold-reset', 'move-it-out', 'stop-skill', 'breathing']
-  if (key === 'scared') return ['breathing', 'grounding', 'safe-place', 'reframes']
-  if (key === 'sad') return ['body-scan', 'breathing', 'safe-place', 'night-reset']
-  if (key === 'disconnected' || key === 'numb') return ['body-scan', 'grounding', 'safe-place', 'night-reset']
-  if (key === 'happy' || key === 'hopeful') return ['move-it-out', 'reframes', 'breathing', 'night-reset']
-  if (key === 'calm') return ['breathing', 'body-scan', 'safe-place', 'night-reset']
-  return ['breathing', 'grounding', 'reframes', 'night-reset']
-}
 
 function SuggestedExerciseCard({
   toolId,
@@ -1731,8 +1715,11 @@ function MoodCheckInTool({ onSaved }: { onSaved?: () => void }) {
 
 export default function WellnessTools() {
   const navigate = useNavigate()
+  const [searchParams] = useSearchParams()
   const { moodId, setMoodId, theme } = useMood()
-  const [selectedEmotion, setSelectedEmotion] = useState<WellnessEmotion | null>(null)
+  const [selectedEmotion, setSelectedEmotion] = useState<WellnessEmotion | null>(() =>
+    moodId ? (moodId as WellnessEmotion) : null,
+  )
   const [activeTool, setActiveTool] = useState<ToolId | null>(null)
   const [moodLog, setMoodLog] = useLocalState<MoodLogEntry[]>(STORAGE.moods, [])
   const [moodEntries, setMoodEntries] = useState<MoodEntryRow[]>([])
@@ -1767,9 +1754,18 @@ export default function WellnessTools() {
     }
   }, [activeTool])
 
+  useEffect(() => {
+    if (moodId) setSelectedEmotion(moodId as WellnessEmotion)
+  }, [moodId])
+
+  useEffect(() => {
+    const tool = searchParams.get('tool')
+    if (tool && isWellnessToolId(tool)) setActiveTool(tool)
+  }, [searchParams])
+
   const selectedMeta = selectedEmotion ? WELLNESS_EMOTIONS.find((e) => e.id === selectedEmotion) ?? null : null
   const suggestedExercises = useMemo(
-    () => resolveSuggestedExercises(selectedEmotion, moodId),
+    () => resolveSuggestedExercisesForMood(selectedEmotion ?? moodId) as ToolId[],
     [moodId, selectedEmotion],
   )
   const recentMoods = useMemo(() => {
@@ -2120,7 +2116,7 @@ export default function WellnessTools() {
             ))}
           </div>
           <p className="mt-3 text-xs leading-relaxed" style={{ color: CARDEA_MUTED }}>
-            These cards shift with your check-in. Later, this can use AI recommendations.
+            These exercises shift with your mood check-in on home or here.
           </p>
         </Section>
 
