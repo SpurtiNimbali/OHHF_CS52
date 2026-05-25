@@ -1,41 +1,56 @@
 import { Link, useLocation } from 'react-router-dom'
 import { motion } from 'motion/react'
-import { Home, MessageCircle, MessageSquare, Wind } from 'lucide-react'
+import { BookOpen, Home, MessageCircle, Wind } from 'lucide-react'
 import { moodColorWithAlpha, useMood } from '../mood'
 import { CARDEA_FONT_MONTSERRAT_STACK } from '../ui/cardeaTokens'
 
+/** Nav tiles ~53–57% saturation; icons/labels ~38–40% — keeps Home / Resources / Tools / Chat visually even */
 export const NAV_TILE_PALETTE = {
   coral: {
-    tile: '#FFAAA5',
-    icon: '#8B3A36',
-    label: '#8B3A36',
-    hoverTile: 'hover:bg-[#FFAAA5]/45',
-    labelHover: 'hover:text-[#8B3A36]',
+    tile: '#E8B4B0',
+    icon: '#6B4540',
+    label: '#6B4540',
+    hoverTile: 'hover:bg-[#E8B4B0]/45',
+    labelHover: 'hover:text-[#6B4540]',
   },
   mint: {
     tile: '#A8E6CF',
-    icon: '#2d5f4f',
-    label: '#2d5f4f',
+    icon: '#2f6a57',
+    label: '#2f6a57',
     hoverTile: 'hover:bg-[#A8E6CF]/45',
-    labelHover: 'hover:text-[#2d5f4f]',
+    labelHover: 'hover:text-[#2f6a57]',
   },
   sky: {
     tile: '#A8C5E6',
-    icon: '#192b3f',
-    label: '#2d4f6f',
+    icon: '#2e556b',
+    label: '#2e556b',
     hoverTile: 'hover:bg-[#A8C5E6]/45',
-    labelHover: 'hover:text-[#2d4f6f]',
+    labelHover: 'hover:text-[#2e556b]',
   },
   lavender: {
-    tile: '#C5B8E8',
-    icon: '#4a3580',
-    label: '#4a3580',
-    hoverTile: 'hover:bg-[#C5B8E8]/45',
-    labelHover: 'hover:text-[#4a3580]',
+    tile: '#C4B5E8',
+    icon: '#453371',
+    label: '#453371',
+    hoverTile: 'hover:bg-[#C4B5E8]/45',
+    labelHover: 'hover:text-[#453371]',
+  },
+  wellness: {
+    tile: '#C4B5E8',
+    icon: '#453371',
+    label: '#453371',
+    hoverTile: 'hover:bg-[#C4B5E8]/45',
+    labelHover: 'hover:text-[#453371]',
+  },
+  chat: {
+    tile: '#A5C0E6',
+    icon: '#2e4e6b',
+    label: '#2e4e6b',
+    hoverTile: 'hover:bg-[#A5C0E6]/45',
+    labelHover: 'hover:text-[#2e4e6b]',
   },
 } as const
 
-type TabId = 'home' | 'learn' | 'wellness' | 'chat'
+type TabId = 'home' | 'resources' | 'wellness' | 'chat'
 
 type PaletteKey = keyof typeof NAV_TILE_PALETTE
 
@@ -47,9 +62,9 @@ const items: {
   palette: PaletteKey
 }[] = [
   { id: 'home',    label: 'Home',    to: '/home',                   Icon: Home,          palette: 'mint'     },
-  { id: 'learn',   label: 'Learn',   to: '/resources',              Icon: MessageCircle, palette: 'sky'      },
-  { id: 'wellness', label: 'Tools',   to: '/wellness',               Icon: Wind,          palette: 'lavender' },
-  { id: 'chat',    label: 'Chat',    to: '/chat',                   Icon: MessageSquare, palette: 'lavender' },
+  { id: 'resources', label: 'Resources', to: '/resources', Icon: BookOpen, palette: 'sky' },
+  { id: 'wellness', label: 'Tools',   to: '/wellness',               Icon: Wind,          palette: 'wellness' },
+  { id: 'chat',    label: 'Chat',    to: '/chat',                   Icon: MessageCircle, palette: 'chat' },
 ]
 
 export function ResourcesRightNav() {
@@ -62,7 +77,7 @@ export function ResourcesRightNav() {
       : location.pathname === '/wellness'
         ? 'wellness'
       : location.pathname === '/resources'
-        ? 'learn'
+        ? 'resources'
         : 'home'
 
   return (

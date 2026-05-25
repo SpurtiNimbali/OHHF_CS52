@@ -1,7 +1,7 @@
 import type { FC, ReactNode } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import { motion } from 'motion/react'
-import { Users, MessageCircle, BookOpen } from 'lucide-react'
+import { Users, CircleHelp, BookOpen } from 'lucide-react'
 import BackButton from '../components/BackButton'
 import { ResourcesRightNav } from '../components/ResourcesRightNav'
 import { useMood, moodShellBackgroundClasses, MoodHeartFill } from '../mood'
@@ -79,7 +79,7 @@ const landingCards: {
     iconClass: 'text-[#192b3f]',
   },
   {
-    Icon: MessageCircle,
+    Icon: CircleHelp,
     title: 'Questions for Your Health Care Team',
     description: 'Important questions and conversation starters for your appointments',
     view: 'questions',
