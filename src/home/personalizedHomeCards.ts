@@ -1,23 +1,29 @@
 /**
- * Expanded, mood-aware home cards — same pastel palette as the current home screen
- * (mint #A8E6CF, coral #FFAAA5, sky #A8C5E6). Wire into HomeScreen when ready.
+ * Mood-aware home cards — CS 51/52 team doc + existing catalog.
  */
 
 import {
   BookOpen,
   CircleHelp,
-  Heart,
   MessageCircle,
   Sparkles,
   Stethoscope,
   Users,
+  Wind,
   type LucideIcon,
 } from 'lucide-react'
-import { getChatPromptHint } from '../mood/moodCopy'
-import type { MoodId } from '../mood/moodVariants'
+import { getChatPromptHint, getMoodMessage } from '../mood/moodCopy'
+import {
+  DEFAULT_HOME_CARD_ORDER,
+  MOOD_HOME_CARD_ORDER,
+  MOOD_PRIMARY_WELLNESS_TOOL,
+  MOOD_WELLNESS_HOME_DESCRIPTION,
+  wellnessToolPath,
+} from '../mood/moodRecommendations'
+import { moodVariantById, type MoodId } from '../mood/moodVariants'
 
 /** Tile styles — keep in sync with `ResourcesRightNav` / existing home cards */
-export type HomeCardPalette = 'mint' | 'coral' | 'sky'
+export type HomeCardPalette = 'mint' | 'coral' | 'sky' | 'lavender'
 
 export const HOME_CARD_PALETTE_CLASSES: Record<
   HomeCardPalette,
@@ -26,6 +32,7 @@ export const HOME_CARD_PALETTE_CLASSES: Record<
   mint: { iconWrapClass: 'bg-[#A8E6CF]', iconClass: 'text-[#2d5f4f]' },
   coral: { iconWrapClass: 'bg-[#FFAAA5]', iconClass: 'text-[#8B3A36]' },
   sky: { iconWrapClass: 'bg-[#A8C5E6]', iconClass: 'text-[#2d4f6f]' },
+  lavender: { iconWrapClass: 'bg-[#D5AAFF]', iconClass: 'text-[#5B3A70]' },
 }
 
 export type HomeCardDefinition = {
@@ -38,6 +45,10 @@ export type HomeCardDefinition = {
   icon: LucideIcon
   /** If set, description comes from mood-specific copy hook */
   descriptionFromChatHint?: boolean
+  /** Title becomes “Feeling {mood label}” when a mood is selected */
+  titleFromMoodLabel?: boolean
+  /** Description comes from getMoodMessage when a mood is selected */
+  descriptionFromMoodMessage?: boolean
   /** Optional mood-specific description overrides (full replace for that mood) */
   moodDescriptions?: Partial<Record<MoodId, string>>
 }
@@ -70,6 +81,24 @@ export const HOME_CARD_CATALOG: HomeCardDefinition[] = [
     descriptionFromChatHint: true,
   },
   {
+    id: 'wellness-tools',
+    icon: Wind,
+    title: 'Wellness tools',
+    descriptionDefault: 'Grounding, breathing, micro-journal, and gentle reset tools.',
+    to: '/wellness',
+    palette: 'lavender',
+  },
+  {
+    id: 'feeling-mood',
+    icon: Sparkles,
+    title: 'How you’re feeling',
+    descriptionDefault: 'Choose a mood to see a gentle reminder tailored to you.',
+    to: '/home#mood-check',
+    palette: 'mint',
+    titleFromMoodLabel: true,
+    descriptionFromMoodMessage: true,
+  },
+  {
     id: 'glossary-quick',
     icon: Stethoscope,
     title: 'Medical glossary',
@@ -100,10 +129,6 @@ export const HOME_CARD_CATALOG: HomeCardDefinition[] = [
     descriptionDefault: 'Gather questions and context so you feel ready at the visit.',
     to: '/resources?view=questions',
     palette: 'sky',
-    moodDescriptions: {
-      hopeful: 'Celebrate what’s going well — then note what you want to ask next.',
-      happy: 'Use your energy to lock in one goal to bring up with your team.',
-    },
   },
   {
     id: 'mood-check-in',
@@ -112,11 +137,6 @@ export const HOME_CARD_CATALOG: HomeCardDefinition[] = [
     descriptionDefault: 'Change your mood tint anytime — it shapes gentle suggestions.',
     to: '/home#mood-check',
     palette: 'mint',
-    moodDescriptions: {
-      overwhelmed: 'Naming how you feel is enough for today — adjust your mood whenever.',
-      exhausted: 'It’s okay to switch to a low-energy day — your home screen will match.',
-      numb: 'It’s alright not to pin a label on it — tweak your mood when you’re ready.',
-    },
   },
 ]
 
@@ -125,140 +145,53 @@ const CATALOG_BY_ID = Object.fromEntries(HOME_CARD_CATALOG.map((c) => [c.id, c])
   HomeCardDefinition
 >
 
-/** Preference order of card ids per mood; first entries are prioritized when slicing */
-const MOOD_CARD_ORDER: Record<'default' | MoodId, string[]> = {
-  default: [
-    'learning-hub',
-    'visit-questions',
-    'chat-support',
-    'glossary-quick',
-    'mood-check-in',
-    'support-network',
-    'explore-hub',
-    'appointment-prep',
-  ],
-  happy: [
-    'appointment-prep',
-    'visit-questions',
-    'explore-hub',
-    'chat-support',
-    'learning-hub',
-    'glossary-quick',
-    'support-network',
-    'mood-check-in',
-  ],
-  calm: [
-    'learning-hub',
-    'glossary-quick',
-    'explore-hub',
-    'visit-questions',
-    'chat-support',
-    'mood-check-in',
-    'appointment-prep',
-    'support-network',
-  ],
-  hopeful: [
-    'visit-questions',
-    'appointment-prep',
-    'learning-hub',
-    'chat-support',
-    'glossary-quick',
-    'mood-check-in',
-    'explore-hub',
-    'support-network',
-  ],
-  overwhelmed: [
-    'chat-support',
-    'support-network',
-    'glossary-quick',
-    'visit-questions',
-    'mood-check-in',
-    'learning-hub',
-    'explore-hub',
-    'appointment-prep',
-  ],
-  exhausted: [
-    'chat-support',
-    'mood-check-in',
-    'glossary-quick',
-    'learning-hub',
-    'visit-questions',
-    'support-network',
-    'explore-hub',
-    'appointment-prep',
-  ],
-  angry: [
-    'chat-support',
-    'support-network',
-    'visit-questions',
-    'learning-hub',
-    'glossary-quick',
-    'mood-check-in',
-    'explore-hub',
-    'appointment-prep',
-  ],
-  scared: [
-    'chat-support',
-    'support-network',
-    'glossary-quick',
-    'visit-questions',
-    'learning-hub',
-    'mood-check-in',
-    'explore-hub',
-    'appointment-prep',
-  ],
-  sad: [
-    'chat-support',
-    'mood-check-in',
-    'glossary-quick',
-    'support-network',
-    'visit-questions',
-    'learning-hub',
-    'explore-hub',
-    'appointment-prep',
-  ],
-  disconnected: [
-    'learning-hub',
-    'visit-questions',
-    'chat-support',
-    'glossary-quick',
-    'mood-check-in',
-    'support-network',
-    'explore-hub',
-    'appointment-prep',
-  ],
-  numb: [
-    'chat-support',
-    'learning-hub',
-    'glossary-quick',
-    'visit-questions',
-    'mood-check-in',
-    'support-network',
-    'explore-hub',
-    'appointment-prep',
-  ],
-}
-
 export type ResolvedHomeCard = Omit<
   HomeCardDefinition,
-  'moodDescriptions' | 'descriptionFromChatHint' | 'palette'
+  'moodDescriptions' | 'descriptionFromChatHint' | 'titleFromMoodLabel' | 'descriptionFromMoodMessage' | 'palette'
 > & {
   description: string
   iconWrapClass: string
   iconClass: string
 }
 
+function resolveTitle(card: HomeCardDefinition, moodId: MoodId | null): string {
+  if (moodId && card.titleFromMoodLabel) {
+    return `Feeling ${moodVariantById(moodId).label}`
+  }
+  return card.title
+}
+
 function resolveDescription(card: HomeCardDefinition, moodId: MoodId | null): string {
+  if (moodId && card.descriptionFromMoodMessage) return getMoodMessage(moodId)
+  if (moodId && card.id === 'wellness-tools') return MOOD_WELLNESS_HOME_DESCRIPTION[moodId]
   if (moodId && card.moodDescriptions?.[moodId]) return card.moodDescriptions[moodId]!
   if (card.descriptionFromChatHint) return getChatPromptHint(moodId)
   return card.descriptionDefault
 }
 
+function resolveTo(card: HomeCardDefinition, moodId: MoodId | null): string {
+  if (moodId && card.id === 'wellness-tools') {
+    return wellnessToolPath(MOOD_PRIMARY_WELLNESS_TOOL[moodId])
+  }
+  return card.to
+}
+
 function toResolved(card: HomeCardDefinition, moodId: MoodId | null): ResolvedHomeCard {
-  const { moodDescriptions: _m, descriptionFromChatHint: _d, palette, ...rest } = card
+  const {
+    moodDescriptions: _m,
+    descriptionFromChatHint: _d,
+    titleFromMoodLabel: _t,
+    descriptionFromMoodMessage: _f,
+    palette,
+    title,
+    to,
+    ...rest
+  } = card
   const { iconWrapClass, iconClass } = HOME_CARD_PALETTE_CLASSES[palette]
   return {
     ...rest,
+    title: resolveTitle(card, moodId),
+    to: resolveTo(card, moodId),
     description: resolveDescription(card, moodId),
     iconWrapClass,
     iconClass,
@@ -266,37 +199,25 @@ function toResolved(card: HomeCardDefinition, moodId: MoodId | null): ResolvedHo
 }
 
 export type PickHomeCardsOptions = {
-  /** How many cards to return after ordering & deduping routes (default 5) */
+  /** How many cards to return (default 4) */
   maxVisible?: number
-  /**
-   * If true, at most one card per `to` path (keeps the list from feeling repetitive).
-   * Default true.
-   */
-  dedupeRoutes?: boolean
 }
 
 /**
- * Ordered, personalized subset of the catalog for the current mood.
- * Safe to call on every render — pure.
+ * Ordered, personalized home cards for the current mood.
+ * With a mood selected: 4 cards from the team doc (chat → wellness → resource → feeling).
  */
 export function pickHomeCardsForMood(
   moodId: MoodId | null,
   options: PickHomeCardsOptions = {},
 ): ResolvedHomeCard[] {
-  const maxVisible = options.maxVisible ?? 5
-  const dedupeRoutes = options.dedupeRoutes ?? true
-
-  const orderKey: 'default' | MoodId = moodId ?? 'default'
-  const idOrder = MOOD_CARD_ORDER[orderKey]
-
-  const seenRoutes = new Set<string>()
+  const maxVisible = options.maxVisible ?? 4
+  const idOrder = moodId ? MOOD_HOME_CARD_ORDER[moodId] : [...DEFAULT_HOME_CARD_ORDER]
   const out: ResolvedHomeCard[] = []
 
   for (const id of idOrder) {
     const def = CATALOG_BY_ID[id]
     if (!def) continue
-    if (dedupeRoutes && seenRoutes.has(def.to)) continue
-    if (dedupeRoutes) seenRoutes.add(def.to)
     out.push(toResolved(def, moodId))
     if (out.length >= maxVisible) break
   }

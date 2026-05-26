@@ -267,6 +267,11 @@ export async function fetchMoodEntries(limit = RECENT_MOOD_CHECKINS_LIMIT): Prom
   return apiRows
 }
 
+export async function fetchLatestMoodEntry(): Promise<MoodEntryRow | null> {
+  const rows = await fetchMoodEntries(1)
+  return rows[0] ?? null
+}
+
 /** Save check-in to Supabase if not saved yet this session; return entry for chat. */
 export async function ensureMoodEntryForChat(
   mood: MoodId,

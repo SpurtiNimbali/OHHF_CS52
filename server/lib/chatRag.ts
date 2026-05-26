@@ -17,7 +17,17 @@ import {
   type SessionContextPrompt,
 } from '../prompts/companionPrompts.js'
 import { detectCrisisKeywords } from '../../src/lib/crisisKeywords.js'
+import {
+  looksLikeCopingRequest,
+  matchCopingRequest,
+  shouldUseCopingBranch,
+} from './copingRequestMatch.js'
 import { loadEmotionMap, safeDetectedEmotion, splitUnderneathIntoChipOptions } from './emotionMapLoader.js'
+import {
+  resolveSelectedTool,
+  type ResolvedWellnessTool,
+  type WellnessToolId,
+} from '../../src/lib/wellnessToolRegistry.js'
 import { loadKnowledgeIndex, getKnowledgeLoadError } from './knowledge/loadIndex.js'
 import { embedQueryToScores } from './knowledge/retrieve.js'
 import type { RetrievedChunk } from './knowledge/types.js'
@@ -94,6 +104,35 @@ export type CompanionChatResult = KbChatResult & {
   classifierIntent: string | null
 }
 
+function fallbackToolIdForEmotion(emotionId: string): WellnessToolId {
+  switch (emotionId) {
+    case 'angry':
+    case 'exhausted':
+      return 'physical-regulation'
+    case 'scared':
+      return 'safe-place'
+    case 'sad':
+    case 'numb':
+      return 'name-it'
+    case 'guilty':
+      return 'reframes'
+    case 'disconnected':
+      return 'today-nudge'
+    case 'helpless':
+      return 'grounding'
+    case 'overwhelmed':
+    case 'anxious':
+    case 'unknown':
+    default:
+      return 'breathing'
+  }
+}
+
+function toCompanionToolPayload(tool: ResolvedWellnessTool | null): CompanionToolPayload | null {
+  if (!tool) return null
+  return { name: tool.label, route: tool.route }
+}
+
 function clip(s: string, n: number): string {
   const t = s.trim()
   if (t.length <= n) return t
@@ -103,7 +142,7 @@ function clip(s: string, n: number): string {
 const HYBRID_EMOTION_MAX_WORDS = 70
 const HYBRID_INFO_MAX_WORDS = 100
 /** Standalone informational RAG (non-hybrid) word cap. */
-const INFO_RAG_MAX_WORDS = 100
+const INFO_RAG_MAX_WORDS = 160
 
 /** Procedure/fact wording that belongs in the informational paragraph, not emotional. */
 const HYBRID_EMOTIONAL_FACTUAL_RE =
@@ -163,7 +202,7 @@ function polishHybridParagraph(text: string): string {
     ) {
       continue
     }
-    if (/resources below|options below|tap below|chips below/i.test(s)) continue
+    if (/resources below/i.test(s)) continue
     kept.push(/[.!]$/.test(s) ? s : `${s}.`)
   }
   return unshieldInlineCitations(kept.join(' ').trim(), markers)
@@ -324,17 +363,18 @@ function polishInformationalFollowUpQuestion(text: string): string {
   return t
 }
 
-/** Body capped at 50–100 words; optional follow-up question after (not capped). */
+/** Body capped at ~85–160 words; optional follow-up question after (not capped). */
 function polishInformationalAnswer(
   text: string,
   userMessage: string,
-  opts?: { includeFollowUp?: boolean },
+  opts?: { includeFollowUp?: boolean; maxBodyWords?: number },
 ): string {
   const includeFollowUp = opts?.includeFollowUp !== false
+  const maxBodyWords = opts?.maxBodyWords ?? INFO_RAG_MAX_WORDS
   const { body, followUp } = splitInformationalFollowUp(text)
   let b = polishHybridInformationalParagraph(polishHybridParagraph(body), userMessage)
   b = b.replace(/\n\s*\n+/g, ' ').replace(/\s+/g, ' ').trim()
-  b = clipWordsAtSentence(b, INFO_RAG_MAX_WORDS)
+  b = clipWordsAtSentence(b, maxBodyWords)
   if (!includeFollowUp) return b
   const q = followUp.trim()
     ? polishInformationalFollowUpQuestion(followUp)
@@ -499,10 +539,67 @@ function looksLikeBareGreeting(msg: string): boolean {
 
 function crisisAnswer(): string {
   return (
-    `If you are in crisis or might hurt yourself or someone else, please reach out right away for professional help.` +
+    `If you are in crisis, feel your life is in danger, or might hurt yourself or someone else, please reach out right away for professional help.` +
     ` Crisis Text Line: text HOME to 741741. 988 Lifeline (US): call or text 988. ` +
     `If there is immediate danger, call local emergency services. Cardea is not a therapist and cannot intervene in emergencies.`
   )
+}
+
+/** Assistant prose that points at emotion chips rendered below the message. */
+const UI_CHIP_POINTER_RE =
+  /\b(tags?|chips?|pills?|themes?|options|labels)\s+below\b|\bbelow[,]?\s*(you can |to )?(tap|see|pick|choose|check|explore)\b|\b(tap|see|check|pick|choose)\s+(what|which|any)\s+(fits|resonates|applies)\b|\bwhich\s+(tag|chip|theme)s?\s+fits\b/i
+
+/** Assistant prose that points at an ExerciseCard rendered below the message. */
+const UI_EXERCISE_POINTER_RE =
+  /\b(exercise|practice|grounding|steps|card|micro-?practice)\s+below\b|\btry\s+the\s+(exercise|practice)\s+below\b/i
+
+function answerReferencesEmotionChips(text: string): boolean {
+  return UI_CHIP_POINTER_RE.test(text)
+}
+
+function answerReferencesExercise(text: string): boolean {
+  return UI_EXERCISE_POINTER_RE.test(text)
+}
+
+function stripSentencesMatching(text: string, re: RegExp): string {
+  const { shielded, markers } = shieldInlineCitations(text)
+  const parts = shielded.match(/[^.!?]+[.!?]+|[^.!?]+$/g) ?? [shielded]
+  const kept: string[] = []
+  for (const part of parts) {
+    const s = part.trim()
+    if (!s || re.test(s)) continue
+    kept.push(/[.!]$/.test(s) ? s : `${s}.`)
+  }
+  const out = kept.join(' ').trim()
+  return out ? unshieldInlineCitations(out, markers) : ''
+}
+
+type CompanionUiAlignInput = {
+  answer: string
+  emotionChips: string[] | null
+  exercise: CompanionExercisePayload | null
+  /** Chip labels available this turn (emotion-map underneath split). */
+  availableChips?: string[]
+}
+
+/** Keep assistant copy aligned with chips / ExerciseCard actually attached to the message. */
+function alignCompanionUiPayload(input: CompanionUiAlignInput): CompanionUiAlignInput {
+  let { answer, emotionChips, exercise, availableChips } = input
+  const chipsAvailable = (availableChips?.length ?? 0) > 0
+
+  if (answerReferencesEmotionChips(answer)) {
+    if (chipsAvailable) {
+      emotionChips = emotionChips?.length ? emotionChips : availableChips!
+    } else if (!emotionChips?.length) {
+      answer = stripSentencesMatching(answer, UI_CHIP_POINTER_RE)
+    }
+  }
+
+  if (answerReferencesExercise(answer) && !exercise) {
+    answer = stripSentencesMatching(answer, UI_EXERCISE_POINTER_RE)
+  }
+
+  return { answer, emotionChips, exercise, availableChips }
 }
 
 async function classifyUserIntent(args: {
@@ -539,6 +636,7 @@ async function classifyUserIntent(args: {
     const intents: ClassifierIntent[] = [
       'GREETING',
       'EMOTIONAL',
+      'COPING_REQUEST',
       'INFORMATIONAL_RAG',
       'INFORMATIONAL_GLOSSARY',
       'INFORMATIONAL_CARE_TEAM',
@@ -659,6 +757,9 @@ export async function runCompanionChat(req: CompanionChatRequest): Promise<Compa
   const selectedEmotion = req.selectedEmotion ?? null
   const selectedUnderneath = req.selectedUnderneath ?? null
   const historyStr = conversationHistorySnippet(hist)
+  // If the user explicitly asks for a coping tool, do not let stale invite/reflect
+  // state swallow the request before it reaches the coping classifier branch.
+  const forceCopingBranch = looksLikeCopingRequest(trimmed)
 
   if (detectCrisisKeywords(trimmed)) {
     const answer = crisisAnswer()
@@ -680,11 +781,11 @@ export async function runCompanionChat(req: CompanionChatRequest): Promise<Compa
     }
   }
 
-  if (conversationStage === 'invite') {
+  if (conversationStage === 'invite' && !forceCopingBranch) {
     const nameHint =
       inviteExerciseTitle.length > 0
-        ? `They just stepped through "${inviteExerciseTitle}" from the ExerciseCard. Do NOT say you're glad they tried anything, thank them for practicing, or open with gratitude. Tie the check-in to that title once if it reads naturally — e.g. "${inviteExerciseTitle} can stir a lot up — how did that land for you?" — or shorten to a single sincere question ("How did that feel?"). Brief warm prose only; no bullet lists.`
-        : 'They are checking in right after completing the guided practice from the prior turn (specific title unavailable). Same rules: no "glad" or "thanks for trying"; start straight into how it landed with one sincere question ("How did that feel?" etc.). Warm prose only; no bullets.'
+        ? `They just stepped through "${inviteExerciseTitle}" from the ExerciseCard. Do NOT say you're glad they tried anything, thank them for practicing, or open with gratitude. Tie the check-in to that title once if it reads naturally — e.g. "${inviteExerciseTitle} can stir a lot up — how did that land for you?" — or shorten to a single sincere question ("How did that feel?"). Warm prose in a few sentences; no bullet lists.`
+        : 'They are checking in right after completing the guided practice from the prior turn (specific title unavailable). Same rules: no "glad" or "thanks for trying"; start straight into how it landed with one sincere question ("How did that feel?" etc.). Warm prose in a few sentences; no bullets.'
     const sys = buildCompanionSystem({
       session: sessionToPrompt(session),
       conversationHistory: historyStr,
@@ -703,11 +804,12 @@ export async function runCompanionChat(req: CompanionChatRequest): Promise<Compa
       ),
       { role: 'user', content: trimmed },
     ]
-    const answer = polishCompanionEmotionalAnswer(
-      await openAiMessages(messages, MAIN_CHAT_MODEL, 550, 0.45),
+    let answer = polishCompanionEmotionalAnswer(
+      await openAiMessages(messages, MAIN_CHAT_MODEL, 720, 0.45),
       trimmed,
     )
     const suggested = await suggestFollowUps(trimmed, stripMissingBlock(answer))
+    ;({ answer } = alignCompanionUiPayload({ answer, emotionChips: null, exercise: null }))
     return {
       answer,
       nextStage: 'open',
@@ -727,7 +829,7 @@ export async function runCompanionChat(req: CompanionChatRequest): Promise<Compa
 
   const emotionMap = loadEmotionMap()
 
-  if (conversationStage === 'reflect') {
+  if (conversationStage === 'reflect' && !forceCopingBranch) {
     const eid =
       safeDetectedEmotion(selectedEmotion) ??
       safeDetectedEmotion(session.emotionCheckIn) ??
@@ -739,6 +841,16 @@ export async function runCompanionChat(req: CompanionChatRequest): Promise<Compa
     if (!row) {
       throw new Error('emotionMap.json missing fallback row unknown')
     }
+    const selectedTool = toCompanionToolPayload(
+      resolveSelectedTool(
+        ...row.tools.map((tool) => tool.name),
+        row.exercise.name,
+        fallbackToolIdForEmotion(row.id),
+      ),
+    )
+    const toolUiHint = selectedTool
+      ? `TOOL CARD UI: One clickable wellness tool card for "${selectedTool.name}" WILL appear below. If you mention an in-app tool in prose, ONLY name "${selectedTool.name}".`
+      : 'TOOL CARD UI: Do NOT mention an in-app wellness tool or card below.'
 
     const sys = buildCompanionSystem({
       session: sessionToPrompt(session),
@@ -747,7 +859,7 @@ export async function runCompanionChat(req: CompanionChatRequest): Promise<Compa
       selectedEmotion: row.id,
       selectedUnderneath: underneath,
       branchHint:
-        `They named what's underneath (${underneath}) while focused on emotion "${row.feeling}" (${row.id}). Modalities described as ${row.modalities.join(', ')} (${row.modalityReason}). Potential benefits clinicians note: ${row.benefits.join('; ')}. Validate their reality without stock phrases — paraphrase in plain language; do not quote their message back. In one grounded sentence, name the micro-practice below ("${row.exercise.name}") and what it helps with — do NOT ask what steps they could take or what they need; do NOT ask permission to try it; do NOT list numbered steps in prose (the ExerciseCard shows steps).`,
+        `They named what's underneath (${underneath}) while focused on emotion "${row.feeling}" (${row.id}). Modalities described as ${row.modalities.join(', ')} (${row.modalityReason}). Potential benefits clinicians note: ${row.benefits.join('; ')}. Validate their reality without stock phrases — paraphrase in plain language; do not quote their message back. EXERCISE UI: An ExerciseCard with steps for "${row.exercise.name}" WILL appear directly below your message. ${toolUiHint} In one or two grounded sentences, point them to the steps below for right now.${selectedTool ? ` If you mention a tool, use "${selectedTool.name}" exactly and no other in-app tool name.` : ''} Do NOT ask what steps they could take or what they need; do NOT ask permission to try it; do NOT list numbered steps in prose (the card shows steps).`,
     })
 
     const messages: ChatCompletionMessageParam[] = [
@@ -760,8 +872,8 @@ export async function runCompanionChat(req: CompanionChatRequest): Promise<Compa
       ),
       { role: 'user', content: trimmed },
     ]
-    const answer = polishCompanionEmotionalAnswer(
-      await openAiMessages(messages, MAIN_CHAT_MODEL, 900, 0.45),
+    let answer = polishCompanionEmotionalAnswer(
+      await openAiMessages(messages, MAIN_CHAT_MODEL, 1100, 0.45),
       trimmed,
     )
     const suggested = await suggestFollowUps(trimmed, stripMissingBlock(answer))
@@ -770,17 +882,18 @@ export async function runCompanionChat(req: CompanionChatRequest): Promise<Compa
       name: row.exercise.name,
       steps: [...row.exercise.steps],
     }
-    const tools: CompanionToolPayload[] = row.tools.map((t) => ({
-      name: t.name,
-      route: t.route,
-    }))
 
+    ;({ answer } = alignCompanionUiPayload({
+      answer,
+      emotionChips: null,
+      exercise: exercisePayload,
+    }))
     return {
       answer,
       nextStage: 'invite',
       emotionChips: null,
       exercise: exercisePayload,
-      toolCards: tools.length ? tools : null,
+      toolCards: selectedTool ? [selectedTool] : null,
       uiRedirect: null,
       citations: [],
       suggestedQuestions: suggested,
@@ -798,6 +911,60 @@ export async function runCompanionChat(req: CompanionChatRequest): Promise<Compa
     recentHistory: recentTwoTurnString(hist),
   })
 
+  if (shouldUseCopingBranch(cls.intent, trimmed)) {
+    const classifierEmotion = safeDetectedEmotion(cls.detectedEmotion)
+    const checkinEm = safeDetectedEmotion(session.emotionCheckIn)
+    const coping = matchCopingRequest(trimmed, classifierEmotion, checkinEm)
+    const selectedTool = coping.selectedTool
+    const toolUiHint = selectedTool
+      ? `TOOL CARD UI: One clickable wellness tool card for "${selectedTool.name}" WILL appear below. If you mention an in-app tool in prose, ONLY name "${selectedTool.name}".`
+      : 'TOOL CARD UI: Do NOT mention an in-app wellness tool or card below.'
+
+    const sys = buildCompanionSystem({
+      session: sessionToPrompt(session),
+      conversationHistory: historyStr,
+      conversationStage: stageToPrompt(conversationStage),
+      selectedEmotion: coping.emotionId,
+      selectedUnderneath: null,
+      branchHint:
+        `They asked for a specific calming practice or exercise (classifier=${cls.intent === 'COPING_REQUEST' ? 'COPING_REQUEST' : 'EMOTIONAL+heuristic'}). Skip emotion-map chips — go straight to the live in-app tool. ${toolUiHint} In one or two grounded sentences, acknowledge the stress briefly and point them to the tool card below for right now.${selectedTool ? ` If you mention the tool in prose, use "${selectedTool.name}" exactly and no other in-app tool name.` : ''} Do NOT mention steps below, an exercise card below, or numbered instructions in prose. Do NOT ask permission to try it; do NOT ask what is underneath or mention tags/chips below.`,
+    })
+
+    const messages: ChatCompletionMessageParam[] = [
+      { role: 'system', content: sys },
+      ...hist.map(
+        (h): ChatCompletionMessageParam => ({
+          role: h.role === 'assistant' ? 'assistant' : 'user',
+          content: h.content,
+        }),
+      ),
+      { role: 'user', content: trimmed },
+    ]
+    let answer = polishCompanionEmotionalAnswer(
+      await openAiMessages(messages, MAIN_CHAT_MODEL, 900, 0.42),
+      trimmed,
+    )
+    const suggested = await suggestFollowUps(trimmed, stripMissingBlock(answer))
+
+    ;({ answer } = alignCompanionUiPayload({ answer, emotionChips: null, exercise: null }))
+
+    return {
+      answer,
+      nextStage: 'open',
+      emotionChips: null,
+      exercise: null,
+      toolCards: selectedTool ? [selectedTool] : null,
+      uiRedirect: null,
+      citations: [],
+      suggestedQuestions: suggested,
+      uiRedirects: [],
+      retrieved: [],
+      crisis: false,
+      detectedEmotion: coping.emotionId,
+      classifierIntent: 'COPING_REQUEST',
+    }
+  }
+
   const inChipStages =
     conversationStage === 'open' ||
     conversationStage === 'hear' ||
@@ -811,7 +978,7 @@ export async function runCompanionChat(req: CompanionChatRequest): Promise<Compa
       selectedEmotion: null,
       selectedUnderneath: null,
       branchHint:
-        `They sent a greeting or salutation (classifier GREETING). Respond warmly and briefly — one or two short sentences — like a teammate who is genuinely glad they're here. No crisis or survival-mode vibes; nothing about overwhelm or overload; do not steer toward emotion-map chips or heavy probing. Invite them softly to share when ready; keep it light until they bring substance.`,
+        `They sent a greeting or salutation (classifier GREETING). Respond warmly — two or three sentences — like a teammate who is genuinely glad they're here. No crisis or survival-mode vibes; nothing about overwhelm or overload; do not steer toward emotion-map chips or heavy probing. Invite them softly to share when ready; keep it light until they bring substance.`,
     })
     const messages: ChatCompletionMessageParam[] = [
       { role: 'system', content: sys },
@@ -823,8 +990,9 @@ export async function runCompanionChat(req: CompanionChatRequest): Promise<Compa
       ),
       { role: 'user', content: trimmed },
     ]
-    const answer = await openAiMessages(messages, MAIN_CHAT_MODEL, 450, 0.35)
+    let answer = await openAiMessages(messages, MAIN_CHAT_MODEL, 580, 0.35)
     const suggested = await suggestFollowUps(trimmed, stripMissingBlock(answer))
+    ;({ answer } = alignCompanionUiPayload({ answer, emotionChips: null, exercise: null }))
     return {
       answer,
       nextStage: 'open',
@@ -885,10 +1053,14 @@ export async function runCompanionChat(req: CompanionChatRequest): Promise<Compa
       polishHybridEmotionalParagraph(emoBlock, trimmed),
       HYBRID_EMOTION_MAX_WORDS,
     )
-    const informationalPara = polishInformationalAnswer(infoBlock, trimmed, { includeFollowUp: false })
+    const informationalPara = polishInformationalAnswer(infoBlock, trimmed, {
+      includeFollowUp: false,
+      maxBodyWords: HYBRID_INFO_MAX_WORDS,
+    })
     let closingPara = polishHybridClosing(closingBlock)
     if (!closingPara) closingPara = fallbackHybridClosing(trimmed)
-    const answer = [emotionalPara, informationalPara, closingPara].filter(Boolean).join('\n\n').trim()
+    let answer = [emotionalPara, informationalPara, closingPara].filter(Boolean).join('\n\n').trim()
+    ;({ answer } = alignCompanionUiPayload({ answer, emotionChips: null, exercise: null }))
     const citations: ChatCitation[] = retrieved.map((r) => ({
       chunkId: r.id,
       title: r.title,
@@ -928,6 +1100,11 @@ export async function runCompanionChat(req: CompanionChatRequest): Promise<Compa
         ? chipOptions.map((c, i) => `${i + 1}. ${c}`).join('\n')
         : '(none — invite them to name what is underneath in their own words)'
 
+    const chipUiRule =
+      chipOptions.length > 0
+        ? `CHIP UI: Tap-to-choose tags WILL appear directly below your message. If you mention tags/chips/pills below, keep it to one short line (e.g. "tap what fits below").`
+        : `CHIP UI: No tag row appears below this message — do NOT mention tags, chips, pills, themes, or options "below".`
+
     const sys = buildCompanionSystem({
       session: sessionToPrompt(session),
       conversationHistory: historyStr,
@@ -936,14 +1113,15 @@ export async function runCompanionChat(req: CompanionChatRequest): Promise<Compa
       selectedUnderneath: null,
       branchHint: `They're sharing emotionally (classifier=${cls.intent}). Write like a calm, specific human — not a therapy script. Do NOT open by restating their message ("You're feeling X and Y…"). Start with a fresh sentence about what this moment is like for a parent. Mention today's check-in (${session.emotionCheckIn ?? 'none'}) only if it fits naturally.
 
+${chipUiRule}
+
 CHIP ROW (for UI only — do not list these themes in prose):
 ${chipBlock}
 
 SHAPE THIS REPLY (vary from prior turns in CONVERSATION HISTORY):
-- 1–3 short paragraphs; no fixed template. Often 2 is enough.
-- Include at most: one grounded acknowledgment, OR one concrete coping idea as a statement, OR one line pointing to the pills below — pick what helps this message; skip what sounds canned.
-- Do NOT ask what small steps they could take. Do NOT use "wondering what's underneath" questions — pills handle that.
-- If you point to the row below, one casual sentence max (wording can vary: "see which tag fits", "tap what resonates", etc.).`,
+- 2–4 short paragraphs; no fixed template. Often 2–3 is enough.
+- Include at most: one grounded acknowledgment, OR one concrete coping idea as a statement, OR (only when CHIP UI says tags will appear) one line pointing to the tags below — pick what helps this message; skip what sounds canned.
+- Do NOT ask what small steps they could take. Do NOT use "wondering what's underneath" questions — pills handle that.`,
     })
 
     const messages: ChatCompletionMessageParam[] = [
@@ -960,14 +1138,20 @@ SHAPE THIS REPLY (vary from prior turns in CONVERSATION HISTORY):
       },
     ]
 
-    const answer = polishCompanionEmotionalAnswer(
-      await openAiMessages(messages, MAIN_CHAT_MODEL, 750, 0.44),
+    let answer = polishCompanionEmotionalAnswer(
+      await openAiMessages(messages, MAIN_CHAT_MODEL, 1000, 0.44),
       trimmed,
     )
 
     const suggested = await suggestFollowUps(trimmed, stripMissingBlock(answer))
 
-    const chips = chipOptions.length > 0 ? chipOptions : null
+    let chips = chipOptions.length > 0 ? chipOptions : null
+    ;({ answer, emotionChips: chips } = alignCompanionUiPayload({
+      answer,
+      emotionChips: chips,
+      exercise: null,
+      availableChips: chipOptions,
+    }))
 
     return {
       answer,
@@ -1017,10 +1201,10 @@ SHAPE THIS REPLY (vary from prior turns in CONVERSATION HISTORY):
     sysInformational,
     [
       trimmed,
-      'Part 1: exactly ONE paragraph, 50–100 words, no question marks. REQUIRED: include at least one inline citation [1], [2], … after excerpt-backed claims in part 1 (numbers match the knowledge excerpts). Part 2 after a blank line: one follow-up question — use parentheses for topics, not [brackets].',
+      'Part 1: exactly ONE paragraph, 85–160 words, no question marks. REQUIRED: include at least one inline citation [1], [2], … after excerpt-backed claims in part 1 (numbers match the knowledge excerpts). Part 2 after a blank line: one follow-up question — use parentheses for topics, not [brackets].',
     ].join('\n'),
     MAIN_CHAT_MODEL,
-    280,
+    430,
     0.28,
   )
   const answer = polishInformationalAnswer(rawInformational, trimmed)
@@ -1057,7 +1241,7 @@ const WELCOME_EMBED_QUERY =
   'Caregiver stress emotional support families congenital heart disease CHD coping worry uncertainty grief fatigue pediatric heart navigating care'
 
 const WELCOME_TOP_K = 7
-const WELCOME_MAX_TOKENS = 520
+const WELCOME_MAX_TOKENS = 720
 
 /**
  * First-screen welcome copy for Chat: retrieval + warm trauma-informed / CBT-structured opener

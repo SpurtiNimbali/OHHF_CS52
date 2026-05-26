@@ -1,35 +1,41 @@
 import type { MoodId } from './moodVariants'
 
+/** “Feeling …” taglines — home card 4 & reminder panel */
 const MOOD_MESSAGES: Record<MoodId, string> = {
-  happy:
-    'That lightness matters — ride the wave kindly and savor what feels good.',
-  calm: "Take a deep breath. You're doing great, and it's wonderful to feel at peace.",
-  hopeful: 'Your optimism is a powerful tool for healing. Keep looking forward with hope.',
-  overwhelmed:
-    'When everything feels loud, small steps still count — you deserve gentleness.',
-  exhausted: 'Rest is part of healing. Be gentle with yourself and take time to recharge.',
-  angry: 'Your frustration makes sense — it’s okay to feel it without judging yourself.',
-  scared: 'Fear often shows up beside love for your heart — you’re not alone with it.',
-  sad: 'It’s alright to carry a heavy heart today — tenderness toward yourself counts.',
+  happy: 'Good moments deserve to be noticed — let’s help this one stay.',
+  calm: 'Calm is hard-won. Take a breath and let yourself have it.',
+  hopeful: 'Hope is a practice. Let’s help it take root.',
+  overwhelmed: 'So much on your plate — let’s find one small thing to release.',
+  exhausted: 'Tired doesn’t mean failing. It means you’ve been showing up.',
+  angry: 'Anger often means something matters deeply to you, and that’s not wrong.',
+  scared: 'Fear often shows up beside love for your heart. You’re not alone with it.',
+  sad: 'Grief is love with nowhere to go — it deserves to be witnessed.',
   disconnected:
-    'Sometimes we feel distant — naming it is honest, and you still belong here.',
-  numb: "Not knowing how you feel is its own truth — there's no rush to sort it.",
+    'Disconnection is protection — your system did what it needed to. We can find our way back.',
+  numb: 'Not knowing what you feel is a feeling too — let’s explore it gently.',
 }
 
 const CHAT_HINTS: Record<MoodId, string> = {
   happy:
-    'Try: “What’s one thing that went better than expected this week?” — share it when you chat.',
-  calm: 'Try: “What relaxes me most on hard days?” Jot it down before you talk with someone.',
-  hopeful: 'Try: “What’s one win from this week I want to celebrate?”',
+    'Try: “What made today feel lighter, and how can I hold onto that?” — share it when you chat.',
+  calm:
+    'Try: “What helped me get to this calm place, and what do I want to remember about it?” — jot it down before you talk with someone.',
+  hopeful:
+    'Try: “What’s one thing I’m looking forward to, even if it’s small?” — celebrate it when you chat.',
   overwhelmed:
-    'Try: “What is the loudest worry right now?” — say it clearly to someone you trust.',
-  exhausted: 'Try: “Where is my energy lowest, and what rest helps?”',
-  angry: 'Try: “What made me upset, and what do I wish my team understood?”',
-  scared: 'Try: “What symptom or uncertainty scares me most today?” — share it with care.',
-  sad: 'Try: “What would feel a little softer today?” — even a tiny comfort counts.',
+    'Try: “What’s one thing I can set down today, even temporarily?” — say it clearly to someone you trust.',
+  exhausted:
+    'Try: “What has caregiving cost me lately that I haven’t named out loud?” — honesty counts as clarity.',
+  angry:
+    'Try: “What feels most unfair about this situation right now?” — share it with care.',
+  scared:
+    'Try: “What symptom or uncertainty scares me most today?” — share it with care.',
+  sad:
+    'Try: “What loss or grief am I carrying right now that I haven’t had space to feel?” — even a tiny comfort counts.',
   disconnected:
-    'Try: “I feel a bit unplugged lately” — that’s enough to open a conversation.',
-  numb: 'Try: “I’m not sure what I’m feeling” — honesty like that counts as clarity.',
+    'Try: “When did I last feel present with someone I love, and what was different then?” — that’s enough to open a conversation.',
+  numb:
+    'Try: “If I had to guess at one word for what I’m feeling underneath ‘unsure,’ what might it be?” — honesty like that counts as clarity.',
 }
 
 const DEFAULT_HINT =
