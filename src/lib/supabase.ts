@@ -128,3 +128,8 @@ export type SupportResource = {
   zipcode: string | null
   age: string | null
 }
+
+export type Nudge = {
+  id: number
+  nudge_text: string
+}

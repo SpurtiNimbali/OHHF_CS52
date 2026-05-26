@@ -241,8 +241,6 @@ export default function QuestionsForCardiologist() {
   const [intake, setIntake] = useState(EMPTY_CARE_TEAM_INTAKE)
   const [generated, setGenerated] = useState<GeneratedItem[]>([])
   const [generating, setGenerating] = useState(false)
-  const [savingGeneratedId, setSavingGeneratedId] = useState<string | null>(null)
-  const [savedGeneratedIds, setSavedGeneratedIds] = useState<Set<string>>(() => new Set())
 
   const [activeTab, setActiveTab] = useState<'suggested' | 'saved'>('suggested')
   const [customLine, setCustomLine] = useState('')
@@ -262,7 +260,6 @@ export default function QuestionsForCardiologist() {
   const customInputRef = useRef<HTMLInputElement>(null)
   const [expandedSavedId, setExpandedSavedId] = useState<string | null>(null)
   const [savedMeta, setSavedMeta] = useState<Record<string, SavedQuestionMeta>>({})
-
   useEffect(() => {
     let cancelled = false
     ;(async () => {
