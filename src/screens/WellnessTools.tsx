@@ -60,6 +60,7 @@ import { ReframesTool } from '../components/wellness/ReframesTool'
 import { SafePlaceTool } from '../components/wellness/SafePlaceTool'
 import { fetchMyReframes } from '../lib/userReframes'
 import { fetchSafePlaces } from '../lib/safePlaces'
+import { WELLNESS_TOOL_REGISTRY, type WellnessToolId } from '../lib/wellnessToolRegistry'
 
 type WellnessEmotion =
   | 'happy'
@@ -74,15 +75,8 @@ type WellnessEmotion =
   | 'numb'
 
 type ToolId =
-  | 'breathing'
-  | 'grounding'
-  | 'physical-regulation'
+  | WellnessToolId
   | 'mood-check-in'
-  | 'name-it'
-  | 'micro-journal'
-  | 'reframes'
-  | 'safe-place'
-  | 'today-nudge'
   | 'crisis-reset'
 
 type MoodLogEntry = {
@@ -144,15 +138,55 @@ const TOOL_META: Record<ToolId, {
   category: 'Regulate body' | 'Understand' | 'Shift mindset' | 'Connect' | 'Crisis'
   icon: typeof Wind
 }> = {
-  breathing: { title: 'Guided breathing', short: '3 calming patterns', category: 'Regulate body', icon: Wind },
-  grounding: { title: '5-4-3-2-1 grounding', short: 'settle into your senses', category: 'Regulate body', icon: Sparkles },
-  'physical-regulation': { title: 'Physical regulation', short: 'cold · movement · body scan', category: 'Regulate body', icon: Activity },
+  breathing: {
+    title: WELLNESS_TOOL_REGISTRY.breathing.label,
+    short: '3 calming patterns',
+    category: 'Regulate body',
+    icon: Wind,
+  },
+  grounding: {
+    title: WELLNESS_TOOL_REGISTRY.grounding.label,
+    short: 'settle into your senses',
+    category: 'Regulate body',
+    icon: Sparkles,
+  },
+  'physical-regulation': {
+    title: WELLNESS_TOOL_REGISTRY['physical-regulation'].label,
+    short: 'cold reset · move it out · body scan',
+    category: 'Regulate body',
+    icon: Activity,
+  },
   'mood-check-in': { title: 'Daily mood check-in', short: 'two questions, one minute', category: 'Understand', icon: Heart },
-  'name-it': { title: 'Name it to tame it', short: 'pick feeling words', category: 'Understand', icon: Tag },
-  'micro-journal': { title: 'Micro-journal', short: 'how are you feeling today?', category: 'Understand', icon: BookOpen },
-  reframes: { title: 'Reframes', short: 'a kinder thought', category: 'Shift mindset', icon: RefreshCw },
-  'safe-place': { title: 'Safe place visualization', short: '90 seconds of steadiness', category: 'Shift mindset', icon: Heart },
-  'today-nudge': { title: "Today's nudge", short: 'feel closer in one small way', category: 'Connect', icon: Heart },
+  'name-it': {
+    title: WELLNESS_TOOL_REGISTRY['name-it'].label,
+    short: 'pick feeling words',
+    category: 'Understand',
+    icon: Tag,
+  },
+  'micro-journal': {
+    title: WELLNESS_TOOL_REGISTRY['micro-journal'].label,
+    short: 'how are you feeling today?',
+    category: 'Understand',
+    icon: BookOpen,
+  },
+  reframes: {
+    title: WELLNESS_TOOL_REGISTRY.reframes.label,
+    short: 'a kinder thought',
+    category: 'Shift mindset',
+    icon: RefreshCw,
+  },
+  'safe-place': {
+    title: WELLNESS_TOOL_REGISTRY['safe-place'].label,
+    short: '90 seconds of steadiness',
+    category: 'Shift mindset',
+    icon: Heart,
+  },
+  'today-nudge': {
+    title: WELLNESS_TOOL_REGISTRY['today-nudge'].label,
+    short: 'feel closer in one small way',
+    category: 'Connect',
+    icon: Heart,
+  },
   'crisis-reset': { title: 'I need help right now', short: 'a guided reset and resources', category: 'Crisis', icon: AlertCircle },
 }
 
@@ -1586,6 +1620,8 @@ export default function WellnessTools() {
   }, [searchParams])
 
   const selectedMeta = selectedEmotion ? WELLNESS_EMOTIONS.find((e) => e.id === selectedEmotion) ?? null : null
+  const checkInEmotion = selectedEmotion ?? wellnessEmotionFromMoodId(moodId)
+  const wellnessDayKey = moodLocalDateKey(new Date())
   const suggestedExercises = useMemo(
     () => resolveSuggestedExercisesForMood(selectedEmotion ?? moodId) as ToolId[],
     [moodId, selectedEmotion],

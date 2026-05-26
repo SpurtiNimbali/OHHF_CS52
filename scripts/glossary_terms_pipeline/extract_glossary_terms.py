@@ -25,7 +25,7 @@ SOURCE_METADATA = {
     },
     "mended_hearts_org__mended_little_heartguide__local_pdfs.md": {
         "source_name": "Mended Little Hearts",
-        "source_url": "https://mendedhearts.org/wp-content/uploads/2025/02/MLHG_2015-2025.pdf",
+        "source_url": "https://mendedhearts.org/mended-hearts-heartguide/",
     },
 }
 
