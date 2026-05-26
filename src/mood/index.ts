@@ -12,19 +12,6 @@ export {
 export { getMoodMessage, getChatPromptHint, getMoodChatPrefill } from './moodCopy'
 export {
   MOOD_PRIMARY_WELLNESS_TOOL,
-  MOOD_SUGGESTED_EXERCISES,
-  MOOD_WELLNESS_PRIMARY_SECONDARY,
-  resolveSuggestedExercisesForMood,
-  wellnessToolPath,
-  isWellnessToolId,
-  type WellnessToolId,
-} from './moodRecommendations'
-export type { MoodCheckInChatState } from './moodCheckInNav'
-export { isMoodCheckInChatState } from './moodCheckInNav'
-export { MoodProvider, useMood, moodLocalDateKey, type MoodContextValue } from './MoodContext'
-export { MoodHeartFill } from './MoodHeartFill'
-export {
-  MOOD_PRIMARY_WELLNESS_TOOL,
   MOOD_WELLNESS_HOME_DESCRIPTION,
   MOOD_SUGGESTED_EXERCISES,
   MOOD_WELLNESS_PRIMARY_SECONDARY,
@@ -33,4 +20,9 @@ export {
   wellnessToolPath,
   isWellnessToolId,
   resolveSuggestedExercisesForMood,
+  type WellnessToolId,
 } from './moodRecommendations'
+export type { MoodCheckInChatState } from './moodCheckInNav'
+export { isMoodCheckInChatState } from './moodCheckInNav'
+export { MoodProvider, useMood, moodLocalDateKey, type MoodContextValue } from './MoodContext'
+export { MoodHeartFill } from './MoodHeartFill'

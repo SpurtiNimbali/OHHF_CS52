@@ -171,10 +171,11 @@
     "modalities": ["CBT", "Art Therapy"],
     "modalityReason": "Helps increase emotional awareness and expression",
     "exercise": {
-      "name": "Feelings Wheel & Draw",
+      "name": "Name It to Tame It",
       "steps": [
-        "Look at a feelings wheel and choose a section that fits.",
-        "Draw or color how that feeling looks in your body."
+        "Pick a few feeling words that fit — up to ten is fine.",
+        "Notice where that feeling sits in your body.",
+        "Open the Name It tool below to explore words by family."
       ]
     },
     "benefits": ["Builds emotional vocabulary", "Creates clarity and connection", "Supports self-expression"],
