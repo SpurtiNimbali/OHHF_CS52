@@ -7,8 +7,17 @@ import type { MoodId } from './moodVariants'
 import {
   buildToolRoute,
   isLiveWellnessToolId,
+  WELLNESS_TOOL_REGISTRY,
   type WellnessToolId,
+  type WellnessToolSection,
 } from '../lib/wellnessToolRegistry'
+
+export type RecommendedWellnessTool = {
+  slug: WellnessToolId
+  label: string
+  route: string
+  section: WellnessToolSection
+}
 
 /** Primary wellness tool surfaced on the home “Wellness tools” card */
 export const MOOD_PRIMARY_WELLNESS_TOOL: Record<MoodId, WellnessToolId> = {
@@ -108,4 +117,24 @@ export function isWellnessToolId(value: string): value is WellnessToolId {
 export function resolveSuggestedExercisesForMood(moodId: MoodId | null): WellnessToolId[] {
   if (!moodId) return DEFAULT_SUGGESTED_EXERCISES
   return MOOD_SUGGESTED_EXERCISES[moodId]
+}
+
+export function resolveRecommendedToolsForMood(
+  moodId: MoodId | null,
+  options: { limit?: number } = {},
+): RecommendedWellnessTool[] {
+  if (!moodId) return []
+
+  const limit = options.limit ?? 4
+  return resolveSuggestedExercisesForMood(moodId)
+    .slice(0, limit)
+    .map((toolId) => {
+      const tool = WELLNESS_TOOL_REGISTRY[toolId]
+      return {
+        slug: tool.id,
+        label: tool.label,
+        route: buildToolRoute(toolId),
+        section: tool.section,
+      }
+    })
 }

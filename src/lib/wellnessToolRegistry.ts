@@ -8,29 +8,64 @@ export type WellnessToolId =
   | 'safe-place'
   | 'today-nudge'
 
+export type WellnessToolSection = 'Regulate body' | 'Understand' | 'Shift mindset' | 'Connect'
+
 export type ResolvedWellnessTool = {
   id: WellnessToolId
   label: string
   route: string
+  section: WellnessToolSection
 }
 
 export const LIVE_TOOL_ALLOWLIST = [
-  { id: 'breathing', label: 'Guided breathing', route: '/wellness?tool=breathing' },
-  { id: 'grounding', label: '5-4-3-2-1 Grounding', route: '/wellness?tool=grounding' },
+  {
+    id: 'breathing',
+    label: 'Guided breathing',
+    route: '/wellness?tool=breathing',
+    section: 'Regulate body',
+  },
+  {
+    id: 'grounding',
+    label: '5-4-3-2-1 Grounding',
+    route: '/wellness?tool=grounding',
+    section: 'Regulate body',
+  },
   {
     id: 'physical-regulation',
     label: 'Physical regulation',
     route: '/wellness?tool=physical-regulation',
+    section: 'Regulate body',
   },
-  { id: 'name-it', label: 'Name It to Tame It', route: '/wellness?tool=name-it' },
-  { id: 'micro-journal', label: 'Micro-journal', route: '/wellness?tool=micro-journal' },
-  { id: 'reframes', label: 'Reframes', route: '/wellness?tool=reframes' },
+  {
+    id: 'name-it',
+    label: 'Name It to Tame It',
+    route: '/wellness?tool=name-it',
+    section: 'Understand',
+  },
+  {
+    id: 'micro-journal',
+    label: 'Micro-journal',
+    route: '/wellness?tool=micro-journal',
+    section: 'Understand',
+  },
+  {
+    id: 'reframes',
+    label: 'Reframes',
+    route: '/wellness?tool=reframes',
+    section: 'Shift mindset',
+  },
   {
     id: 'safe-place',
     label: 'Safe Place Visualization',
     route: '/wellness?tool=safe-place',
+    section: 'Shift mindset',
   },
-  { id: 'today-nudge', label: "Today's Nudge", route: '/wellness?tool=today-nudge' },
+  {
+    id: 'today-nudge',
+    label: "Today's Nudge",
+    route: '/wellness?tool=today-nudge',
+    section: 'Connect',
+  },
 ] as const satisfies readonly ResolvedWellnessTool[]
 
 export const WELLNESS_TOOL_REGISTRY = Object.fromEntries(
