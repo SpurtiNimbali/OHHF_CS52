@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState, type ReactNode } from 'react'
-import { Link, useNavigate, useSearchParams } from 'react-router-dom'
+import { useNavigate, useSearchParams } from 'react-router-dom'
 import {
   Activity,
   AlertCircle,
@@ -1734,7 +1734,7 @@ export default function WellnessTools() {
   useEffect(() => {
     const pending = sessionStorage.getItem('cardea-wellness-pending-journal-prompt')
     if (pending) {
-      setJournalPrompt(pending)
+      setActivePrefill(pending)
       sessionStorage.removeItem('cardea-wellness-pending-journal-prompt')
     }
   }, [activeTool])

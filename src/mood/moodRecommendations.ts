@@ -12,6 +12,8 @@ import {
   type WellnessToolSection,
 } from '../lib/wellnessToolRegistry'
 
+export type { WellnessToolId }
+
 export type RecommendedWellnessTool = {
   slug: WellnessToolId
   label: string
