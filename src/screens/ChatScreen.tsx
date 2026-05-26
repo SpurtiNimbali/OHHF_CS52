@@ -707,7 +707,7 @@ function MessageBubble({
           !message.companion?.exercise && (
           <div style={{ marginTop: 8, width: '100%', display: 'flex', flexDirection: 'column', gap: 6 }}>
             <p style={{ margin: 0, fontSize: '0.7rem', fontWeight: 650, color: MUTED }}>
-              Gentle tools nearby
+              {message.companion.toolCards.length === 1 ? 'Wellness tool' : 'Gentle tools nearby'}
             </p>
             <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
               {message.companion.toolCards.map((t) => (

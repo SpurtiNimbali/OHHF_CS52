@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState, type ReactNode } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { Link, useNavigate, useSearchParams } from 'react-router-dom'
 import {
   Activity,
   AlertCircle,
@@ -23,7 +23,10 @@ import {
   MOOD_VARIANTS,
   MoodHeartFill,
   getMoodChatPrefill,
+  isWellnessToolId,
+  MOOD_WELLNESS_PRIMARY_SECONDARY,
   moodShellBackgroundClasses,
+  resolveSuggestedExercisesForMood,
   type MoodId,
   moodLocalDateKey,
   useMood,
@@ -57,6 +60,11 @@ import {
   CARDEA_NAVY,
 } from '../ui/cardeaTokens'
 import { ResourcesRightNav } from '../components/ResourcesRightNav'
+import { ReframesTool } from '../components/wellness/ReframesTool'
+import { SafePlaceTool } from '../components/wellness/SafePlaceTool'
+import { fetchMyReframes } from '../lib/userReframes'
+import { fetchSafePlaces } from '../lib/safePlaces'
+import { WELLNESS_TOOL_REGISTRY, type WellnessToolId } from '../lib/wellnessToolRegistry'
 
 type WellnessEmotion =
   | 'happy'
@@ -71,15 +79,8 @@ type WellnessEmotion =
   | 'numb'
 
 type ToolId =
-  | 'breathing'
-  | 'grounding'
-  | 'physical-regulation'
+  | WellnessToolId
   | 'mood-check-in'
-  | 'name-it'
-  | 'micro-journal'
-  | 'reframes'
-  | 'safe-place'
-  | 'today-nudge'
   | 'crisis-reset'
 
 type MoodLogEntry = {
@@ -97,21 +98,9 @@ type ToolUseEntry = {
   emotion: WellnessEmotion | null
 }
 
-type Reframe = {
-  id: string
-  from: string
-  to: string
-  date: string
-}
-
 type Reflection = {
   id: string
   prompt: string
-  text: string
-  date: string
-}
-
-type SafePlace = {
   text: string
   date: string
 }
@@ -121,7 +110,6 @@ type StoredValue<T> = T | (() => T)
 const STORAGE = {
   moods: 'cardea-wellness-mood-log',
   tools: 'cardea-wellness-tool-log',
-  reframes: 'cardea-wellness-reframes',
   reflections: 'cardea-wellness-parent-reflections',
   safePlace: 'cardea-wellness-safe-place',
   nudgeCycle: 'cardea-nudge-cycle',
@@ -133,18 +121,16 @@ const WELLNESS_EMOTIONS: Array<{
   label: string
   primary: ToolId
   secondary: ToolId
-}> = [
-  { id: 'happy', moodId: 'happy', label: 'Happy', primary: 'today-nudge', secondary: 'micro-journal' },
-  { id: 'calm', moodId: 'calm', label: 'Calm', primary: 'physical-regulation', secondary: 'today-nudge' },
-  { id: 'hopeful', moodId: 'hopeful', label: 'Hopeful', primary: 'reframes', secondary: 'today-nudge' },
-  { id: 'overwhelmed', moodId: 'overwhelmed', label: 'Overwhelmed', primary: 'grounding', secondary: 'breathing' },
-  { id: 'exhausted', moodId: 'exhausted', label: 'Exhausted', primary: 'physical-regulation', secondary: 'micro-journal' },
-  { id: 'angry', moodId: 'angry', label: 'Angry', primary: 'physical-regulation', secondary: 'breathing' },
-  { id: 'scared', moodId: 'scared', label: 'Scared', primary: 'reframes', secondary: 'safe-place' },
-  { id: 'sad', moodId: 'sad', label: 'Sad', primary: 'micro-journal', secondary: 'physical-regulation' },
-  { id: 'disconnected', moodId: 'disconnected', label: 'Disconnected', primary: 'today-nudge', secondary: 'micro-journal' },
-  { id: 'numb', moodId: 'numb', label: 'Unsure', primary: 'name-it', secondary: 'micro-journal' },
-]
+}> = MOOD_VARIANTS.map((m) => {
+  const tools = MOOD_WELLNESS_PRIMARY_SECONDARY[m.id]
+  return {
+    id: m.id as WellnessEmotion,
+    moodId: m.id,
+    label: m.label,
+    primary: tools.primary as ToolId,
+    secondary: tools.secondary as ToolId,
+  }
+})
 
 /** Maps global mood (home + tools) to check-in chip selection. */
 function wellnessEmotionFromMoodId(moodId: MoodId | null): WellnessEmotion | null {
@@ -158,15 +144,55 @@ const TOOL_META: Record<ToolId, {
   category: 'Regulate body' | 'Understand' | 'Shift mindset' | 'Connect' | 'Crisis'
   icon: typeof Wind
 }> = {
-  breathing: { title: 'Guided breathing', short: '3 calming patterns', category: 'Regulate body', icon: Wind },
-  grounding: { title: '5-4-3-2-1 grounding', short: 'settle into your senses', category: 'Regulate body', icon: Sparkles },
-  'physical-regulation': { title: 'Physical regulation', short: 'cold · movement · body scan', category: 'Regulate body', icon: Activity },
+  breathing: {
+    title: WELLNESS_TOOL_REGISTRY.breathing.label,
+    short: '3 calming patterns',
+    category: 'Regulate body',
+    icon: Wind,
+  },
+  grounding: {
+    title: WELLNESS_TOOL_REGISTRY.grounding.label,
+    short: 'settle into your senses',
+    category: 'Regulate body',
+    icon: Sparkles,
+  },
+  'physical-regulation': {
+    title: WELLNESS_TOOL_REGISTRY['physical-regulation'].label,
+    short: 'cold reset · move it out · body scan',
+    category: 'Regulate body',
+    icon: Activity,
+  },
   'mood-check-in': { title: 'Daily mood check-in', short: 'two questions, one minute', category: 'Understand', icon: Heart },
-  'name-it': { title: 'Name it to tame it', short: 'pick feeling words', category: 'Understand', icon: Tag },
-  'micro-journal': { title: 'Micro-journal', short: 'how are you feeling today?', category: 'Understand', icon: BookOpen },
-  reframes: { title: 'Reframes', short: 'a kinder thought', category: 'Shift mindset', icon: RefreshCw },
-  'safe-place': { title: 'Safe place visualization', short: '90 seconds of steadiness', category: 'Shift mindset', icon: Heart },
-  'today-nudge': { title: "Today's nudge", short: 'feel closer in one small way', category: 'Connect', icon: Heart },
+  'name-it': {
+    title: WELLNESS_TOOL_REGISTRY['name-it'].label,
+    short: 'pick feeling words',
+    category: 'Understand',
+    icon: Tag,
+  },
+  'micro-journal': {
+    title: WELLNESS_TOOL_REGISTRY['micro-journal'].label,
+    short: 'how are you feeling today?',
+    category: 'Understand',
+    icon: BookOpen,
+  },
+  reframes: {
+    title: WELLNESS_TOOL_REGISTRY.reframes.label,
+    short: 'a kinder thought',
+    category: 'Shift mindset',
+    icon: RefreshCw,
+  },
+  'safe-place': {
+    title: WELLNESS_TOOL_REGISTRY['safe-place'].label,
+    short: '90 seconds of steadiness',
+    category: 'Shift mindset',
+    icon: Heart,
+  },
+  'today-nudge': {
+    title: WELLNESS_TOOL_REGISTRY['today-nudge'].label,
+    short: 'feel closer in one small way',
+    category: 'Connect',
+    icon: Heart,
+  },
   'crisis-reset': { title: 'I need help right now', short: 'a guided reset and resources', category: 'Crisis', icon: AlertCircle },
 }
 
@@ -199,15 +225,6 @@ function isStandardMicroJournalPrompt(prompt: string) {
     prompt === 'Write down your feelings'
   )
 }
-
-const presetReframes: Array<[string, string]> = [
-  ['I have to handle everything', 'I can take one next step'],
-  ["I can't fall apart", 'I can feel this and keep going'],
-  ["I'm failing", "This is hard, and I'm trying"],
-  ['I should be stronger', 'strength includes asking for help'],
-  ["I'm so behind", 'I am doing what I can'],
-  ["I can't do this", 'I have done hard things today'],
-]
 
 const emotionFamilies: Record<string, string[]> = {
   joy: ['happy', 'grateful', 'proud', 'playful', 'relieved'],
@@ -421,23 +438,6 @@ const SUGGESTED_CARD_TONES: Record<
 }
 
 const SUGGESTED_TONES: RegulateTone[] = ['forest', 'sky', 'outline', 'sage']
-
-/**
- * AI-ready card resolver. Keep the return shape stable so this can later be
- * replaced with model/server recommendations without changing the UI.
- */
-function resolveSuggestedExercises(emotion: WellnessEmotion | null, moodId: MoodId | null): ToolId[] {
-  const key = emotion ?? moodId
-  if (key === 'overwhelmed') return ['breathing', 'grounding', 'reframes', 'physical-regulation']
-  if (key === 'exhausted') return ['physical-regulation', 'safe-place', 'micro-journal', 'breathing']
-  if (key === 'angry') return ['physical-regulation', 'breathing', 'reframes', 'grounding']
-  if (key === 'scared') return ['breathing', 'grounding', 'safe-place', 'reframes']
-  if (key === 'sad') return ['micro-journal', 'breathing', 'safe-place', 'physical-regulation']
-  if (key === 'disconnected' || key === 'numb') return ['physical-regulation', 'grounding', 'safe-place', 'name-it']
-  if (key === 'happy' || key === 'hopeful') return ['today-nudge', 'reframes', 'breathing', 'physical-regulation']
-  if (key === 'calm') return ['breathing', 'physical-regulation', 'safe-place', 'today-nudge']
-  return ['breathing', 'grounding', 'reframes', 'safe-place']
-}
 
 function SuggestedExerciseCard({
   toolId,
@@ -1216,88 +1216,6 @@ function NameItTool({ onOpenTool }: { onOpenTool: (toolId: ToolId) => void }) {
   )
 }
 
-function ReframesTool() {
-  const [reframes, setReframes] = useLocalState<Reframe[]>(STORAGE.reframes, [])
-  const [index, setIndex] = useState(0)
-  const [from, setFrom] = useState('')
-  const [to, setTo] = useState('')
-  const all = [...reframes.map((r) => [r.from, r.to] as [string, string]), ...presetReframes]
-  const current = all[index % all.length]
-  return (
-    <div>
-      <div className="grid gap-3 sm:grid-cols-[1fr_auto_1fr] sm:items-center">
-        <div className="rounded-2xl bg-[#f5f9f9] p-4">
-          <p className="mb-1 text-[10px] font-bold uppercase tracking-[0.16em]" style={{ color: CARDEA_MUTED }}>the thought</p>
-          <p className="text-lg text-[#3A525A] line-through">{current[0]}</p>
-        </div>
-        <ArrowRight className="mx-auto hidden h-5 w-5 text-[#acb7a8] sm:block" />
-        <div className="rounded-2xl bg-[#577568]/10 p-4">
-          <p className="mb-1 text-[10px] font-bold uppercase tracking-[0.16em]" style={{ color: CARDEA_DARK_GREEN }}>try instead</p>
-          <p className="text-lg font-semibold text-[#192b3f]">{current[1]}</p>
-        </div>
-      </div>
-      <button
-        type="button"
-        onClick={() => setIndex((i) => i + 1)}
-        className="mt-4 rounded-xl px-4 py-2 text-sm font-semibold text-white"
-        style={{ background: CARDEA_NAVY }}
-      >
-        Next reframe
-      </button>
-      <div className="mt-6 border-t pt-5" style={{ borderColor: 'rgba(25, 43, 63, 0.08)' }}>
-        <p className="mb-3 text-sm font-semibold text-[#192b3f]">write your own</p>
-        <div className="grid gap-2 sm:grid-cols-2">
-          <input value={from} onChange={(e) => setFrom(e.target.value)} placeholder="the thought" className="rounded-xl border bg-[#f5f9f9] px-3 py-2 text-sm outline-none" />
-          <input value={to} onChange={(e) => setTo(e.target.value)} placeholder="a kinder way" className="rounded-xl border bg-[#f5f9f9] px-3 py-2 text-sm outline-none" />
-        </div>
-        <button
-          type="button"
-          disabled={!from.trim() || !to.trim()}
-          onClick={() => {
-            setReframes([{ id: makeId('reframe'), from: from.trim(), to: to.trim(), date: new Date().toISOString() }, ...reframes])
-            setFrom('')
-            setTo('')
-          }}
-          className="mt-3 rounded-xl px-4 py-2 text-sm font-semibold text-white disabled:opacity-40"
-          style={{ background: CARDEA_DARK_GREEN }}
-        >
-          Save reframe
-        </button>
-      </div>
-    </div>
-  )
-}
-
-function SafePlaceTool() {
-  const [safePlace, setSafePlace] = useLocalState<SafePlace | null>(STORAGE.safePlace, null)
-  const [draft, setDraft] = useState(safePlace?.text ?? '')
-  return (
-    <div className="space-y-4">
-      <div className="rounded-2xl bg-[#f5f9f9] p-5 text-sm leading-relaxed text-[#192b3f]">
-        picture a place where your body loosens. notice the light. notice the sounds.
-        let your shoulders drop. stay for three slow breaths.
-      </div>
-      <textarea
-        value={draft}
-        onChange={(e) => setDraft(e.target.value)}
-        placeholder="write your safe place once..."
-        className="min-h-[120px] w-full rounded-2xl border bg-white p-4 text-sm outline-none"
-        style={{ borderColor: CARDEA_LIGHT_BLUE }}
-      />
-      <button
-        type="button"
-        disabled={!draft.trim()}
-        onClick={() => setSafePlace({ text: draft.trim(), date: new Date().toISOString() })}
-        className="rounded-xl px-4 py-2 text-sm font-semibold text-white disabled:opacity-40"
-        style={{ background: CARDEA_DARK_GREEN }}
-      >
-        Save safe place
-      </button>
-      {safePlace ? <p className="text-xs" style={{ color: CARDEA_MUTED }}>saved for next time.</p> : null}
-    </div>
-  )
-}
-
 function PastEntriesSection({
   moodEntries,
   journalRefreshKey = 0,
@@ -1307,14 +1225,22 @@ function PastEntriesSection({
 }) {
   const [journalRows, setJournalRows] = useState<JournalEntryRow[]>([])
   const [reflections] = useLocalState<Reflection[]>(STORAGE.reflections, [])
-  const [reframes] = useLocalState<Reframe[]>(STORAGE.reframes, [])
-  const [safePlace] = useLocalState<SafePlace | null>(STORAGE.safePlace, null)
+  const [userReframes, setUserReframes] = useState<Awaited<ReturnType<typeof fetchMyReframes>>>([])
+  const [safePlaces, setSafePlaces] = useState<Awaited<ReturnType<typeof fetchSafePlaces>>>([])
 
   useEffect(() => {
     let cancelled = false
     ;(async () => {
-      const rows = await fetchJournalEntries(50)
-      if (!cancelled) setJournalRows(rows)
+      const [rows, reframes, places] = await Promise.all([
+        fetchJournalEntries(50),
+        fetchMyReframes(50),
+        fetchSafePlaces(50),
+      ])
+      if (!cancelled) {
+        setJournalRows(rows)
+        setUserReframes(reframes)
+        setSafePlaces(places)
+      }
     })()
     return () => {
       cancelled = true
@@ -1355,33 +1281,30 @@ function PastEntriesSection({
       text: entry.text,
     }))
 
-    const savedReframes = reframes.map((entry) => ({
+    const savedReframes = userReframes.map((entry) => ({
       id: entry.id,
-      date: entry.date,
+      date: entry.timestamp,
       type: 'Reframe',
-      prompt: entry.from,
-      text: entry.to,
+      prompt: entry.thought,
+      text: entry.reframe,
     }))
 
-    const safePlaceEntry =
-      safePlace?.text.trim()
-        ? [{
-            id: 'safe-place',
-            date: safePlace.date,
-            type: 'Safe place',
-            prompt: 'safe place',
-            text: safePlace.text,
-          }]
-        : []
+    const safePlaceEntries = safePlaces.map((place) => ({
+      id: place.id,
+      date: place.timestamp,
+      type: 'Safe place',
+      prompt: place.name,
+      text: place.description,
+    }))
 
     return [
       ...moodItems,
       ...journals,
       ...parentReflections,
       ...savedReframes,
-      ...safePlaceEntry,
+      ...safePlaceEntries,
     ].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
-  }, [journalRows, moodEntries, reframes, reflections, safePlace])
+  }, [journalRows, moodEntries, userReframes, reflections, safePlaces])
 
   return (
     <div className="rounded-3xl bg-white/85 p-5 shadow-sm">
@@ -1777,8 +1700,11 @@ function MoodCheckInTool({ onSaved }: { onSaved?: () => void }) {
 
 export default function WellnessTools() {
   const navigate = useNavigate()
-  const { moodId, setMoodId, theme, wellnessDayKey } = useMood()
-  const checkInEmotion = wellnessEmotionFromMoodId(moodId)
+  const [searchParams] = useSearchParams()
+  const { moodId, setMoodId, theme } = useMood()
+  const [selectedEmotion, setSelectedEmotion] = useState<WellnessEmotion | null>(() =>
+    moodId ? (moodId as WellnessEmotion) : null,
+  )
   const [activeTool, setActiveTool] = useState<ToolId | null>(null)
   const [activePrefill, setActivePrefill] = useState<string | null>(null)
   const [moodLog, setMoodLog] = useLocalState<MoodLogEntry[]>(STORAGE.moods, [])
@@ -1805,10 +1731,29 @@ export default function WellnessTools() {
     }
   }, [reloadMoodEntries])
 
-  const selectedMeta = checkInEmotion ? WELLNESS_EMOTIONS.find((e) => e.id === checkInEmotion) ?? null : null
+  useEffect(() => {
+    const pending = sessionStorage.getItem('cardea-wellness-pending-journal-prompt')
+    if (pending) {
+      setJournalPrompt(pending)
+      sessionStorage.removeItem('cardea-wellness-pending-journal-prompt')
+    }
+  }, [activeTool])
+
+  useEffect(() => {
+    if (moodId) setSelectedEmotion(moodId as WellnessEmotion)
+  }, [moodId])
+
+  useEffect(() => {
+    const tool = searchParams.get('tool')
+    if (tool && isWellnessToolId(tool)) setActiveTool(tool)
+  }, [searchParams])
+
+  const selectedMeta = selectedEmotion ? WELLNESS_EMOTIONS.find((e) => e.id === selectedEmotion) ?? null : null
+  const checkInEmotion = selectedEmotion ?? wellnessEmotionFromMoodId(moodId)
+  const wellnessDayKey = moodLocalDateKey(new Date())
   const suggestedExercises = useMemo(
-    () => resolveSuggestedExercises(checkInEmotion, moodId),
-    [checkInEmotion, moodId],
+    () => resolveSuggestedExercisesForMood(selectedEmotion ?? moodId) as ToolId[],
+    [moodId, selectedEmotion],
   )
   const recentMoods = useMemo(() => {
     if (moodEntries.length > 0) {
@@ -2188,7 +2133,7 @@ export default function WellnessTools() {
             ))}
           </div>
           <p className="mt-3 text-xs leading-relaxed" style={{ color: CARDEA_MUTED }}>
-            These cards shift with your check-in. Later, this can use AI recommendations.
+            These exercises shift with your mood check-in on home or here.
           </p>
         </Section>
 

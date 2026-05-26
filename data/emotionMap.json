@@ -14,7 +14,7 @@
       ]
     },
     "benefits": ["Reduces mental overload", "Brings focus back to what matters", "Creates small, doable action"],
-    "tools": [{ "name": "5-4-3-2-1 Grounding", "route": "/wellness" }]
+    "tools": [{ "name": "5-4-3-2-1 Grounding", "route": "/wellness?tool=grounding" }]
   },
   {
     "id": "anxious",
@@ -30,7 +30,7 @@
       ]
     },
     "benefits": ["Calms the nervous system", "Brings you into the present", "Reduces spiral of worry"],
-    "tools": [{ "name": "5-4-3-2-1 Grounding", "route": "/wellness" }]
+    "tools": [{ "name": "5-4-3-2-1 Grounding", "route": "/wellness?tool=grounding" }]
   },
   {
     "id": "exhausted",
@@ -48,9 +48,8 @@
     },
     "benefits": ["Validates your limits", "Prevents burnout", "Helps you refill your cup"],
     "tools": [
-      { "name": "Cold Reset", "route": "/wellness" },
-      { "name": "Journaling", "route": "/wellness" },
-      { "name": "Move It Out", "route": "/wellness" }
+      { "name": "Physical regulation", "route": "/wellness?tool=physical-regulation" },
+      { "name": "Micro-journal", "route": "/wellness?tool=micro-journal" }
     ]
   },
   {
@@ -104,8 +103,8 @@
     },
     "benefits": ["Prevents reactive reactions", "Helps you respond vs. react", "Protects relationships"],
     "tools": [
-      { "name": "Cold Reset", "route": "/wellness" },
-      { "name": "STOP Skill", "route": "/wellness" }
+      { "name": "Physical regulation", "route": "/wellness?tool=physical-regulation" },
+      { "name": "Reframes", "route": "/wellness?tool=reframes" }
     ]
   },
   {
@@ -124,8 +123,8 @@
     },
     "benefits": ["Calms fear response", "Creates internal sense of safety", "Supports trauma healing"],
     "tools": [
-      { "name": "Reframing", "route": "/wellness" },
-      { "name": "Safe Place Visualization", "route": "/wellness" }
+      { "name": "Safe Place Visualization", "route": "/wellness?tool=safe-place" },
+      { "name": "Reframes", "route": "/wellness?tool=reframes" }
     ]
   },
   {
@@ -143,7 +142,10 @@
       ]
     },
     "benefits": ["Reconnects you with your body", "Gently builds emotional awareness", "Supports nervous system regulation"],
-    "tools": [{ "name": "Body Scan", "route": "/wellness" }]
+    "tools": [
+      { "name": "Name It to Tame It", "route": "/wellness?tool=name-it" },
+      { "name": "Physical regulation", "route": "/wellness?tool=physical-regulation" }
+    ]
   },
   {
     "id": "disconnected",
@@ -160,7 +162,7 @@
       ]
     },
     "benefits": ["Rebuilds emotional connection", "Strengthens relationships", "Increases feelings of support"],
-    "tools": [{ "name": "Be the Parent", "route": "/wellness", "note": "highlight when relevant" }]
+    "tools": [{ "name": "Today's Nudge", "route": "/wellness?tool=today-nudge", "note": "highlight when relevant" }]
   },
   {
     "id": "unknown",
@@ -177,8 +179,8 @@
     },
     "benefits": ["Builds emotional vocabulary", "Creates clarity and connection", "Supports self-expression"],
     "tools": [
-      { "name": "Feelings Wheel", "route": "/wellness" },
-      { "name": "Name It to Tame It", "route": "/wellness" }
+      { "name": "Name It to Tame It", "route": "/wellness?tool=name-it" },
+      { "name": "Micro-journal", "route": "/wellness?tool=micro-journal" }
     ]
   }
 ]

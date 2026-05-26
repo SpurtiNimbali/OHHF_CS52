@@ -79,7 +79,7 @@ PUBLIC_PDF_SOURCE_URLS: dict[str, dict[str, str]] = {
         ),
     },
     "mended_hearts_org__mended_little_heartguide": {
-        "MLHG_2015-2025.pdf": "https://mendedhearts.org/wp-content/uploads/2025/02/MLHG_2015-2025.pdf",
+        "MLHG_2015-2025.pdf": "https://mendedhearts.org/mended-hearts-heartguide/",
     },
     "mended_hearts_org__neurodevelopmental_issues_chd": {
         "Neurodevelopmental-Issues-CHD.pdf": (

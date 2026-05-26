@@ -65,12 +65,57 @@ export type CardiologistQuestion = {
   category: string
 }
 
+export type SavedQuestionSource = 'generated' | 'custom' | 'preset'
+
 export type SavedQuestion = {
   id: string
   user_id: string
   question_id: string | null
   custom_text: string | null
-  source: 'generated' | 'custom' | 'bank' | null
+  source: SavedQuestionSource
+}
+
+type SavedQuestionRow = {
+  id: string
+  user_id: string
+  question_id: string | null
+  custom_text: string | null
+  source?: unknown
+}
+
+export function isSavedQuestionSource(value: unknown): value is SavedQuestionSource {
+  return value === 'generated' || value === 'custom' || value === 'preset'
+}
+
+export function normalizeSavedQuestionSource(
+  value: unknown,
+  fallbackSource: SavedQuestionSource | null = null,
+  questionId: string | null = null,
+  customText: string | null = null,
+): SavedQuestionSource {
+  const normalized = typeof value === 'string' ? value.trim().toLowerCase() : ''
+
+  if (normalized === 'generated' || normalized === 'custom' || normalized === 'preset') {
+    return normalized
+  }
+  if (normalized === 'bank' || normalized === 'corpus') return 'preset'
+  if (fallbackSource) return fallbackSource
+  if (questionId) return 'preset'
+  if (customText?.trim()) return 'custom'
+  return 'custom'
+}
+
+export function normalizeSavedQuestion(
+  row: SavedQuestionRow,
+  fallbackSource: SavedQuestionSource | null = null,
+): SavedQuestion {
+  return {
+    id: row.id,
+    user_id: row.user_id,
+    question_id: row.question_id,
+    custom_text: row.custom_text,
+    source: normalizeSavedQuestionSource(row.source, fallbackSource, row.question_id, row.custom_text),
+  }
 }
 
 export type SupportResource = {
