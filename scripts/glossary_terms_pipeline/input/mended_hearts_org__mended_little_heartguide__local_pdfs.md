@@ -8,7 +8,7 @@
 
 ## 1. MLHG 2015 2025
 
-**Source:** local_pdf_resources/mended_hearts_org__mended_little_heartguide/MLHG_2015-2025.pdf
+**Source:** https://mendedhearts.org/mended-hearts-heartguide/
 
 
 <!-- Page 9 -->
