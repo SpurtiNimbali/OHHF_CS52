@@ -4,61 +4,52 @@
  */
 
 import type { MoodId } from './moodVariants'
-
-export type WellnessToolId =
-  | 'breathing'
-  | 'grounding'
-  | 'physical-regulation'
-  | 'body-scan'
-  | 'name-it'
-  | 'feelings-wheel'
-  | 'micro-journal'
-  | 'reframes'
-  | 'safe-place'
-  | 'stop-skill'
-  | 'today-nudge'
-  | 'night-reset'
+import {
+  buildToolRoute,
+  isLiveWellnessToolId,
+  type WellnessToolId,
+} from '../lib/wellnessToolRegistry'
 
 /** Primary wellness tool surfaced on the home “Wellness tools” card */
 export const MOOD_PRIMARY_WELLNESS_TOOL: Record<MoodId, WellnessToolId> = {
   overwhelmed: 'breathing',
-  exhausted: 'body-scan',
-  angry: 'stop-skill',
+  exhausted: 'physical-regulation',
+  angry: 'physical-regulation',
   scared: 'safe-place',
   sad: 'name-it',
-  disconnected: 'body-scan',
-  numb: 'feelings-wheel',
+  disconnected: 'today-nudge',
+  numb: 'name-it',
   hopeful: 'micro-journal',
   happy: 'micro-journal',
-  calm: 'body-scan',
+  calm: 'grounding',
 }
 
 /** Home “Wellness tools” card copy — names the primary exercise */
 export const MOOD_WELLNESS_HOME_DESCRIPTION: Record<MoodId, string> = {
   overwhelmed: 'Start with guided breathing — calms an overwhelmed nervous system quickly.',
-  exhausted: 'Start with a body scan — gentle, low-effort, and restorative.',
-  angry: 'Start with the STOP skill — pause before the next step.',
-  scared: 'Start with safe place visualization — 90 seconds of steadiness.',
-  sad: 'Start with name it to tame it — labeling sadness with specificity helps.',
-  disconnected: 'Start with a body scan — reconnect with your physical self.',
-  numb: 'Start with the feelings wheel — explore when you’re unsure.',
+  exhausted: 'Start with physical regulation — cold, movement, or a body scan can steady your system.',
+  angry: 'Start with physical regulation — move some of the charge through your body first.',
+  scared: 'Start with Safe Place Visualization — 90 seconds of steadiness.',
+  sad: 'Start with Name It to Tame It — labeling sadness with specificity helps.',
+  disconnected: "Start with Today's Nudge — one small cue can help you reconnect.",
+  numb: 'Start with Name It to Tame It — a few words can create some signal.',
   hopeful: 'Start with micro-journaling — capture and anchor hope.',
   happy: 'Start with micro-journaling — savoring extends the good moments.',
-  calm: 'Start with a body scan — deepen body awareness from a calm baseline.',
+  calm: 'Start with grounding — stay anchored in what already feels steady.',
 }
 
 /** “Suggested Exercises” on the wellness page (4 per mood) */
 export const MOOD_SUGGESTED_EXERCISES: Record<MoodId, WellnessToolId[]> = {
   overwhelmed: ['breathing', 'grounding', 'micro-journal', 'today-nudge'],
-  exhausted: ['body-scan', 'breathing', 'night-reset', 'today-nudge'],
-  angry: ['stop-skill', 'physical-regulation', 'reframes', 'micro-journal'],
+  exhausted: ['physical-regulation', 'breathing', 'micro-journal', 'today-nudge'],
+  angry: ['physical-regulation', 'reframes', 'grounding', 'micro-journal'],
   scared: ['safe-place', 'breathing', 'grounding', 'reframes'],
-  sad: ['name-it', 'safe-place', 'micro-journal', 'body-scan'],
-  disconnected: ['body-scan', 'name-it', 'grounding', 'today-nudge'],
-  numb: ['feelings-wheel', 'name-it', 'body-scan', 'micro-journal'],
+  sad: ['name-it', 'safe-place', 'micro-journal', 'reframes'],
+  disconnected: ['today-nudge', 'micro-journal', 'grounding', 'name-it'],
+  numb: ['name-it', 'physical-regulation', 'grounding', 'micro-journal'],
   hopeful: ['micro-journal', 'today-nudge', 'reframes', 'breathing'],
   happy: ['micro-journal', 'today-nudge', 'breathing', 'reframes'],
-  calm: ['body-scan', 'grounding', 'micro-journal', 'breathing'],
+  calm: ['grounding', 'breathing', 'micro-journal', 'safe-place'],
 }
 
 /** Primary + secondary tiles in “Tools for your mood” */
@@ -67,15 +58,15 @@ export const MOOD_WELLNESS_PRIMARY_SECONDARY: Record<
   { primary: WellnessToolId; secondary: WellnessToolId }
 > = {
   overwhelmed: { primary: 'breathing', secondary: 'grounding' },
-  exhausted: { primary: 'body-scan', secondary: 'breathing' },
-  angry: { primary: 'stop-skill', secondary: 'physical-regulation' },
+  exhausted: { primary: 'physical-regulation', secondary: 'breathing' },
+  angry: { primary: 'physical-regulation', secondary: 'reframes' },
   scared: { primary: 'safe-place', secondary: 'breathing' },
   sad: { primary: 'name-it', secondary: 'safe-place' },
-  disconnected: { primary: 'body-scan', secondary: 'name-it' },
-  numb: { primary: 'feelings-wheel', secondary: 'name-it' },
+  disconnected: { primary: 'today-nudge', secondary: 'micro-journal' },
+  numb: { primary: 'name-it', secondary: 'physical-regulation' },
   hopeful: { primary: 'micro-journal', secondary: 'today-nudge' },
   happy: { primary: 'micro-journal', secondary: 'today-nudge' },
-  calm: { primary: 'body-scan', secondary: 'grounding' },
+  calm: { primary: 'grounding', secondary: 'breathing' },
 }
 
 /** “Right for you now” card ids per mood (exactly 4 when mood is set) */
@@ -103,28 +94,15 @@ const DEFAULT_SUGGESTED_EXERCISES: WellnessToolId[] = [
   'breathing',
   'grounding',
   'reframes',
-  'night-reset',
+  'micro-journal',
 ]
 
 export function wellnessToolPath(toolId: WellnessToolId): string {
-  return `/wellness?tool=${toolId}`
+  return buildToolRoute(toolId)
 }
 
 export function isWellnessToolId(value: string): value is WellnessToolId {
-  return (
-    value === 'breathing' ||
-    value === 'grounding' ||
-    value === 'physical-regulation' ||
-    value === 'body-scan' ||
-    value === 'name-it' ||
-    value === 'feelings-wheel' ||
-    value === 'micro-journal' ||
-    value === 'reframes' ||
-    value === 'safe-place' ||
-    value === 'stop-skill' ||
-    value === 'today-nudge' ||
-    value === 'night-reset'
-  )
+  return isLiveWellnessToolId(value)
 }
 
 export function resolveSuggestedExercisesForMood(moodId: MoodId | null): WellnessToolId[] {

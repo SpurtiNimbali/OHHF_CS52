@@ -85,7 +85,7 @@ export const HOME_CARD_CATALOG: HomeCardDefinition[] = [
     id: 'wellness-tools',
     icon: Wind,
     title: 'Wellness tools',
-    descriptionDefault: 'Grounding, breathing, journaling, and gentle reset tools.',
+    descriptionDefault: 'Grounding, breathing, micro-journal, and gentle reset tools.',
     to: '/wellness',
     palette: 'lavender',
   },

@@ -18,10 +18,16 @@ import {
 } from '../prompts/companionPrompts.js'
 import { detectCrisisKeywords } from '../../src/lib/crisisKeywords.js'
 import {
+  looksLikeCopingRequest,
   matchCopingRequest,
   shouldUseCopingBranch,
 } from './copingRequestMatch.js'
 import { loadEmotionMap, safeDetectedEmotion, splitUnderneathIntoChipOptions } from './emotionMapLoader.js'
+import {
+  resolveSelectedTool,
+  type ResolvedWellnessTool,
+  type WellnessToolId,
+} from '../../src/lib/wellnessToolRegistry.js'
 import { loadKnowledgeIndex, getKnowledgeLoadError } from './knowledge/loadIndex.js'
 import { embedQueryToScores } from './knowledge/retrieve.js'
 import type { RetrievedChunk } from './knowledge/types.js'
@@ -96,6 +102,35 @@ export type CompanionChatResult = KbChatResult & {
   detectedEmotion: string | null
   /** Classifier intent label; `CRISIS` when heuristic triage fired. */
   classifierIntent: string | null
+}
+
+function fallbackToolIdForEmotion(emotionId: string): WellnessToolId {
+  switch (emotionId) {
+    case 'angry':
+    case 'exhausted':
+      return 'physical-regulation'
+    case 'scared':
+      return 'safe-place'
+    case 'sad':
+    case 'numb':
+      return 'name-it'
+    case 'guilty':
+      return 'reframes'
+    case 'disconnected':
+      return 'today-nudge'
+    case 'helpless':
+      return 'grounding'
+    case 'overwhelmed':
+    case 'anxious':
+    case 'unknown':
+    default:
+      return 'breathing'
+  }
+}
+
+function toCompanionToolPayload(tool: ResolvedWellnessTool | null): CompanionToolPayload | null {
+  if (!tool) return null
+  return { name: tool.label, route: tool.route }
 }
 
 function clip(s: string, n: number): string {
@@ -722,6 +757,9 @@ export async function runCompanionChat(req: CompanionChatRequest): Promise<Compa
   const selectedEmotion = req.selectedEmotion ?? null
   const selectedUnderneath = req.selectedUnderneath ?? null
   const historyStr = conversationHistorySnippet(hist)
+  // If the user explicitly asks for a coping tool, do not let stale invite/reflect
+  // state swallow the request before it reaches the coping classifier branch.
+  const forceCopingBranch = looksLikeCopingRequest(trimmed)
 
   if (detectCrisisKeywords(trimmed)) {
     const answer = crisisAnswer()
@@ -743,7 +781,7 @@ export async function runCompanionChat(req: CompanionChatRequest): Promise<Compa
     }
   }
 
-  if (conversationStage === 'invite') {
+  if (conversationStage === 'invite' && !forceCopingBranch) {
     const nameHint =
       inviteExerciseTitle.length > 0
         ? `They just stepped through "${inviteExerciseTitle}" from the ExerciseCard. Do NOT say you're glad they tried anything, thank them for practicing, or open with gratitude. Tie the check-in to that title once if it reads naturally — e.g. "${inviteExerciseTitle} can stir a lot up — how did that land for you?" — or shorten to a single sincere question ("How did that feel?"). Warm prose in a few sentences; no bullet lists.`
@@ -791,7 +829,7 @@ export async function runCompanionChat(req: CompanionChatRequest): Promise<Compa
 
   const emotionMap = loadEmotionMap()
 
-  if (conversationStage === 'reflect') {
+  if (conversationStage === 'reflect' && !forceCopingBranch) {
     const eid =
       safeDetectedEmotion(selectedEmotion) ??
       safeDetectedEmotion(session.emotionCheckIn) ??
@@ -803,6 +841,16 @@ export async function runCompanionChat(req: CompanionChatRequest): Promise<Compa
     if (!row) {
       throw new Error('emotionMap.json missing fallback row unknown')
     }
+    const selectedTool = toCompanionToolPayload(
+      resolveSelectedTool(
+        ...row.tools.map((tool) => tool.name),
+        row.exercise.name,
+        fallbackToolIdForEmotion(row.id),
+      ),
+    )
+    const toolUiHint = selectedTool
+      ? `TOOL CARD UI: One clickable wellness tool card for "${selectedTool.name}" WILL appear below. If you mention an in-app tool in prose, ONLY name "${selectedTool.name}".`
+      : 'TOOL CARD UI: Do NOT mention an in-app wellness tool or card below.'
 
     const sys = buildCompanionSystem({
       session: sessionToPrompt(session),
@@ -811,7 +859,7 @@ export async function runCompanionChat(req: CompanionChatRequest): Promise<Compa
       selectedEmotion: row.id,
       selectedUnderneath: underneath,
       branchHint:
-        `They named what's underneath (${underneath}) while focused on emotion "${row.feeling}" (${row.id}). Modalities described as ${row.modalities.join(', ')} (${row.modalityReason}). Potential benefits clinicians note: ${row.benefits.join('; ')}. Validate their reality without stock phrases — paraphrase in plain language; do not quote their message back. EXERCISE UI: An ExerciseCard with steps for "${row.exercise.name}" WILL appear directly below your message. In one or two grounded sentences, name that practice and what it helps with — you may say it is below. Do NOT ask what steps they could take or what they need; do NOT ask permission to try it; do NOT list numbered steps in prose (the card shows steps).`,
+        `They named what's underneath (${underneath}) while focused on emotion "${row.feeling}" (${row.id}). Modalities described as ${row.modalities.join(', ')} (${row.modalityReason}). Potential benefits clinicians note: ${row.benefits.join('; ')}. Validate their reality without stock phrases — paraphrase in plain language; do not quote their message back. EXERCISE UI: An ExerciseCard with steps for "${row.exercise.name}" WILL appear directly below your message. ${toolUiHint} In one or two grounded sentences, point them to the steps below for right now.${selectedTool ? ` If you mention a tool, use "${selectedTool.name}" exactly and no other in-app tool name.` : ''} Do NOT ask what steps they could take or what they need; do NOT ask permission to try it; do NOT list numbered steps in prose (the card shows steps).`,
     })
 
     const messages: ChatCompletionMessageParam[] = [
@@ -834,10 +882,6 @@ export async function runCompanionChat(req: CompanionChatRequest): Promise<Compa
       name: row.exercise.name,
       steps: [...row.exercise.steps],
     }
-    const tools: CompanionToolPayload[] = row.tools.map((t) => ({
-      name: t.name,
-      route: t.route,
-    }))
 
     ;({ answer } = alignCompanionUiPayload({
       answer,
@@ -849,7 +893,7 @@ export async function runCompanionChat(req: CompanionChatRequest): Promise<Compa
       nextStage: 'invite',
       emotionChips: null,
       exercise: exercisePayload,
-      toolCards: tools.length ? tools : null,
+      toolCards: selectedTool ? [selectedTool] : null,
       uiRedirect: null,
       citations: [],
       suggestedQuestions: suggested,
@@ -871,6 +915,10 @@ export async function runCompanionChat(req: CompanionChatRequest): Promise<Compa
     const classifierEmotion = safeDetectedEmotion(cls.detectedEmotion)
     const checkinEm = safeDetectedEmotion(session.emotionCheckIn)
     const coping = matchCopingRequest(trimmed, classifierEmotion, checkinEm)
+    const selectedTool = coping.selectedTool
+    const toolUiHint = selectedTool
+      ? `TOOL CARD UI: One clickable wellness tool card for "${selectedTool.name}" WILL appear below. If you mention an in-app tool in prose, ONLY name "${selectedTool.name}".`
+      : 'TOOL CARD UI: Do NOT mention an in-app wellness tool or card below.'
 
     const sys = buildCompanionSystem({
       session: sessionToPrompt(session),
@@ -879,7 +927,7 @@ export async function runCompanionChat(req: CompanionChatRequest): Promise<Compa
       selectedEmotion: coping.emotionId,
       selectedUnderneath: null,
       branchHint:
-        `They asked for a specific calming practice or exercise (classifier=${cls.intent === 'COPING_REQUEST' ? 'COPING_REQUEST' : 'EMOTIONAL+heuristic'}). Skip emotion-map chips — go straight to the practice. EXERCISE UI: An ExerciseCard with steps for "${coping.exercise.name}" WILL appear directly below your message. In one or two grounded sentences, acknowledge the stress briefly, name that practice and what it helps with, and point them to the steps below. Do NOT ask permission to try it; do NOT list numbered steps in prose; do NOT ask what is underneath or mention tags/chips below.`,
+        `They asked for a specific calming practice or exercise (classifier=${cls.intent === 'COPING_REQUEST' ? 'COPING_REQUEST' : 'EMOTIONAL+heuristic'}). Skip emotion-map chips — go straight to the live in-app tool. ${toolUiHint} In one or two grounded sentences, acknowledge the stress briefly and point them to the tool card below for right now.${selectedTool ? ` If you mention the tool in prose, use "${selectedTool.name}" exactly and no other in-app tool name.` : ''} Do NOT mention steps below, an exercise card below, or numbered instructions in prose. Do NOT ask permission to try it; do NOT ask what is underneath or mention tags/chips below.`,
     })
 
     const messages: ChatCompletionMessageParam[] = [
@@ -898,27 +946,14 @@ export async function runCompanionChat(req: CompanionChatRequest): Promise<Compa
     )
     const suggested = await suggestFollowUps(trimmed, stripMissingBlock(answer))
 
-    const exercisePayload: CompanionExercisePayload = {
-      name: coping.exercise.name,
-      steps: [...coping.exercise.steps],
-    }
-    const tools: CompanionToolPayload[] = coping.tools.map((t) => ({
-      name: t.name,
-      route: t.route,
-    }))
-
-    ;({ answer } = alignCompanionUiPayload({
-      answer,
-      emotionChips: null,
-      exercise: exercisePayload,
-    }))
+    ;({ answer } = alignCompanionUiPayload({ answer, emotionChips: null, exercise: null }))
 
     return {
       answer,
-      nextStage: 'invite',
+      nextStage: 'open',
       emotionChips: null,
-      exercise: exercisePayload,
-      toolCards: tools.length ? tools : null,
+      exercise: null,
+      toolCards: selectedTool ? [selectedTool] : null,
       uiRedirect: null,
       citations: [],
       suggestedQuestions: suggested,

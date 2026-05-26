@@ -46,6 +46,10 @@ for (const msg of shouldBeCoping) {
     console.error('FAIL (expected exercise match):', msg)
     failed++
   }
+  if (!m.selectedTool?.name || !/^\/wellness\?tool=/.test(m.selectedTool.route)) {
+    console.error('FAIL (expected live selected tool):', msg, m.selectedTool)
+    failed++
+  }
 }
 
 for (const msg of shouldBeVenting) {
@@ -65,6 +69,10 @@ for (const msg of shouldNotBeCoping) {
 const breathing = matchCopingRequest('breathing exercise please', 'scared', null)
 if (breathing.exercise.name !== 'Box Breathing') {
   console.error('FAIL (expected Box Breathing):', breathing.exercise.name)
+  failed++
+}
+if (breathing.selectedTool?.name !== 'Guided breathing') {
+  console.error('FAIL (expected Guided breathing tool):', breathing.selectedTool)
   failed++
 }
 

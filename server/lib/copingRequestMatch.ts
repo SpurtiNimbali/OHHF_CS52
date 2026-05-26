@@ -1,11 +1,16 @@
 import { loadEmotionMap, safeDetectedEmotion } from './emotionMapLoader.js'
+import {
+  resolveSelectedTool,
+  type ResolvedWellnessTool,
+  type WellnessToolId,
+} from '../../src/lib/wellnessToolRegistry.js'
 
 export type CopingExercisePayload = { name: string; steps: string[] }
 export type CopingToolPayload = { name: string; route: string }
 
 export type CopingMatch = {
   exercise: CopingExercisePayload
-  tools: CopingToolPayload[]
+  selectedTool: CopingToolPayload | null
   emotionId: string
 }
 
@@ -27,6 +32,8 @@ const BREATHING_RE = /\b(?:breathing\s+exercise|box\s+breathing|4-7-8|physiologi
 const GROUNDING_RE = /\b(?:grounding|5-4-3-2-1|ground\s+me)\b/i
 const SAFE_PLACE_RE = /\b(?:safe\s+place|visualization)\b/i
 const BODY_SCAN_RE = /\b(?:body\s+scan|body\s+check-?in)\b/i
+const JOURNALING_RE = /\b(?:journaling|journal(?:ing)?|micro-?journal(?:ing)?)\b/i
+const REFRAMES_RE = /\b(?:refram(?:e|es|ing))\b/i
 const CALM_RE = /\b(?:calm(?:\s+me)?\s+down|help\s+me\s+calm|need\s+to\s+calm)\b/i
 const STOP_RE = /\b(?:stop\s+skill|dbt\s+stop)\b/i
 
@@ -40,34 +47,106 @@ const BOX_BREATHING: CopingExercisePayload = {
   ],
 }
 
+function fallbackToolIdForEmotion(emotionId: string): WellnessToolId {
+  switch (emotionId) {
+    case 'angry':
+    case 'exhausted':
+      return 'physical-regulation'
+    case 'scared':
+      return 'safe-place'
+    case 'sad':
+    case 'numb':
+      return 'name-it'
+    case 'guilty':
+      return 'reframes'
+    case 'disconnected':
+      return 'today-nudge'
+    case 'helpless':
+      return 'grounding'
+    case 'overwhelmed':
+    case 'anxious':
+    case 'unknown':
+    default:
+      return 'breathing'
+  }
+}
+
+function toToolPayload(tool: ResolvedWellnessTool | null): CopingToolPayload | null {
+  if (!tool) return null
+  return { name: tool.label, route: tool.route }
+}
+
+function withCanonicalSelectedTool(
+  match: CopingMatch | null,
+  ...toolCandidates: Array<string | null | undefined>
+): CopingMatch | null {
+  if (!match) return null
+  return {
+    ...match,
+    selectedTool: toToolPayload(resolveSelectedTool(...toolCandidates)) ?? match.selectedTool,
+  }
+}
+
 function rowToMatch(emotionId: string): CopingMatch | null {
   const row = loadEmotionMap().get(emotionId)
   if (!row) return null
+  const selectedTool = resolveSelectedTool(
+    ...row.tools.map((tool) => tool.name),
+    row.exercise.name,
+    fallbackToolIdForEmotion(row.id),
+  )
   return {
     emotionId: row.id,
     exercise: { name: row.exercise.name, steps: [...row.exercise.steps] },
-    tools: row.tools.map((t) => ({ name: t.name, route: t.route })),
+    selectedTool: toToolPayload(selectedTool),
   }
 }
 
 function breathingMatch(): CopingMatch {
-  const anxious = rowToMatch('anxious')
   return {
     emotionId: 'anxious',
     exercise: BOX_BREATHING,
-    tools: anxious?.tools.length
-      ? anxious.tools
-      : [{ name: 'Guided breathing', route: '/wellness' }],
+    selectedTool: toToolPayload(resolveSelectedTool('guided breathing', 'breathing')),
   }
 }
 
 function pickByKeywords(normalized: string): CopingMatch | null {
   if (BREATHING_RE.test(normalized)) return breathingMatch()
-  if (GROUNDING_RE.test(normalized)) return rowToMatch('anxious') ?? breathingMatch()
-  if (SAFE_PLACE_RE.test(normalized)) return rowToMatch('scared') ?? rowToMatch('anxious')
-  if (BODY_SCAN_RE.test(normalized)) return rowToMatch('numb') ?? rowToMatch('anxious')
-  if (STOP_RE.test(normalized)) return rowToMatch('angry') ?? rowToMatch('anxious')
-  if (CALM_RE.test(normalized)) return rowToMatch('anxious') ?? breathingMatch()
+  if (GROUNDING_RE.test(normalized)) {
+    return withCanonicalSelectedTool(
+      rowToMatch('anxious') ?? breathingMatch(),
+      'grounding',
+      'grounding exercise',
+      '5-4-3-2-1 grounding',
+    )
+  }
+  if (SAFE_PLACE_RE.test(normalized)) {
+    return withCanonicalSelectedTool(
+      rowToMatch('scared') ?? rowToMatch('anxious'),
+      'safe place',
+      'safe place visualization',
+    )
+  }
+  if (BODY_SCAN_RE.test(normalized)) {
+    return withCanonicalSelectedTool(
+      rowToMatch('numb') ?? rowToMatch('anxious'),
+      'body scan',
+      'physical regulation',
+    )
+  }
+  if (STOP_RE.test(normalized)) {
+    return withCanonicalSelectedTool(
+      rowToMatch('angry') ?? rowToMatch('anxious'),
+      'physical regulation',
+    )
+  }
+  if (CALM_RE.test(normalized)) {
+    return withCanonicalSelectedTool(
+      rowToMatch('anxious') ?? breathingMatch(),
+      'guided breathing',
+      'breathing',
+    )
+  }
   return null
 }
 
@@ -108,6 +187,24 @@ export function matchCopingRequest(
 
   const emotionId =
     safeDetectedEmotion(detectedEmotion) ?? safeDetectedEmotion(emotionCheckIn) ?? 'anxious'
+  if (JOURNALING_RE.test(normalized)) {
+    return (
+      withCanonicalSelectedTool(
+        rowToMatch(emotionId) ?? rowToMatch('anxious') ?? breathingMatch(),
+        'micro-journal',
+        'journaling',
+      ) ?? breathingMatch()
+    )
+  }
+  if (REFRAMES_RE.test(normalized)) {
+    return (
+      withCanonicalSelectedTool(
+        rowToMatch(emotionId) ?? rowToMatch('anxious') ?? breathingMatch(),
+        'reframes',
+        'reframing',
+      ) ?? breathingMatch()
+    )
+  }
   const fromMap = rowToMatch(emotionId) ?? rowToMatch('anxious')
   if (fromMap) return fromMap
 
