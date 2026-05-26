@@ -7,6 +7,7 @@ import moodEntriesRouter from './routes/moodEntries.js'
 import journalEntriesRouter from './routes/journalEntries.js'
 import userReframesRouter from './routes/userReframes.js'
 import safePlacesRouter from './routes/safePlaces.js'
+import toolUsageRouter from './routes/toolUsage.js'
 
 const app = express()
 const PORT = process.env.PORT ?? 3001
@@ -21,6 +22,7 @@ app.use('/api/mood-entries', moodEntriesRouter)
 app.use('/api/journal-entries', journalEntriesRouter)
 app.use('/api/user-reframes', userReframesRouter)
 app.use('/api/safe-places', safePlacesRouter)
+app.use('/api/tool-usage', toolUsageRouter)
 
 // ── Health check ──────────────────────────────────────────────────────────────
 app.get('/health', (_req, res) => {

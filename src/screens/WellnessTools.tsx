@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState, type ReactNode } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { Link, useNavigate, useSearchParams } from 'react-router-dom'
 import {
   Activity,
   AlertCircle,
@@ -23,7 +23,10 @@ import {
   MOOD_VARIANTS,
   MoodHeartFill,
   getMoodChatPrefill,
+  isWellnessToolId,
+  MOOD_WELLNESS_PRIMARY_SECONDARY,
   moodShellBackgroundClasses,
+  resolveSuggestedExercisesForMood,
   type MoodId,
   moodLocalDateKey,
   useMood,
@@ -57,6 +60,13 @@ import { ReframesTool } from '../components/wellness/ReframesTool'
 import { SafePlaceTool } from '../components/wellness/SafePlaceTool'
 import { fetchMyReframes } from '../lib/userReframes'
 import { fetchSafePlaces } from '../lib/safePlaces'
+import {
+  fetchToolUsage,
+  insertToolUsage,
+  WELLNESS_DAY_RESET_EVENT,
+  type ToolUsageRow,
+} from '../lib/toolUsage'
+import { WELLNESS_TOOL_REGISTRY, type WellnessToolId } from '../lib/wellnessToolRegistry'
 
 type WellnessEmotion =
   | 'happy'
@@ -71,15 +81,8 @@ type WellnessEmotion =
   | 'numb'
 
 type ToolId =
-  | 'breathing'
-  | 'grounding'
-  | 'physical-regulation'
+  | WellnessToolId
   | 'mood-check-in'
-  | 'name-it'
-  | 'micro-journal'
-  | 'reframes'
-  | 'safe-place'
-  | 'today-nudge'
   | 'crisis-reset'
 
 type MoodLogEntry = {
@@ -88,13 +91,6 @@ type MoodLogEntry = {
   emotion: MoodId
   intensity?: number
   note?: string
-}
-
-type ToolUseEntry = {
-  id: string
-  date: string
-  toolId: ToolId
-  emotion: WellnessEmotion | null
 }
 
 type Reflection = {
@@ -108,7 +104,6 @@ type StoredValue<T> = T | (() => T)
 
 const STORAGE = {
   moods: 'cardea-wellness-mood-log',
-  tools: 'cardea-wellness-tool-log',
   reflections: 'cardea-wellness-parent-reflections',
 }
 
@@ -118,18 +113,16 @@ const WELLNESS_EMOTIONS: Array<{
   label: string
   primary: ToolId
   secondary: ToolId
-}> = [
-  { id: 'happy', moodId: 'happy', label: 'Happy', primary: 'today-nudge', secondary: 'micro-journal' },
-  { id: 'calm', moodId: 'calm', label: 'Calm', primary: 'physical-regulation', secondary: 'today-nudge' },
-  { id: 'hopeful', moodId: 'hopeful', label: 'Hopeful', primary: 'reframes', secondary: 'today-nudge' },
-  { id: 'overwhelmed', moodId: 'overwhelmed', label: 'Overwhelmed', primary: 'grounding', secondary: 'breathing' },
-  { id: 'exhausted', moodId: 'exhausted', label: 'Exhausted', primary: 'physical-regulation', secondary: 'micro-journal' },
-  { id: 'angry', moodId: 'angry', label: 'Angry', primary: 'physical-regulation', secondary: 'breathing' },
-  { id: 'scared', moodId: 'scared', label: 'Scared', primary: 'reframes', secondary: 'safe-place' },
-  { id: 'sad', moodId: 'sad', label: 'Sad', primary: 'micro-journal', secondary: 'physical-regulation' },
-  { id: 'disconnected', moodId: 'disconnected', label: 'Disconnected', primary: 'today-nudge', secondary: 'micro-journal' },
-  { id: 'numb', moodId: 'numb', label: 'Unsure', primary: 'name-it', secondary: 'micro-journal' },
-]
+}> = MOOD_VARIANTS.map((m) => {
+  const tools = MOOD_WELLNESS_PRIMARY_SECONDARY[m.id]
+  return {
+    id: m.id as WellnessEmotion,
+    moodId: m.id,
+    label: m.label,
+    primary: tools.primary as ToolId,
+    secondary: tools.secondary as ToolId,
+  }
+})
 
 /** Maps global mood (home + tools) to check-in chip selection. */
 function wellnessEmotionFromMoodId(moodId: MoodId | null): WellnessEmotion | null {
@@ -143,15 +136,55 @@ const TOOL_META: Record<ToolId, {
   category: 'Regulate body' | 'Understand' | 'Shift mindset' | 'Connect' | 'Crisis'
   icon: typeof Wind
 }> = {
-  breathing: { title: 'Guided breathing', short: '3 calming patterns', category: 'Regulate body', icon: Wind },
-  grounding: { title: '5-4-3-2-1 grounding', short: 'settle into your senses', category: 'Regulate body', icon: Sparkles },
-  'physical-regulation': { title: 'Physical regulation', short: 'cold · movement · body scan', category: 'Regulate body', icon: Activity },
+  breathing: {
+    title: WELLNESS_TOOL_REGISTRY.breathing.label,
+    short: '3 calming patterns',
+    category: 'Regulate body',
+    icon: Wind,
+  },
+  grounding: {
+    title: WELLNESS_TOOL_REGISTRY.grounding.label,
+    short: 'settle into your senses',
+    category: 'Regulate body',
+    icon: Sparkles,
+  },
+  'physical-regulation': {
+    title: WELLNESS_TOOL_REGISTRY['physical-regulation'].label,
+    short: 'cold reset · move it out · body scan',
+    category: 'Regulate body',
+    icon: Activity,
+  },
   'mood-check-in': { title: 'Daily mood check-in', short: 'two questions, one minute', category: 'Understand', icon: Heart },
-  'name-it': { title: 'Name it to tame it', short: 'pick feeling words', category: 'Understand', icon: Tag },
-  'micro-journal': { title: 'Micro-journal', short: 'how are you feeling today?', category: 'Understand', icon: BookOpen },
-  reframes: { title: 'Reframes', short: 'a kinder thought', category: 'Shift mindset', icon: RefreshCw },
-  'safe-place': { title: 'Safe place visualization', short: '90 seconds of steadiness', category: 'Shift mindset', icon: Heart },
-  'today-nudge': { title: "Today's nudge", short: 'feel closer in one small way', category: 'Connect', icon: Heart },
+  'name-it': {
+    title: WELLNESS_TOOL_REGISTRY['name-it'].label,
+    short: 'pick feeling words',
+    category: 'Understand',
+    icon: Tag,
+  },
+  'micro-journal': {
+    title: WELLNESS_TOOL_REGISTRY['micro-journal'].label,
+    short: 'how are you feeling today?',
+    category: 'Understand',
+    icon: BookOpen,
+  },
+  reframes: {
+    title: WELLNESS_TOOL_REGISTRY.reframes.label,
+    short: 'a kinder thought',
+    category: 'Shift mindset',
+    icon: RefreshCw,
+  },
+  'safe-place': {
+    title: WELLNESS_TOOL_REGISTRY['safe-place'].label,
+    short: '90 seconds of steadiness',
+    category: 'Shift mindset',
+    icon: Heart,
+  },
+  'today-nudge': {
+    title: WELLNESS_TOOL_REGISTRY['today-nudge'].label,
+    short: 'feel closer in one small way',
+    category: 'Connect',
+    icon: Heart,
+  },
   'crisis-reset': { title: 'I need help right now', short: 'a guided reset and resources', category: 'Crisis', icon: AlertCircle },
 }
 
@@ -277,16 +310,11 @@ function MoodCheckInColorLegend() {
   )
 }
 
-function toolUseCount(
-  toolLog: ToolUseEntry[],
-  toolId: ToolId,
-  emotion: WellnessEmotion | null,
-  wellnessDayKey: string,
-) {
-  return toolLog.filter((entry) => {
-    const usedAt = new Date(entry.date)
+function toolUseCount(usage: ToolUsageRow[], toolId: ToolId, wellnessDayKey: string) {
+  return usage.filter((entry) => {
+    const usedAt = new Date(entry.timestamp)
     if (Number.isNaN(usedAt.getTime()) || moodLocalDateKey(usedAt) !== wellnessDayKey) return false
-    return entry.toolId === toolId && (!emotion || entry.emotion === emotion)
+    return entry.tool_id === toolId
   }).length
 }
 
@@ -394,23 +422,6 @@ const SUGGESTED_CARD_TONES: Record<
 }
 
 const SUGGESTED_TONES: RegulateTone[] = ['forest', 'sky', 'outline', 'sage']
-
-/**
- * AI-ready card resolver. Keep the return shape stable so this can later be
- * replaced with model/server recommendations without changing the UI.
- */
-function resolveSuggestedExercises(emotion: WellnessEmotion | null, moodId: MoodId | null): ToolId[] {
-  const key = emotion ?? moodId
-  if (key === 'overwhelmed') return ['breathing', 'grounding', 'reframes', 'physical-regulation']
-  if (key === 'exhausted') return ['physical-regulation', 'safe-place', 'micro-journal', 'breathing']
-  if (key === 'angry') return ['physical-regulation', 'breathing', 'reframes', 'grounding']
-  if (key === 'scared') return ['breathing', 'grounding', 'safe-place', 'reframes']
-  if (key === 'sad') return ['micro-journal', 'breathing', 'safe-place', 'physical-regulation']
-  if (key === 'disconnected' || key === 'numb') return ['physical-regulation', 'grounding', 'safe-place', 'name-it']
-  if (key === 'happy' || key === 'hopeful') return ['today-nudge', 'reframes', 'breathing', 'physical-regulation']
-  if (key === 'calm') return ['breathing', 'physical-regulation', 'safe-place', 'today-nudge']
-  return ['breathing', 'grounding', 'reframes', 'safe-place']
-}
 
 function SuggestedExerciseCard({
   toolId,
@@ -1554,12 +1565,15 @@ function MoodCheckInTool({ onSaved }: { onSaved?: () => void }) {
 
 export default function WellnessTools() {
   const navigate = useNavigate()
+  const [searchParams] = useSearchParams()
   const { moodId, setMoodId, theme, wellnessDayKey } = useMood()
-  const checkInEmotion = wellnessEmotionFromMoodId(moodId)
+  const [selectedEmotion, setSelectedEmotion] = useState<WellnessEmotion | null>(() =>
+    moodId ? (moodId as WellnessEmotion) : null,
+  )
   const [activeTool, setActiveTool] = useState<ToolId | null>(null)
   const [moodLog, setMoodLog] = useLocalState<MoodLogEntry[]>(STORAGE.moods, [])
   const [moodEntries, setMoodEntries] = useState<MoodEntryRow[]>([])
-  const [toolLog, setToolLog] = useLocalState<ToolUseEntry[]>(STORAGE.tools, [])
+  const [toolUsage, setToolUsage] = useState<ToolUsageRow[]>([])
   const [checkInSaved, setCheckInSaved] = useState(false)
   const [checkInError, setCheckInError] = useState<string | null>(null)
   const [journalRefreshKey, setJournalRefreshKey] = useState(0)
@@ -1569,22 +1583,58 @@ export default function WellnessTools() {
     setMoodEntries(rows)
   }, [])
 
+  const reloadToolUsage = useCallback(async () => {
+    const rows = await fetchToolUsage(200)
+    setToolUsage(rows)
+  }, [])
+
   useEffect(() => {
     let cancelled = false
     ;(async () => {
       await ensureAuthUserId()
       if (cancelled) return
-      await reloadMoodEntries()
+      await Promise.all([reloadMoodEntries(), reloadToolUsage()])
     })()
     return () => {
       cancelled = true
     }
-  }, [reloadMoodEntries])
+  }, [reloadMoodEntries, reloadToolUsage])
 
-  const selectedMeta = checkInEmotion ? WELLNESS_EMOTIONS.find((e) => e.id === checkInEmotion) ?? null : null
+  useEffect(() => {
+    void reloadToolUsage()
+  }, [wellnessDayKey, reloadToolUsage])
+
+  useEffect(() => {
+    const onWellnessDayReset = () => {
+      setToolUsage([])
+      void reloadToolUsage()
+    }
+    window.addEventListener(WELLNESS_DAY_RESET_EVENT, onWellnessDayReset)
+    return () => window.removeEventListener(WELLNESS_DAY_RESET_EVENT, onWellnessDayReset)
+  }, [reloadToolUsage])
+
+  useEffect(() => {
+    const pending = sessionStorage.getItem('cardea-wellness-pending-journal-prompt')
+    if (pending) {
+      sessionStorage.removeItem('cardea-wellness-pending-journal-prompt')
+      setActiveTool('micro-journal')
+    }
+  }, [])
+
+  useEffect(() => {
+    if (moodId) setSelectedEmotion(moodId as WellnessEmotion)
+  }, [moodId])
+
+  useEffect(() => {
+    const tool = searchParams.get('tool')
+    if (tool && isWellnessToolId(tool)) setActiveTool(tool)
+  }, [searchParams])
+
+  const selectedMeta = selectedEmotion ? WELLNESS_EMOTIONS.find((e) => e.id === selectedEmotion) ?? null : null
+  const checkInEmotion = selectedEmotion ?? wellnessEmotionFromMoodId(moodId)
   const suggestedExercises = useMemo(
-    () => resolveSuggestedExercises(checkInEmotion, moodId),
-    [checkInEmotion, moodId],
+    () => resolveSuggestedExercisesForMood(selectedEmotion ?? moodId) as ToolId[],
+    [moodId, selectedEmotion],
   )
   const recentMoods = useMemo(() => {
     if (moodEntries.length > 0) {
@@ -1691,10 +1741,12 @@ export default function WellnessTools() {
       if (!ok) return
     }
     setActiveTool(toolId)
-    setToolLog([
-      { id: makeId('tool'), date: new Date().toISOString(), toolId, emotion: checkInEmotion },
-      ...toolLog,
-    ].slice(0, 120))
+    const { row } = await insertToolUsage(toolId)
+    if (row) {
+      setToolUsage((prev) => [row, ...prev.filter((r) => r.id !== row.id)])
+    } else {
+      void reloadToolUsage()
+    }
   }
 
   function chooseEmotion(emotion: (typeof WELLNESS_EMOTIONS)[number]) {
@@ -1846,12 +1898,12 @@ export default function WellnessTools() {
                 <ToolTile
                   toolId={selectedMeta.primary}
                   onOpen={(id) => void openTool(id, { saveCheckIn: true })}
-                  count={toolUseCount(toolLog, selectedMeta.primary, checkInEmotion, wellnessDayKey)}
+                  count={toolUseCount(toolUsage, selectedMeta.primary, wellnessDayKey)}
                 />
                 <ToolTile
                   toolId={selectedMeta.secondary}
                   onOpen={(id) => void openTool(id, { saveCheckIn: true })}
-                  count={toolUseCount(toolLog, selectedMeta.secondary, checkInEmotion, wellnessDayKey)}
+                  count={toolUseCount(toolUsage, selectedMeta.secondary, wellnessDayKey)}
                   accent="rgba(172, 183, 168, 0.45)"
                 />
               </div>
@@ -1912,7 +1964,7 @@ export default function WellnessTools() {
             <ToolTile
               toolId="micro-journal"
               onOpen={(id) => void openTool(id, { saveCheckIn: true })}
-              count={toolUseCount(toolLog, 'micro-journal', checkInEmotion, wellnessDayKey)}
+              count={toolUseCount(toolUsage, 'micro-journal', wellnessDayKey)}
             />
           </div>
         </Section>
@@ -1958,7 +2010,7 @@ export default function WellnessTools() {
             ))}
           </div>
           <p className="mt-3 text-xs leading-relaxed" style={{ color: CARDEA_MUTED }}>
-            These cards shift with your check-in. Later, this can use AI recommendations.
+            These exercises shift with your mood check-in on home or here.
           </p>
         </Section>
 
@@ -1969,7 +2021,7 @@ export default function WellnessTools() {
                 key={toolId}
                 toolId={toolId}
                 onOpen={openTool}
-                count={toolUseCount(toolLog, toolId, checkInEmotion, wellnessDayKey)}
+                count={toolUseCount(toolUsage, toolId, wellnessDayKey)}
               />
             ))}
           </div>
@@ -1982,7 +2034,7 @@ export default function WellnessTools() {
                 key={toolId}
                 toolId={toolId}
                 onOpen={openTool}
-                count={toolUseCount(toolLog, toolId, checkInEmotion, wellnessDayKey)}
+                count={toolUseCount(toolUsage, toolId, wellnessDayKey)}
               />
             ))}
           </div>

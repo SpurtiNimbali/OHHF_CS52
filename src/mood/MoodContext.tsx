@@ -8,6 +8,7 @@ import {
   type ReactNode,
 } from 'react'
 import { clearMoodCheckInSession } from '../lib/moodEntries'
+import { clearToolUsageForUser } from '../lib/toolUsage'
 import type { MoodId } from './moodVariants'
 import {
   moodVariantById,
@@ -40,13 +41,19 @@ function clearStoredMood() {
   clearMoodCheckInSession()
 }
 
+/** New wellness day — clears mood storage and tool_usage (used markers). */
+function resetWellnessDaySession() {
+  clearStoredMood()
+  void clearToolUsageForUser()
+}
+
 function readStoredMood(): MoodId | null {
   try {
     const today = moodLocalDateKey()
     const storedDate = localStorage.getItem(STORAGE_DATE_KEY)
     const raw = localStorage.getItem(STORAGE_KEY)
     if (!storedDate || storedDate !== today) {
-      if (raw || storedDate) clearStoredMood()
+      if (raw || storedDate) resetWellnessDaySession()
       return null
     }
     if (raw && VALID.has(raw)) return raw as MoodId
