@@ -18,7 +18,7 @@ import {
   Tag,
   Wind,
 } from 'lucide-react'
-import { AnimatePresence, motion } from 'motion/react'
+import { motion } from 'motion/react'
 import {
   MOOD_VARIANTS,
   MoodHeartFill,
@@ -47,10 +47,6 @@ import {
   type JournalEntryRow,
 } from '../lib/journalEntries'
 import { ensureAuthUserId } from '../lib/supabase'
-import type { Nudge } from '../lib/supabase'
-import { fetchNudges } from '../lib/nudges'
-import type { ReflectionPrompt } from '../lib/reflectionPrompts'
-import { fetchReflectionPrompts, pickDailyPrompts } from '../lib/reflectionPrompts'
 import {
   CARDEA_ALMOST_WHITE,
   CARDEA_DARK_GREEN,
@@ -64,6 +60,12 @@ import { ReframesTool } from '../components/wellness/ReframesTool'
 import { SafePlaceTool } from '../components/wellness/SafePlaceTool'
 import { fetchMyReframes } from '../lib/userReframes'
 import { fetchSafePlaces } from '../lib/safePlaces'
+import {
+  fetchToolUsage,
+  insertToolUsage,
+  WELLNESS_DAY_RESET_EVENT,
+  type ToolUsageRow,
+} from '../lib/toolUsage'
 import { WELLNESS_TOOL_REGISTRY, type WellnessToolId } from '../lib/wellnessToolRegistry'
 
 type WellnessEmotion =
@@ -91,13 +93,6 @@ type MoodLogEntry = {
   note?: string
 }
 
-type ToolUseEntry = {
-  id: string
-  date: string
-  toolId: ToolId
-  emotion: WellnessEmotion | null
-}
-
 type Reflection = {
   id: string
   prompt: string
@@ -109,10 +104,7 @@ type StoredValue<T> = T | (() => T)
 
 const STORAGE = {
   moods: 'cardea-wellness-mood-log',
-  tools: 'cardea-wellness-tool-log',
   reflections: 'cardea-wellness-parent-reflections',
-  safePlace: 'cardea-wellness-safe-place',
-  nudgeCycle: 'cardea-nudge-cycle',
 }
 
 const WELLNESS_EMOTIONS: Array<{
@@ -196,23 +188,20 @@ const TOOL_META: Record<ToolId, {
   'crisis-reset': { title: 'I need help right now', short: 'a guided reset and resources', category: 'Crisis', icon: AlertCircle },
 }
 
-function shuffleArray<T>(arr: T[]): T[] {
-  const a = [...arr]
-  for (let i = a.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1))
-    const tmp = a[i]!
-    a[i] = a[j]!
-    a[j] = tmp
-  }
-  return a
-}
+const nudges = [
+  'tell your child one thing you love about them today.',
+  'sit close. no phone. just two minutes.',
+  'take 5 minutes with no medical talk.',
+  'notice one thing that made them smile.',
+  'laugh about something silly together.',
+  'you are allowed to enjoy them.',
+]
 
-type NudgeCycle = {
-  order: number[]
-  pos: number
-}
-
-const REFLECTION_PROMPT_PREFIX = 'reflection:'
+const reflectionPrompts = [
+  'when did we last do something fun?',
+  'what does connection look like for us right now?',
+  'what small joy can we create today?',
+]
 
 /** Stored in journal_entries.prompt for standard micro-journal saves (not shown in history UI). */
 const MICRO_JOURNAL_STORED_PROMPT =
@@ -321,16 +310,11 @@ function MoodCheckInColorLegend() {
   )
 }
 
-function toolUseCount(
-  toolLog: ToolUseEntry[],
-  toolId: ToolId,
-  emotion: WellnessEmotion | null,
-  wellnessDayKey: string,
-) {
-  return toolLog.filter((entry) => {
-    const usedAt = new Date(entry.date)
+function toolUseCount(usage: ToolUsageRow[], toolId: ToolId, wellnessDayKey: string) {
+  return usage.filter((entry) => {
+    const usedAt = new Date(entry.timestamp)
     if (Number.isNaN(usedAt.getTime()) || moodLocalDateKey(usedAt) !== wellnessDayKey) return false
-    return entry.toolId === toolId && (!emotion || entry.emotion === emotion)
+    return entry.tool_id === toolId
   }).length
 }
 
@@ -1011,16 +995,8 @@ function BodyScanTool() {
   )
 }
 
-function MicroJournalTool({
-  onEntriesChanged,
-  prefillPrompt,
-}: {
-  onEntriesChanged?: () => void
-  prefillPrompt?: string | null
-}) {
-  const savePrompt = prefillPrompt?.trim()
-    ? `${REFLECTION_PROMPT_PREFIX}${prefillPrompt.trim()}`
-    : MICRO_JOURNAL_STORED_PROMPT
+function MicroJournalTool({ onEntriesChanged }: { onEntriesChanged?: () => void }) {
+  const savePrompt = MICRO_JOURNAL_STORED_PROMPT
   const [text, setText] = useState('')
   const [saved, setSaved] = useState(false)
   const [saveError, setSaveError] = useState<string | null>(null)
@@ -1064,21 +1040,12 @@ function MicroJournalTool({
 
   return (
     <div className="space-y-6">
-      {prefillPrompt ? (
-        <div className="rounded-2xl border-l-4 bg-[#f0f7f4] p-4" style={{ borderLeftColor: CARDEA_DARK_GREEN }}>
-          <p className="mb-1 text-[10px] font-bold uppercase tracking-[0.16em]" style={{ color: CARDEA_DARK_GREEN }}>
-            today&apos;s reflection
-          </p>
-          <p className="text-base font-semibold leading-snug text-[#192b3f]">{prefillPrompt}</p>
-        </div>
-      ) : (
-        <p className="text-base leading-relaxed text-[#192b3f]">{MICRO_JOURNAL_STORED_PROMPT}</p>
-      )}
+      <p className="text-base leading-relaxed text-[#192b3f]">{MICRO_JOURNAL_STORED_PROMPT}</p>
 
       <textarea
         value={text}
         onChange={(e) => setText(e.target.value)}
-        placeholder={prefillPrompt ? 'Write your reflection here…' : 'Start writing here…'}
+        placeholder="Start writing here…"
         rows={6}
         className="w-full resize-y rounded-2xl border bg-[#f5f9f9] px-4 py-3 text-sm leading-relaxed outline-none"
         style={{ borderColor: CARDEA_LIGHT_BLUE, color: CARDEA_NAVY }}
@@ -1260,18 +1227,13 @@ function PastEntriesSection({
       }
     })
 
-    const journals = journalRows.map((row) => {
-      const isReflection = row.prompt.startsWith(REFLECTION_PROMPT_PREFIX)
-      return {
-        id: row.id,
-        date: row.timestamp,
-        type: isReflection ? 'Reflection' : 'Micro-journal',
-        prompt: isReflection
-          ? row.prompt.slice(REFLECTION_PROMPT_PREFIX.length)
-          : isStandardMicroJournalPrompt(row.prompt) ? '' : row.prompt,
-        text: row.entry,
-      }
-    })
+    const journals = journalRows.map((row) => ({
+      id: row.id,
+      date: row.timestamp,
+      type: 'Micro-journal',
+      prompt: isStandardMicroJournalPrompt(row.prompt) ? '' : row.prompt,
+      text: row.entry,
+    }))
 
     const parentReflections = reflections.map((entry) => ({
       id: entry.id,
@@ -1350,57 +1312,13 @@ function PastEntriesSection({
 }
 
 function TodayNudgeCard() {
-  const [allNudges, setAllNudges] = useState<Nudge[]>([])
-  const [loading, setLoading] = useState(true)
-  const [cycle, setCycle] = useLocalState<NudgeCycle | null>(STORAGE.nudgeCycle, null)
-  const [animKey, setAnimKey] = useState(0)
-
-  useEffect(() => {
-    void fetchNudges().then((nudges) => {
-      setAllNudges(nudges)
-      setLoading(false)
-    })
-  }, [])
-
-  useEffect(() => {
-    if (allNudges.length === 0) return
-    const ids = allNudges.map((n) => n.id)
-    setCycle((prev) => {
-      if (prev && prev.order.length === ids.length && prev.order.every((id) => ids.includes(id))) {
-        return prev
-      }
-      return { order: shuffleArray(ids), pos: 0 }
-    })
-  }, [allNudges, setCycle])
-
-  const currentNudge = useMemo(() => {
-    if (!cycle || allNudges.length === 0) return null
-    const id = cycle.order[cycle.pos]
-    return allNudges.find((n) => n.id === id) ?? null
-  }, [cycle, allNudges])
-
-  function nextNudge() {
-    if (allNudges.length === 0) return
-    const ids = allNudges.map((n) => n.id)
-    setCycle((prev) => {
-      const nextPos = (prev?.pos ?? 0) + 1
-      if (nextPos >= allNudges.length) {
-        return { order: shuffleArray(ids), pos: 0 }
-      }
-      return { order: prev?.order ?? shuffleArray(ids), pos: nextPos }
-    })
-    setAnimKey((k) => k + 1)
-  }
-
-  const totalCount = allNudges.length
-  const currentPos = (cycle?.pos ?? 0) + 1
-
+  const [idx, setIdx] = useState(() => new Date().getDate() % nudges.length)
   return (
     <div
-      className="relative overflow-hidden rounded-2xl p-6 text-white shadow-md"
+      className="relative overflow-hidden rounded-2xl p-6 text-white"
       style={{ background: `linear-gradient(135deg, ${CARDEA_NAVY}, #2c4566 62%, ${CARDEA_DARK_GREEN})` }}
     >
-      <div className="mb-4 flex items-center gap-3">
+      <div className="mb-3 flex items-center gap-3">
         <span className="flex h-10 w-10 items-center justify-center rounded-full bg-white/10">
           <Heart className="h-5 w-5 text-[#c6d9e5]" />
         </span>
@@ -1408,127 +1326,80 @@ function TodayNudgeCard() {
           <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-[#c6d9e5]/80">today&apos;s nudge</p>
           <h3 className="text-xl font-semibold text-white">a small invitation</h3>
         </div>
-      </div>
-
-      <div className="min-h-[3.5rem]">
-        {loading ? (
-          <p className="animate-pulse text-lg text-[#c6d9e5]/50">loading&hellip;</p>
-        ) : (
-          <AnimatePresence mode="wait">
-            <motion.p
-              key={animKey}
-              initial={{ opacity: 0, y: 8 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -8 }}
-              transition={{ duration: 0.28, ease: 'easeOut' }}
-              className="text-lg leading-relaxed text-[#c6d9e5]"
-            >
-              {currentNudge?.nudge_text ?? ''}
-            </motion.p>
-          </AnimatePresence>
-        )}
-      </div>
-
-      <div className="mt-4 flex items-center justify-between">
-        <span className="text-[10px] font-medium text-[#c6d9e5]/60">
-          {!loading && totalCount > 0 ? `Nudge ${currentPos} of ${totalCount}` : ''}
-        </span>
         <button
           type="button"
-          onClick={nextNudge}
-          disabled={loading}
-          className="rounded-full bg-white/15 px-4 py-1.5 text-xs font-semibold text-[#c6d9e5] transition-colors hover:bg-white/25 disabled:opacity-40"
+          onClick={() => setIdx((i) => (i + 1) % nudges.length)}
+          className="ml-auto text-xs font-semibold text-[#c6d9e5]"
         >
-          Tap for another
+          another
         </button>
       </div>
+      <p className="text-lg leading-relaxed text-[#c6d9e5]">{nudges[idx]}</p>
     </div>
   )
 }
 
-function ReflectionPromptsPanel({
-  moodId,
-  onReflect,
-}: {
-  moodId: MoodId | null
-  onReflect: (prompt: string) => void
-}) {
-  const [allPrompts, setAllPrompts] = useState<ReflectionPrompt[]>([])
-  const [loading, setLoading] = useState(true)
-
-  useEffect(() => {
-    void fetchReflectionPrompts().then((prompts) => {
-      setAllPrompts(prompts)
-      setLoading(false)
-    })
-  }, [])
-
-  const dailyPrompts = useMemo(
-    () => pickDailyPrompts(allPrompts, moodId, 3),
-    [allPrompts, moodId],
-  )
-
-  if (loading) {
-    return (
-      <div className="grid gap-3 md:grid-cols-3">
-        {[0, 1, 2].map((i) => (
-          <div
-            key={i}
-            className="h-28 animate-pulse rounded-2xl border bg-white/70"
-            style={{ borderColor: CARDEA_LIGHT_BLUE }}
-          />
-        ))}
-      </div>
-    )
-  }
-
-  if (dailyPrompts.length === 0) {
-    return (
-      <p className="text-sm leading-relaxed" style={{ color: CARDEA_MUTED }}>
-        No reflection prompts available right now. Check back later.
-      </p>
-    )
-  }
-
+function ReflectionPromptsPanel({ onJournal }: { onJournal: () => void }) {
+  const [reflections, setReflections] = useLocalState<Reflection[]>(STORAGE.reflections, [])
+  const [openPrompt, setOpenPrompt] = useState<string | null>(null)
+  const [text, setText] = useState('')
   return (
     <div className="grid gap-3 md:grid-cols-3">
-      {dailyPrompts.map((prompt, i) => (
-        <motion.div
-          key={prompt.id}
-          initial={{ opacity: 0, y: 10 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.25, delay: i * 0.06 }}
-          className="flex flex-col rounded-2xl border bg-white p-4 shadow-sm"
+      {reflectionPrompts.map((prompt) => (
+        <div
+          key={prompt}
+          className="rounded-2xl border bg-white p-4 shadow-sm"
           style={{ borderColor: CARDEA_LIGHT_BLUE }}
         >
-          <p className="mb-4 flex-1 text-sm font-semibold leading-relaxed text-[#192b3f]">
-            {prompt.prompt_text}
-          </p>
-          <button
-            type="button"
-            onClick={() => onReflect(prompt.prompt_text)}
-            className="self-start rounded-xl px-3 py-1.5 text-xs font-semibold text-white transition-opacity hover:opacity-90"
-            style={{ background: CARDEA_DARK_GREEN }}
-          >
-            Reflect →
+          <p className="mb-3 text-sm font-semibold text-[#192b3f]">{prompt}</p>
+          {openPrompt === prompt ? (
+            <>
+              <textarea
+                value={text}
+                onChange={(e) => setText(e.target.value)}
+                className="min-h-[90px] w-full rounded-xl border bg-[#f5f9f9] p-3 text-sm"
+              />
+              <button
+                type="button"
+                onClick={() => {
+                  if (!text.trim()) return
+                  setReflections([
+                    { id: makeId('reflection'), prompt, text: text.trim(), date: new Date().toISOString() },
+                    ...reflections,
+                  ])
+                  setText('')
+                  setOpenPrompt(null)
+                }}
+                className="mt-2 rounded-lg px-3 py-1.5 text-xs font-semibold text-white"
+                style={{ background: CARDEA_DARK_GREEN }}
+              >
+                Save
+              </button>
+            </>
+          ) : (
+            <button
+              type="button"
+              onClick={() => setOpenPrompt(prompt)}
+              className="text-xs font-semibold"
+              style={{ color: CARDEA_DARK_GREEN }}
+            >
+              Reflect →
+            </button>
+          )}
+          <button type="button" onClick={onJournal} className="ml-3 text-xs font-semibold" style={{ color: CARDEA_MUTED }}>
+            journal
           </button>
-        </motion.div>
+        </div>
       ))}
     </div>
   )
 }
 
-function TodayNudgeTool({
-  moodId,
-  onReflect,
-}: {
-  moodId: MoodId | null
-  onReflect: (prompt: string) => void
-}) {
+function TodayNudgeTool({ onJournal }: { onJournal: () => void }) {
   return (
     <div className="space-y-4">
       <TodayNudgeCard />
-      <ReflectionPromptsPanel moodId={moodId} onReflect={onReflect} />
+      <ReflectionPromptsPanel onJournal={onJournal} />
     </div>
   )
 }
@@ -1605,17 +1476,11 @@ function ToolContent({
   onOpenTool,
   onMoodEntriesChanged,
   onJournalEntriesChanged,
-  prefillText,
-  moodId,
-  onReflect,
 }: {
   toolId: ToolId
   onOpenTool: (toolId: ToolId) => void
   onMoodEntriesChanged?: () => void
   onJournalEntriesChanged?: () => void
-  prefillText?: string | null
-  moodId: MoodId | null
-  onReflect: (prompt: string) => void
 }) {
   if (toolId === 'breathing') return <BreathingTool />
   if (toolId === 'grounding') return <GroundingTool />
@@ -1623,11 +1488,11 @@ function ToolContent({
   if (toolId === 'mood-check-in') return <MoodCheckInTool onSaved={onMoodEntriesChanged} />
   if (toolId === 'name-it') return <NameItTool onOpenTool={onOpenTool} />
   if (toolId === 'micro-journal') {
-    return <MicroJournalTool onEntriesChanged={onJournalEntriesChanged} prefillPrompt={prefillText} />
+    return <MicroJournalTool onEntriesChanged={onJournalEntriesChanged} />
   }
   if (toolId === 'reframes') return <ReframesTool />
   if (toolId === 'safe-place') return <SafePlaceTool />
-  if (toolId === 'today-nudge') return <TodayNudgeTool moodId={moodId} onReflect={onReflect} />
+  if (toolId === 'today-nudge') return <TodayNudgeTool onJournal={() => onOpenTool('micro-journal')} />
   return <CrisisResetTool />
 }
 
@@ -1701,15 +1566,14 @@ function MoodCheckInTool({ onSaved }: { onSaved?: () => void }) {
 export default function WellnessTools() {
   const navigate = useNavigate()
   const [searchParams] = useSearchParams()
-  const { moodId, setMoodId, theme } = useMood()
+  const { moodId, setMoodId, theme, wellnessDayKey } = useMood()
   const [selectedEmotion, setSelectedEmotion] = useState<WellnessEmotion | null>(() =>
     moodId ? (moodId as WellnessEmotion) : null,
   )
   const [activeTool, setActiveTool] = useState<ToolId | null>(null)
-  const [activePrefill, setActivePrefill] = useState<string | null>(null)
   const [moodLog, setMoodLog] = useLocalState<MoodLogEntry[]>(STORAGE.moods, [])
   const [moodEntries, setMoodEntries] = useState<MoodEntryRow[]>([])
-  const [toolLog, setToolLog] = useLocalState<ToolUseEntry[]>(STORAGE.tools, [])
+  const [toolUsage, setToolUsage] = useState<ToolUsageRow[]>([])
   const [checkInSaved, setCheckInSaved] = useState(false)
   const [checkInError, setCheckInError] = useState<string | null>(null)
   const [journalRefreshKey, setJournalRefreshKey] = useState(0)
@@ -1719,25 +1583,43 @@ export default function WellnessTools() {
     setMoodEntries(rows)
   }, [])
 
+  const reloadToolUsage = useCallback(async () => {
+    const rows = await fetchToolUsage(200)
+    setToolUsage(rows)
+  }, [])
+
   useEffect(() => {
     let cancelled = false
     ;(async () => {
       await ensureAuthUserId()
       if (cancelled) return
-      await reloadMoodEntries()
+      await Promise.all([reloadMoodEntries(), reloadToolUsage()])
     })()
     return () => {
       cancelled = true
     }
-  }, [reloadMoodEntries])
+  }, [reloadMoodEntries, reloadToolUsage])
+
+  useEffect(() => {
+    void reloadToolUsage()
+  }, [wellnessDayKey, reloadToolUsage])
+
+  useEffect(() => {
+    const onWellnessDayReset = () => {
+      setToolUsage([])
+      void reloadToolUsage()
+    }
+    window.addEventListener(WELLNESS_DAY_RESET_EVENT, onWellnessDayReset)
+    return () => window.removeEventListener(WELLNESS_DAY_RESET_EVENT, onWellnessDayReset)
+  }, [reloadToolUsage])
 
   useEffect(() => {
     const pending = sessionStorage.getItem('cardea-wellness-pending-journal-prompt')
     if (pending) {
-      setJournalPrompt(pending)
       sessionStorage.removeItem('cardea-wellness-pending-journal-prompt')
+      setActiveTool('micro-journal')
     }
-  }, [activeTool])
+  }, [])
 
   useEffect(() => {
     if (moodId) setSelectedEmotion(moodId as WellnessEmotion)
@@ -1750,7 +1632,6 @@ export default function WellnessTools() {
 
   const selectedMeta = selectedEmotion ? WELLNESS_EMOTIONS.find((e) => e.id === selectedEmotion) ?? null : null
   const checkInEmotion = selectedEmotion ?? wellnessEmotionFromMoodId(moodId)
-  const wellnessDayKey = moodLocalDateKey(new Date())
   const suggestedExercises = useMemo(
     () => resolveSuggestedExercisesForMood(selectedEmotion ?? moodId) as ToolId[],
     [moodId, selectedEmotion],
@@ -1854,22 +1735,18 @@ export default function WellnessTools() {
     })
   }
 
-  async function openTool(toolId: ToolId, options?: { saveCheckIn?: boolean; prefill?: string }) {
+  async function openTool(toolId: ToolId, options?: { saveCheckIn?: boolean }) {
     if (options?.saveCheckIn && selectedMeta) {
       const ok = await saveCheckInFromSelection({ showSavedToast: true })
       if (!ok) return
     }
-    setActivePrefill(options?.prefill ?? null)
     setActiveTool(toolId)
-    setToolLog([
-      { id: makeId('tool'), date: new Date().toISOString(), toolId, emotion: checkInEmotion },
-      ...toolLog,
-    ].slice(0, 120))
-  }
-
-  function closeModal() {
-    setActiveTool(null)
-    setActivePrefill(null)
+    const { row } = await insertToolUsage(toolId)
+    if (row) {
+      setToolUsage((prev) => [row, ...prev.filter((r) => r.id !== row.id)])
+    } else {
+      void reloadToolUsage()
+    }
   }
 
   function chooseEmotion(emotion: (typeof WELLNESS_EMOTIONS)[number]) {
@@ -2021,12 +1898,12 @@ export default function WellnessTools() {
                 <ToolTile
                   toolId={selectedMeta.primary}
                   onOpen={(id) => void openTool(id, { saveCheckIn: true })}
-                  count={toolUseCount(toolLog, selectedMeta.primary, checkInEmotion, wellnessDayKey)}
+                  count={toolUseCount(toolUsage, selectedMeta.primary, wellnessDayKey)}
                 />
                 <ToolTile
                   toolId={selectedMeta.secondary}
                   onOpen={(id) => void openTool(id, { saveCheckIn: true })}
-                  count={toolUseCount(toolLog, selectedMeta.secondary, checkInEmotion, wellnessDayKey)}
+                  count={toolUseCount(toolUsage, selectedMeta.secondary, wellnessDayKey)}
                   accent="rgba(172, 183, 168, 0.45)"
                 />
               </div>
@@ -2087,7 +1964,7 @@ export default function WellnessTools() {
             <ToolTile
               toolId="micro-journal"
               onOpen={(id) => void openTool(id, { saveCheckIn: true })}
-              count={toolUseCount(toolLog, 'micro-journal', checkInEmotion, wellnessDayKey)}
+              count={toolUseCount(toolUsage, 'micro-journal', wellnessDayKey)}
             />
           </div>
         </Section>
@@ -2144,7 +2021,7 @@ export default function WellnessTools() {
                 key={toolId}
                 toolId={toolId}
                 onOpen={openTool}
-                count={toolUseCount(toolLog, toolId, checkInEmotion, wellnessDayKey)}
+                count={toolUseCount(toolUsage, toolId, wellnessDayKey)}
               />
             ))}
           </div>
@@ -2157,7 +2034,7 @@ export default function WellnessTools() {
                 key={toolId}
                 toolId={toolId}
                 onOpen={openTool}
-                count={toolUseCount(toolLog, toolId, checkInEmotion, wellnessDayKey)}
+                count={toolUseCount(toolUsage, toolId, wellnessDayKey)}
               />
             ))}
           </div>
@@ -2170,10 +2047,7 @@ export default function WellnessTools() {
               <p className="mb-3 text-xs font-bold uppercase tracking-[0.18em]" style={{ color: CARDEA_MUTED }}>
                 Reflection prompts
               </p>
-              <ReflectionPromptsPanel
-                moodId={moodId}
-                onReflect={(prompt) => void openTool('micro-journal', { prefill: prompt })}
-              />
+              <ReflectionPromptsPanel onJournal={() => openTool('micro-journal')} />
             </div>
           </div>
         </Section>
@@ -2199,7 +2073,7 @@ export default function WellnessTools() {
           >
             <button
               type="button"
-              onClick={closeModal}
+              onClick={() => setActiveTool(null)}
               className="mb-4 rounded-full px-4 py-2 text-sm font-semibold text-white"
               style={{ background: CARDEA_NAVY }}
             >
@@ -2217,13 +2091,10 @@ export default function WellnessTools() {
               onOpenTool={openTool}
               onMoodEntriesChanged={reloadMoodEntries}
               onJournalEntriesChanged={() => setJournalRefreshKey((k) => k + 1)}
-              prefillText={activePrefill}
-              moodId={moodId}
-              onReflect={(prompt) => void openTool('micro-journal', { prefill: prompt })}
             />
             <ToolActions
-              onDone={closeModal}
-              onTryElse={closeModal}
+              onDone={() => setActiveTool(null)}
+              onTryElse={() => setActiveTool(null)}
             />
           </motion.div>
         </div>
