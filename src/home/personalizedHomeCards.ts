@@ -6,7 +6,6 @@
 import {
   BookOpen,
   CircleHelp,
-  Heart,
   MessageCircle,
   Sparkles,
   Stethoscope,
