@@ -1,9 +1,13 @@
 import { useEffect, useRef, useState, useMemo } from 'react'
-import { supabase, CardiologistQuestion, SavedQuestion } from '../lib/supabase'
+import { supabase, CardiologistQuestion, normalizeSavedQuestion, SavedQuestion } from '../lib/supabase'
 
 const CURRENT_USER_ID = 'demo-user-id'
 
 type GroupedQuestions = Record<string, CardiologistQuestion[]>
+
+function getSavedSourceLabel(source: SavedQuestion['source']): string {
+  return source === 'generated' ? 'Generated' : source === 'custom' ? 'Custom' : 'Preset'
+}
 
 // ── QuestionItem ─────────────────────────────────────────────────────────────
 
@@ -254,12 +258,12 @@ function SavedQuestionsList({
 
       <ul style={{ listStyle: 'none', margin: 0, padding: 0, display: 'flex', flexDirection: 'column', gap: '10px' }}>
         {saved.map((row) => {
-          const isCustom = !row.question_id
           const matchedQuestion = allQuestions.find(
             (q) => String(q.id) === String(row.question_id),
           )
           const label = row.custom_text ?? matchedQuestion?.question_text ?? ''
           const category = matchedQuestion?.category ?? null
+          const sourceLabel = getSavedSourceLabel(row.source)
 
           return (
             <li
@@ -298,21 +302,19 @@ function SavedQuestionsList({
                       {category}
                     </span>
                   )}
-                  {isCustom && (
-                    <span style={{
-                      fontSize: '0.7rem',
-                      fontWeight: 600,
-                      background: '#f5f9f9',
-                      color: '#577568',
-                      border: '1px solid #c6d9e5',
-                      padding: '2px 9px',
-                      borderRadius: '100px',
-                      width: 'fit-content',
-                      fontFamily: 'Inter, system-ui, sans-serif',
-                    }}>
-                      Custom
-                    </span>
-                  )}
+                  <span style={{
+                    fontSize: '0.7rem',
+                    fontWeight: 600,
+                    background: '#f5f9f9',
+                    color: '#577568',
+                    border: '1px solid #c6d9e5',
+                    padding: '2px 9px',
+                    borderRadius: '100px',
+                    width: 'fit-content',
+                    fontFamily: 'Inter, system-ui, sans-serif',
+                  }}>
+                    {sourceLabel}
+                  </span>
                 </div>
               </div>
               <button
@@ -382,8 +384,9 @@ export default function QuestionsForCardiologist() {
       }
 
       if (savedRows) {
-        setSaved(savedRows as SavedQuestion[])
-        setSavedIds(new Set((savedRows as SavedQuestion[]).map((r) => String(r.question_id ?? ''))))
+        const rows = (savedRows as SavedQuestion[]).map((row) => normalizeSavedQuestion(row))
+        setSaved(rows)
+        setSavedIds(new Set(rows.map((r) => String(r.question_id ?? ''))))
       }
 
       setLoading(false)
@@ -417,21 +420,21 @@ export default function QuestionsForCardiologist() {
       })
       setSaved((prev) => prev.filter((r) => String(r.question_id) !== String(question.id)))
     } else {
-      const row = { user_id: CURRENT_USER_ID, question_id: question.id, custom_text: null }
+      const row = { user_id: CURRENT_USER_ID, question_id: question.id, custom_text: null, source: 'preset' as const }
       const { data, error } = await supabase.from('saved_questions').upsert(row).select().single()
       console.log('[toggleQuestion] upsert:', { data, error })
       setSavedIds((prev) => new Set([...prev, String(question.id)]))
-      if (data) setSaved((prev) => [...prev, data as SavedQuestion])
+      if (data) setSaved((prev) => [...prev, normalizeSavedQuestion(data as SavedQuestion, 'preset')])
     }
   }
 
   async function addCustomQuestion() {
     if (!customText.trim()) return
     setAdding(true)
-    const row = { user_id: CURRENT_USER_ID, question_id: null, custom_text: customText.trim() }
+    const row = { user_id: CURRENT_USER_ID, question_id: null, custom_text: customText.trim(), source: 'custom' as const }
     const { data, error } = await supabase.from('saved_questions').insert(row).select().single()
     console.log('[addCustomQuestion]', { data, error })
-    if (data) setSaved((prev) => [...prev, data as SavedQuestion])
+    if (data) setSaved((prev) => [...prev, normalizeSavedQuestion(data as SavedQuestion, 'custom')])
     setCustomText('')
     setAdding(false)
   }

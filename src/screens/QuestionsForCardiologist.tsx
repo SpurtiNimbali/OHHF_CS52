@@ -9,7 +9,14 @@ import {
   generateCareTeamQuestionsFromApi,
 } from '../lib/careTeamQuestionApi'
 import { EMPTY_CARE_TEAM_INTAKE, isCareTeamIntakeComplete, type CareTeamIntakeAnswers } from '../lib/careTeamQuestionIntake'
-import { supabase, ensureAuthUserId, SavedQuestion } from '../lib/supabase'
+import {
+  supabase,
+  ensureAuthUserId,
+  normalizeSavedQuestion,
+  normalizeSavedQuestionSource,
+  SavedQuestion,
+  type SavedQuestionSource,
+} from '../lib/supabase'
 
 function generateMockQuestions(intake: CareTeamIntakeAnswers): GeneratedItem[] {
   const provider = intake.providerTypes[0] ?? 'Cardiologist'
@@ -90,7 +97,10 @@ function loadLocalSaved(userId: string | null): SavedQuestion[] {
     const raw = localStorage.getItem(localSavedKey(userId))
     if (!raw) return []
     const parsed = JSON.parse(raw)
-    return Array.isArray(parsed) ? (parsed as SavedQuestion[]) : []
+    if (!Array.isArray(parsed)) return []
+    return parsed
+      .filter((row): row is Record<string, unknown> => Boolean(row) && typeof row === 'object')
+      .map((row) => normalizeSavedQuestion(row as SavedQuestion))
   } catch {
     return []
   }
@@ -102,18 +112,18 @@ function persistLocalSaved(userId: string | null, rows: SavedQuestion[]) {
   } catch { /* ignore */ }
 }
 
-function makeLocalSavedQuestion(text: string, userId: string | null, source: SavedQuestion['source']): SavedQuestion {
+function makeLocalSavedQuestion(text: string, userId: string | null, source: SavedQuestionSource): SavedQuestion {
   return {
     id: `local-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
     user_id: userId ?? 'anon',
     question_id: null,
     custom_text: text,
     source,
-  } as SavedQuestion
+  }
 }
 
 type SavedQuestionMeta = {
-  source: 'generated' | 'custom' | 'bank'
+  source: SavedQuestionSource
   contextTags: string[]
   notes: string
   /** Links a saved row back to `care_team_generated_questions.id` for + Save button state. */
@@ -130,8 +140,14 @@ function normalizeStoredMeta(raw: unknown): Record<string, SavedQuestionMeta> {
   for (const [id, entry] of Object.entries(raw as Record<string, unknown>)) {
     if (!entry || typeof entry !== 'object') continue
     const e = entry as Record<string, unknown>
-    const source = e.source
-    if (source !== 'generated' && source !== 'custom' && source !== 'bank') continue
+    const rawSource = typeof e.source === 'string' ? e.source.trim().toLowerCase() : ''
+    if (
+      rawSource !== 'generated' &&
+      rawSource !== 'custom' &&
+      rawSource !== 'preset' &&
+      rawSource !== 'bank' &&
+      rawSource !== 'corpus'
+    ) continue
     const notes = typeof e.notes === 'string' ? e.notes : ''
     const contextTags = Array.isArray(e.contextTags)
       ? e.contextTags.filter((t): t is string => typeof t === 'string')
@@ -141,7 +157,7 @@ function normalizeStoredMeta(raw: unknown): Record<string, SavedQuestionMeta> {
         ? e.generatedSourceId.trim()
         : undefined
     out[id] = {
-      source: source as SavedQuestionMeta['source'],
+      source: normalizeSavedQuestionSource(rawSource),
       contextTags,
       notes,
       ...(generatedSourceId ? { generatedSourceId } : {}),
@@ -327,14 +343,17 @@ export default function QuestionsForCardiologist() {
         if (sError) {
           setSaved(loadLocalSaved(uid))
         } else {
-          const rows = (savedRows as SavedQuestion[]) ?? []
+          const existingMeta = loadAllMeta(uid)
+          const rows = ((savedRows as SavedQuestion[]) ?? []).map((row) =>
+            normalizeSavedQuestion(row, existingMeta[row.id]?.source ?? null),
+          )
           setSaved(rows)
-          // Seed savedMeta from the DB source column so color coding works
-          // across devices/sessions without relying solely on localStorage.
+          // Seed savedMeta from the normalized DB source so color coding works
+          // across devices and migrates older bank/corpus values to preset.
           setSavedMeta((prev) => {
-            const merged = { ...prev }
+            const merged = { ...existingMeta, ...prev }
             for (const row of rows) {
-              if (row.source && !merged[row.id]) {
+              if (!merged[row.id]) {
                 merged[row.id] = {
                   source: row.source,
                   contextTags: [],
@@ -342,6 +361,7 @@ export default function QuestionsForCardiologist() {
                 }
               }
             }
+            persistAllMeta(uid, merged)
             return merged
           })
         }
@@ -416,7 +436,7 @@ export default function QuestionsForCardiologist() {
       const row = { user_id: userId, question_id: null, custom_text: text, source: 'generated' as const }
       const { data, error: insErr } = await supabase.from('saved_questions').insert(row).select().single()
       if (!insErr && data) {
-        s = data as SavedQuestion
+        s = normalizeSavedQuestion(data as SavedQuestion, 'generated')
       }
     }
 
@@ -457,7 +477,7 @@ export default function QuestionsForCardiologist() {
       const row = { user_id: userId, question_id: null, custom_text: customLine.trim(), source: 'custom' as const }
       const { data, error: insErr } = await supabase.from('saved_questions').insert(row).select().single()
       if (!insErr && data) {
-        s = data as SavedQuestion
+        s = normalizeSavedQuestion(data as SavedQuestion, 'custom')
       }
     }
 
@@ -847,14 +867,14 @@ export default function QuestionsForCardiologist() {
                     const badge = savedBadge(item)
                     const open = expandedSavedId === item.id
                     const notes = savedMeta[item.id]?.notes ?? ''
-                    const source = savedMeta[item.id]?.source
+                    const source = savedMeta[item.id]?.source ?? item.source
 
                     const cardColors =
                       source === 'generated'
-                        ? { border: '#a8c8dc', bg: 'rgba(198,217,229,0.22)', badgeBg: '#c6d9e5', badgeText: NAVY, sourceLabel: 'AI suggested', sourceBg: 'rgba(198,217,229,0.5)', sourceText: '#2a5070' }
+                        ? { border: '#a8c8dc', bg: 'rgba(198,217,229,0.22)', badgeBg: '#c6d9e5', badgeText: NAVY, sourceLabel: 'Generated', sourceBg: 'rgba(198,217,229,0.5)', sourceText: '#2a5070' }
                         : source === 'custom'
-                        ? { border: 'rgba(87,117,104,0.5)', bg: 'rgba(87,117,104,0.08)', badgeBg: 'rgba(87,117,104,0.18)', badgeText: DARK_GREEN, sourceLabel: 'Self-written', sourceBg: 'rgba(87,117,104,0.12)', sourceText: DARK_GREEN }
-                        : { border: 'rgba(25,43,63,0.18)', bg: '#f9faf8', badgeBg: 'rgba(25,43,63,0.07)', badgeText: NAVY, sourceLabel: 'Standard', sourceBg: 'rgba(25,43,63,0.05)', sourceText: MUTED_GREEN }
+                        ? { border: 'rgba(87,117,104,0.5)', bg: 'rgba(87,117,104,0.08)', badgeBg: 'rgba(87,117,104,0.18)', badgeText: DARK_GREEN, sourceLabel: 'Custom', sourceBg: 'rgba(87,117,104,0.12)', sourceText: DARK_GREEN }
+                        : { border: 'rgba(25,43,63,0.18)', bg: '#f9faf8', badgeBg: 'rgba(25,43,63,0.07)', badgeText: NAVY, sourceLabel: 'Preset', sourceBg: 'rgba(25,43,63,0.05)', sourceText: MUTED_GREEN }
 
                     return (
                       <motion.div
