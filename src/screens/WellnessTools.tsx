@@ -58,6 +58,7 @@ import {
 import { ResourcesRightNav } from '../components/ResourcesRightNav'
 import { ReframesTool } from '../components/wellness/ReframesTool'
 import { SafePlaceTool } from '../components/wellness/SafePlaceTool'
+import { CrisisSupportPanel } from '../components/wellness/CrisisSupportPanel'
 import { fetchMyReframes } from '../lib/userReframes'
 import { fetchSafePlaces } from '../lib/safePlaces'
 import {
@@ -179,7 +180,7 @@ const TOOL_META: Record<ToolId, {
     category: 'Connect',
     icon: Heart,
   },
-  'crisis-reset': { title: 'I need help right now', short: 'a guided reset and resources', category: 'Crisis', icon: AlertCircle },
+  'crisis-reset': { title: 'I need help right now', short: 'Go slowly — grounding, hotlines, and support', category: 'Crisis', icon: AlertCircle },
 }
 
 const nudges = [
@@ -1388,32 +1389,15 @@ function TodayNudgeTool({ onJournal }: { onJournal: () => void }) {
   )
 }
 
-function CrisisResetTool() {
-  const steps = [
-    'put both feet on the floor.',
-    'look for one safe object nearby.',
-    'take one longer exhale.',
-    'text or call someone now.',
-  ]
-  const [idx, setIdx] = useState(0)
+function CrisisResetTool({ onOpenTool }: { onOpenTool?: (toolId: ToolId) => void }) {
   return (
-    <div className="space-y-4">
-      <div className="rounded-2xl border bg-[#fff7f7] p-5" style={{ borderColor: 'rgba(220, 38, 38, 0.18)' }}>
-        <p className="text-lg font-semibold text-[#9B1C31]">{steps[idx]}</p>
-        <button
-          type="button"
-          onClick={() => setIdx((i) => Math.min(i + 1, steps.length - 1))}
-          className="mt-4 rounded-xl px-4 py-2 text-sm font-semibold text-white"
-          style={{ background: '#9B1C31' }}
-        >
-          {idx >= steps.length - 1 ? 'Stay with this' : 'Next'}
-        </button>
-      </div>
-      <div className="rounded-2xl bg-white p-4 text-sm leading-relaxed text-[#192b3f]">
-        if you might hurt yourself or someone else, call <strong>988</strong> in the U.S.
-        or go to the nearest emergency room.
-      </div>
-    </div>
+    <CrisisSupportPanel
+      onOpenTool={
+        onOpenTool
+          ? (toolId) => onOpenTool(toolId)
+          : undefined
+      }
+    />
   )
 }
 
@@ -1477,7 +1461,8 @@ function ToolContent({
   if (toolId === 'reframes') return <ReframesTool />
   if (toolId === 'safe-place') return <SafePlaceTool />
   if (toolId === 'today-nudge') return <TodayNudgeTool onJournal={() => onOpenTool('micro-journal')} />
-  return <CrisisResetTool />
+  if (toolId === 'crisis-reset') return <CrisisResetTool onOpenTool={onOpenTool} />
+  return null
 }
 
 function MoodCheckInTool({ onSaved }: { onSaved?: () => void }) {
@@ -1650,7 +1635,7 @@ export default function WellnessTools() {
     return `linear-gradient(90deg, ${colors.join(', ')})`
   }, [recentMoodSummaries])
 
-  async function saveCheckInFromSelection(options?: { showSavedToast?: boolean }): Promise<boolean> {
+  async function saveCheckInFromSelection(): Promise<boolean> {
     if (!selectedMeta) return true
     setCheckInError(null)
     setMoodLog([
@@ -1661,7 +1646,7 @@ export default function WellnessTools() {
       },
       ...moodLog,
     ].slice(0, 80))
-    const { entry, error, alreadySaved } = await saveMoodCheckInIfNeeded(selectedMeta.moodId)
+    const { entry, error } = await saveMoodCheckInIfNeeded(selectedMeta.moodId)
     if (error) {
       setCheckInError(error)
       return false
@@ -1671,10 +1656,6 @@ export default function WellnessTools() {
       setMoodEntries((prev) =>
         [entry, ...prev.filter((r) => r.id !== entry.id)].slice(0, RECENT_MOOD_CHECKINS_LIMIT),
       )
-      if (options?.showSavedToast && !alreadySaved) {
-        setCheckInSaved(true)
-        window.setTimeout(() => setCheckInSaved(false), 1800)
-      }
     } else {
       await reloadMoodEntries()
     }
@@ -1682,7 +1663,10 @@ export default function WellnessTools() {
   }
 
   async function saveMoodCheckIn() {
-    await saveCheckInFromSelection({ showSavedToast: true })
+    const ok = await saveCheckInFromSelection()
+    if (!ok) return
+    setCheckInSaved(true)
+    window.setTimeout(() => setCheckInSaved(false), 1800)
   }
 
   async function openMoodChat() {
@@ -1696,7 +1680,9 @@ export default function WellnessTools() {
       },
       ...moodLog,
     ].slice(0, 80))
-    const { entry, entryId: moodEntryId, error } = await ensureMoodEntryForChat(selectedMeta.moodId)
+    const { entry, entryId: moodEntryId, error } = await ensureMoodEntryForChat(
+      selectedMeta.moodId,
+    )
     if (error) {
       setCheckInError(error)
       return
@@ -1720,7 +1706,7 @@ export default function WellnessTools() {
 
   async function openTool(toolId: ToolId, options?: { saveCheckIn?: boolean }) {
     if (options?.saveCheckIn && selectedMeta) {
-      const ok = await saveCheckInFromSelection({ showSavedToast: true })
+      const ok = await saveCheckInFromSelection()
       if (!ok) return
     }
     setActiveTool(toolId)
@@ -1832,9 +1818,30 @@ export default function WellnessTools() {
               ))}
             </div>
 
-            <p className="mt-2 text-xs leading-relaxed" style={{ color: CARDEA_MUTED }}>
-              Feeling more than one? Pick Unsure.
-            </p>
+            <div className="mt-2 flex flex-wrap items-center justify-between gap-3">
+              <p className="text-xs leading-relaxed" style={{ color: CARDEA_MUTED }}>
+                Feeling more than one? Pick Unsure.
+              </p>
+              <div className="flex items-center gap-2">
+                {checkInSaved && (
+                  <span className="text-xs font-semibold" style={{ color: CARDEA_DARK_GREEN }}>
+                    saved
+                  </span>
+                )}
+                <button
+                  type="button"
+                  disabled={!selectedMeta}
+                  onClick={() => void saveMoodCheckIn()}
+                  className="rounded-full px-4 py-2 text-xs font-semibold text-white disabled:opacity-40"
+                  style={{ background: CARDEA_DARK_GREEN }}
+                >
+                  Save check-in
+                </button>
+              </div>
+            </div>
+            {checkInError ? (
+              <p className="mt-2 text-xs leading-relaxed text-[#9B1C31]">{checkInError}</p>
+            ) : null}
 
             <div className="mt-4 rounded-2xl border bg-white/85 p-4 shadow-sm" style={{ borderColor: 'rgba(25,43,63,0.08)' }}>
               <p className="mb-3 text-sm font-semibold text-[#192b3f]">
@@ -1850,30 +1857,9 @@ export default function WellnessTools() {
                 Open chat
                 <ArrowRight className="h-4 w-4" aria-hidden />
               </button>
-              {checkInError ? (
-                <p className="mt-2 text-xs leading-relaxed text-[#9B1C31]">{checkInError}</p>
-              ) : null}
-              <div className="mt-3 flex flex-wrap items-center justify-between gap-3">
-                <p className="text-xs leading-relaxed" style={{ color: CARDEA_MUTED }}>
-                  two questions. one minute.
-                </p>
-                <div className="flex items-center gap-2">
-                  {checkInSaved && (
-                    <span className="text-xs font-semibold" style={{ color: CARDEA_DARK_GREEN }}>
-                      saved
-                    </span>
-                  )}
-                  <button
-                    type="button"
-                    disabled={!selectedMeta}
-                    onClick={() => void saveMoodCheckIn()}
-                    className="rounded-full px-4 py-2 text-xs font-semibold text-white disabled:opacity-40"
-                    style={{ background: CARDEA_DARK_GREEN }}
-                  >
-                    Save check-in
-                  </button>
-                </div>
-              </div>
+              <p className="mt-3 text-xs leading-relaxed" style={{ color: CARDEA_MUTED }}>
+                two questions. one minute.
+              </p>
             </div>
 
             {selectedMeta ? (
@@ -1971,12 +1957,12 @@ export default function WellnessTools() {
                   I need help right now
                 </h3>
                 <p className="mt-1 text-sm leading-relaxed" style={{ color: CARDEA_MUTED }}>
-                  A guided 4-step reset. Takes about 60 seconds.
+                  Go slowly — grounding questions, hotlines, and Cardea support.
                 </p>
               </div>
             </div>
             <span className="hidden rounded-xl bg-[#9B1C31] px-4 py-2 text-sm font-semibold text-white sm:inline-flex">
-              Start now →
+              Open →
             </span>
           </button>
         </Section>

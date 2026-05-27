@@ -400,9 +400,30 @@ export function HomeScreen() {
               ))}
             </div>
 
-            <p className="mt-2 text-xs leading-relaxed" style={{ color: CARDEA_MUTED }}>
-              Feeling more than one? Pick Unsure.
-            </p>
+            <div className="mt-2 flex flex-wrap items-center justify-between gap-3">
+              <p className="text-xs leading-relaxed" style={{ color: CARDEA_MUTED }}>
+                Feeling more than one? Pick Unsure.
+              </p>
+              <div className="flex items-center gap-2">
+                {checkInSaved && (
+                  <span className="text-xs font-semibold" style={{ color: '#577568' }}>
+                    saved
+                  </span>
+                )}
+                <button
+                  type="button"
+                  disabled={!moodId}
+                  onClick={() => void saveMoodCheckIn()}
+                  className="rounded-full px-4 py-2 text-xs font-semibold text-white disabled:opacity-40"
+                  style={{ background: '#577568' }}
+                >
+                  Save check-in
+                </button>
+              </div>
+            </div>
+            {checkInError ? (
+              <p className="mt-2 text-xs leading-relaxed text-[#9B1C31]">{checkInError}</p>
+            ) : null}
 
             <div className="mt-4 rounded-2xl border bg-[#f5f9f9] p-4" style={{ borderColor: 'rgba(25,43,63,0.08)' }}>
               <p className="mb-3 text-sm font-semibold text-[#192b3f]">
@@ -417,30 +438,9 @@ export function HomeScreen() {
               >
                 Open chat
               </button>
-              {checkInError ? (
-                <p className="mt-2 text-xs leading-relaxed text-[#9B1C31]">{checkInError}</p>
-              ) : null}
-              <div className="mt-3 flex items-center justify-between gap-3">
-                <p className="text-xs leading-relaxed" style={{ color: CARDEA_MUTED }}>
-                  one minute. no perfect answer needed.
-                </p>
-                <div className="flex items-center gap-2">
-                  {checkInSaved && (
-                    <span className="text-xs font-semibold" style={{ color: '#577568' }}>
-                      saved
-                    </span>
-                  )}
-                  <button
-                    type="button"
-                    disabled={!moodId}
-                    onClick={() => void saveMoodCheckIn()}
-                    className="rounded-full px-4 py-2 text-xs font-semibold text-white disabled:opacity-40"
-                    style={{ background: '#577568' }}
-                  >
-                    Save check-in
-                  </button>
-                </div>
-              </div>
+              <p className="mt-3 text-xs leading-relaxed" style={{ color: CARDEA_MUTED }}>
+                one minute. no perfect answer needed.
+              </p>
             </div>
           </motion.div>
         </div>
