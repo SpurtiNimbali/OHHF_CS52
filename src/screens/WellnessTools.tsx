@@ -2099,14 +2099,6 @@ export default function WellnessTools() {
               </p>
             </div>
           ) : null}
-
-          <div className="mt-4">
-            <ToolTile
-              toolId="micro-journal"
-              onOpen={(id) => void openTool(id, { saveCheckIn: true })}
-              count={toolUseCount(toolUsage, 'micro-journal', wellnessDayKey)}
-            />
-          </div>
         </Section>
 
         <Section id="crisis" label="Crisis support">
