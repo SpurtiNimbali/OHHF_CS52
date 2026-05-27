@@ -1898,21 +1898,6 @@ export default function WellnessTools() {
               </div>
             </div>
 
-            {selectedMeta ? (
-              <div className="mt-5 grid gap-3 sm:grid-cols-2">
-                <ToolTile
-                  toolId={selectedMeta.primary}
-                  onOpen={(id) => void openTool(id, { saveCheckIn: true })}
-                  count={toolUseCount(toolLog, selectedMeta.primary, checkInEmotion, wellnessDayKey)}
-                />
-                <ToolTile
-                  toolId={selectedMeta.secondary}
-                  onOpen={(id) => void openTool(id, { saveCheckIn: true })}
-                  count={toolUseCount(toolLog, selectedMeta.secondary, checkInEmotion, wellnessDayKey)}
-                  accent="rgba(172, 183, 168, 0.45)"
-                />
-              </div>
-            ) : null}
           </div>
 
           {recentMoods.length === 0 ? (
