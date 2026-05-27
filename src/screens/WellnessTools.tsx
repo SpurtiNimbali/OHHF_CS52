@@ -7,6 +7,7 @@ import {
   BookOpen,
   Brain,
   ChevronRight,
+  ChevronLeft,
   Coffee,
   Ear,
   Eye,
@@ -71,7 +72,6 @@ import {
   defaultMicroJournalDraft,
   formatJournalTag,
   isStandardMicroJournalPrompt,
-  JOURNAL_TAG_OPTIONS,
   microJournalDraftFromReflection,
   MICRO_JOURNAL_DEFAULT_PROMPT,
   savePendingJournalDraft,
@@ -980,13 +980,9 @@ function BodyScanTool() {
 
 function MicroJournalTool({
   draft,
-  onDraftChange,
-  moodId,
   onEntriesChanged,
 }: {
   draft: MicroJournalDraft
-  onDraftChange: (draft: MicroJournalDraft) => void
-  moodId?: MoodId | null
   onEntriesChanged?: () => void
 }) {
   const [text, setText] = useState('')
@@ -995,24 +991,12 @@ function MicroJournalTool({
   const [saving, setSaving] = useState(false)
   const [history, setHistory] = useState<JournalEntryRow[]>([])
   const [historyLoading, setHistoryLoading] = useState(true)
+  const [historyIndex, setHistoryIndex] = useState(0)
 
   const displayPrompt = draft.prompt.trim() || MICRO_JOURNAL_DEFAULT_PROMPT
   const savePrompt = isStandardMicroJournalPrompt(displayPrompt)
     ? MICRO_JOURNAL_DEFAULT_PROMPT
     : displayPrompt
-
-  const tagOptions = useMemo(() => {
-    const options = new Set<string>([...draft.tags, ...JOURNAL_TAG_OPTIONS])
-    if (moodId) options.add(moodId)
-    return [...options]
-  }, [draft.tags, moodId])
-
-  const toggleTag = (tag: string) => {
-    const next = draft.tags.includes(tag)
-      ? draft.tags.filter((item) => item !== tag)
-      : [...draft.tags, tag]
-    onDraftChange({ ...draft, tags: next })
-  }
 
   const reloadHistory = useCallback(async () => {
     setHistoryLoading(true)
@@ -1024,6 +1008,12 @@ function MicroJournalTool({
   useEffect(() => {
     void reloadHistory()
   }, [reloadHistory])
+
+  useEffect(() => {
+    setHistoryIndex((idx) => Math.min(idx, Math.max(history.length - 1, 0)))
+  }, [history.length])
+
+  const activeHistoryEntry = history[historyIndex] ?? null
 
   async function handleSave() {
     const trimmed = text.trim()
@@ -1043,6 +1033,7 @@ function MicroJournalTool({
     setSaved(true)
     if (entry) {
       setHistory((prev) => [entry, ...prev.filter((r) => r.id !== entry.id)].slice(0, 40))
+      setHistoryIndex(0)
     } else {
       await reloadHistory()
     }
@@ -1055,30 +1046,17 @@ function MicroJournalTool({
     <div className="space-y-6">
       <p className="text-base leading-relaxed text-[#192b3f]">{displayPrompt}</p>
 
-      {tagOptions.length > 0 ? (
-        <div className="space-y-2">
-          <p className="flex items-center gap-1.5 text-xs font-bold uppercase tracking-[0.16em]" style={{ color: CARDEA_MUTED }}>
-            <Tag className="h-3.5 w-3.5" />
-            tags
-          </p>
-          <div className="flex flex-wrap gap-2">
-            {tagOptions.map((tag) => {
-              const active = draft.tags.includes(tag)
-              return (
-                <button
-                  key={tag}
-                  type="button"
-                  onClick={() => toggleTag(tag)}
-                  className={`rounded-full px-3 py-1.5 text-xs font-semibold ${
-                    active ? 'text-white' : 'bg-[#f5f9f9] text-[#192b3f]'
-                  }`}
-                  style={{ background: active ? CARDEA_NAVY : undefined }}
-                >
-                  {formatJournalTag(tag)}
-                </button>
-              )
-            })}
-          </div>
+      {draft.tags.length > 0 ? (
+        <div className="flex flex-wrap gap-1.5">
+          {draft.tags.map((tag) => (
+            <span
+              key={tag}
+              className="rounded-full bg-[#577568]/10 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.08em]"
+              style={{ color: CARDEA_DARK_GREEN }}
+            >
+              {formatJournalTag(tag)}
+            </span>
+          ))}
         </div>
       ) : null}
 
@@ -1125,24 +1103,52 @@ function MicroJournalTool({
             No entries yet. What you save will show up here.
           </p>
         ) : (
-          <ul className="space-y-4">
-            {history.map((row) => (
-              <li
-                key={row.id}
-                className="rounded-2xl border bg-[#f5f9f9] px-4 py-3"
-                style={{ borderColor: 'rgba(25,43,63,0.08)' }}
+          <div
+            className="rounded-2xl border bg-[#f5f9f9]"
+            style={{ borderColor: 'rgba(25,43,63,0.08)' }}
+          >
+            <div
+              className="flex items-center justify-between gap-2 border-b px-3 py-2"
+              style={{ borderColor: 'rgba(25,43,63,0.08)' }}
+            >
+              <button
+                type="button"
+                onClick={() => setHistoryIndex((idx) => Math.max(idx - 1, 0))}
+                disabled={historyIndex <= 0}
+                className="flex h-8 w-8 items-center justify-center rounded-full disabled:opacity-30"
+                style={{ color: CARDEA_NAVY }}
+                aria-label="Previous entry"
               >
-                <p className="text-xs" style={{ color: CARDEA_MUTED }}>
-                  {formatEntryDateTime(row.timestamp)}
-                </p>
-                {row.prompt && !isStandardMicroJournalPrompt(row.prompt) ? (
-                  <p className="mt-1 text-sm leading-relaxed" style={{ color: CARDEA_MUTED }}>
-                    {row.prompt}
+                <ChevronLeft className="h-4 w-4" />
+              </button>
+              <p className="text-center text-xs font-semibold" style={{ color: CARDEA_MUTED }}>
+                {historyIndex + 1} of {history.length}
+                {activeHistoryEntry ? (
+                  <span className="block font-normal">{formatEntryDateTime(activeHistoryEntry.timestamp)}</span>
+                ) : null}
+              </p>
+              <button
+                type="button"
+                onClick={() => setHistoryIndex((idx) => Math.min(idx + 1, history.length - 1))}
+                disabled={historyIndex >= history.length - 1}
+                className="flex h-8 w-8 items-center justify-center rounded-full disabled:opacity-30"
+                style={{ color: CARDEA_NAVY }}
+                aria-label="Next entry"
+              >
+                <ChevronRight className="h-4 w-4" />
+              </button>
+            </div>
+
+            {activeHistoryEntry ? (
+              <div className="max-h-52 overflow-y-auto px-4 py-3">
+                {activeHistoryEntry.prompt && !isStandardMicroJournalPrompt(activeHistoryEntry.prompt) ? (
+                  <p className="text-sm leading-relaxed" style={{ color: CARDEA_MUTED }}>
+                    {activeHistoryEntry.prompt}
                   </p>
                 ) : null}
-                {row.tags.length > 0 ? (
-                  <div className="mt-2 flex flex-wrap gap-1.5">
-                    {row.tags.map((tag) => (
+                {activeHistoryEntry.tags.length > 0 ? (
+                  <div className={`flex flex-wrap gap-1.5 ${activeHistoryEntry.prompt && !isStandardMicroJournalPrompt(activeHistoryEntry.prompt) ? 'mt-2' : ''}`}>
+                    {activeHistoryEntry.tags.map((tag) => (
                       <span
                         key={tag}
                         className="rounded-full bg-white px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.08em]"
@@ -1155,14 +1161,17 @@ function MicroJournalTool({
                 ) : null}
                 <p
                   className={`whitespace-pre-wrap text-sm leading-relaxed text-[#3A525A] ${
-                    row.prompt && !isStandardMicroJournalPrompt(row.prompt) ? 'mt-2' : 'mt-1'
+                    (activeHistoryEntry.prompt && !isStandardMicroJournalPrompt(activeHistoryEntry.prompt)) ||
+                    activeHistoryEntry.tags.length > 0
+                      ? 'mt-2'
+                      : ''
                   }`}
                 >
-                  {row.entry}
+                  {activeHistoryEntry.entry}
                 </p>
-              </li>
-            ))}
-          </ul>
+              </div>
+            ) : null}
+          </div>
         )}
       </div>
     </div>
@@ -1548,7 +1557,6 @@ function ToolContent({
   onMoodEntriesChanged,
   onJournalEntriesChanged,
   microJournalDraft,
-  onMicroJournalDraftChange,
   moodId,
   selectedReflectionPromptId,
   onOpenJournalFromReflection,
@@ -1558,7 +1566,6 @@ function ToolContent({
   onMoodEntriesChanged?: () => void
   onJournalEntriesChanged?: () => void
   microJournalDraft: MicroJournalDraft
-  onMicroJournalDraftChange: (draft: MicroJournalDraft) => void
   moodId?: MoodId | null
   selectedReflectionPromptId?: number | null
   onOpenJournalFromReflection: (prompt: ReflectionPrompt) => void
@@ -1572,8 +1579,6 @@ function ToolContent({
     return (
       <MicroJournalTool
         draft={microJournalDraft}
-        onDraftChange={onMicroJournalDraftChange}
-        moodId={moodId}
         onEntriesChanged={onJournalEntriesChanged}
       />
     )
@@ -1870,6 +1875,10 @@ export default function WellnessTools() {
     if (options?.saveCheckIn && selectedMeta) {
       const ok = await saveCheckInFromSelection()
       if (!ok) return
+    }
+    if (toolId === 'micro-journal') {
+      setMicroJournalDraft(defaultMicroJournalDraft())
+      setSelectedReflectionPromptId(null)
     }
     setActiveTool(toolId)
     const { row } = await insertToolUsage(toolId)
@@ -2227,7 +2236,6 @@ export default function WellnessTools() {
               onMoodEntriesChanged={reloadMoodEntries}
               onJournalEntriesChanged={() => setJournalRefreshKey((k) => k + 1)}
               microJournalDraft={microJournalDraft}
-              onMicroJournalDraftChange={setMicroJournalDraft}
               moodId={reflectionMoodId}
               selectedReflectionPromptId={selectedReflectionPromptId}
               onOpenJournalFromReflection={openJournalFromReflection}

@@ -10,18 +10,27 @@ export type SafePlaceRow = {
   name: string
   description: string
   timestamp: string
+  image_url: string | null
+}
+
+export type SafePlaceInsertOptions = {
+  imageUrl?: string | null
 }
 
 function normalizeRow(row: Record<string, unknown>): SafePlaceRow | null {
   const name = typeof row.name === 'string' ? row.name.trim() : ''
   const description = typeof row.description === 'string' ? row.description.trim() : ''
   if (!name) return null
+  const imageUrlRaw = row.image_url
+  const image_url =
+    typeof imageUrlRaw === 'string' && imageUrlRaw.trim() ? imageUrlRaw.trim() : null
   return {
     id: String(row.id),
     user_id: String(row.user_id),
     name,
     description,
     timestamp: String(row.timestamp),
+    image_url,
   }
 }
 
@@ -37,7 +46,7 @@ function isRlsError(error: unknown): boolean {
 async function fetchSafePlacesDirect(userId: string, limit: number): Promise<SafePlaceRow[]> {
   const { data, error } = await supabase
     .from('safe_places')
-    .select('id, user_id, name, description, timestamp')
+    .select('id, user_id, name, description, timestamp, image_url')
     .eq('user_id', userId)
     .order('timestamp', { ascending: false })
     .limit(limit)
@@ -90,16 +99,20 @@ async function insertSafePlaceDirect(
   userId: string,
   name: string,
   description: string,
+  options: SafePlaceInsertOptions = {},
 ): Promise<SafePlaceRow | null> {
+  const payload: Record<string, unknown> = {
+    user_id: userId,
+    name,
+    description,
+    timestamp: new Date().toISOString(),
+  }
+  if (options.imageUrl) payload.image_url = options.imageUrl
+
   const { data, error } = await supabase
     .from('safe_places')
-    .insert({
-      user_id: userId,
-      name,
-      description,
-      timestamp: new Date().toISOString(),
-    })
-    .select('id, user_id, name, description, timestamp')
+    .insert(payload)
+    .select('id, user_id, name, description, timestamp, image_url')
     .single()
 
   if (error) {
@@ -114,6 +127,7 @@ async function insertSafePlaceDirect(
 async function insertSafePlaceApi(
   name: string,
   description: string,
+  options: SafePlaceInsertOptions = {},
 ): Promise<{ row: SafePlaceRow | null; error: string | null }> {
   const token = await getAccessToken()
   if (!token) {
@@ -123,7 +137,11 @@ async function insertSafePlaceApi(
   try {
     const res = await authFetch('/api/safe-places', {
       method: 'POST',
-      body: JSON.stringify({ name, description }),
+      body: JSON.stringify({
+        name,
+        description,
+        image_url: options.imageUrl ?? null,
+      }),
     })
     const body = (await res.json()) as { place?: Record<string, unknown>; error?: string }
     if (!res.ok) {
@@ -141,6 +159,7 @@ async function insertSafePlaceApi(
 export async function insertSafePlace(
   name: string,
   description: string,
+  options: SafePlaceInsertOptions = {},
 ): Promise<{ row: SafePlaceRow | null; error: string | null }> {
   if (!isSupabaseConfigured) {
     return { row: null, error: 'Supabase is not configured in .env.' }
@@ -157,10 +176,10 @@ export async function insertSafePlace(
     return { row: null, error: 'Give your safe place a name.' }
   }
 
-  const apiFirst = await insertSafePlaceApi(n, d)
+  const apiFirst = await insertSafePlaceApi(n, d, options)
   if (apiFirst.row) return { row: apiFirst.row, error: null }
 
-  const direct = await insertSafePlaceDirect(userId, n, d)
+  const direct = await insertSafePlaceDirect(userId, n, d, options)
   if (!direct) {
     return { row: null, error: apiFirst.error ?? RLS_SETUP_HINT }
   }
