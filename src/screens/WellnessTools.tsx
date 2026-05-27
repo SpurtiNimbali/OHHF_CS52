@@ -899,16 +899,16 @@ function MoveItOutTool() {
 }
 
 function BodyScanTool() {
-  const STEPS = [
-    'Notice your scalp and forehead. Let any tension soften.',
-    'Bring attention to your jaw and neck. Unclench gently.',
-    'Notice your shoulders. Let them drop away from your ears.',
-    'Move to your arms and hands. Uncurl your fingers.',
-    'Bring attention to your chest. Let each breath expand it softly.',
-    'Notice your belly. Let it rise and fall freely.',
-    'Move to your lower back. Soften on each exhale.',
-    'Bring attention to your thighs and hips. Let them sink.',
-    'Notice your calves and feet. Let them be heavy against the floor.',
+  const STEPS: { text: string; regions: BodyRegion[] }[] = [
+    { text: 'Notice your scalp and forehead. Let any tension soften.', regions: ['head'] },
+    { text: 'Bring attention to your jaw and neck. Unclench gently.', regions: ['head'] },
+    { text: 'Notice your shoulders. Let them drop away from your ears.', regions: ['shoulders'] },
+    { text: 'Move to your arms and hands. Uncurl your fingers.', regions: ['arms', 'hands'] },
+    { text: 'Bring attention to your chest. Let each breath expand it softly.', regions: ['chest'] },
+    { text: 'Notice your belly. Let it rise and fall freely.', regions: ['belly'] },
+    { text: 'Move to your lower back. Soften on each exhale.', regions: ['hips'] },
+    { text: 'Bring attention to your thighs and hips. Let them sink.', regions: ['thighs', 'hips'] },
+    { text: 'Notice your calves and feet. Let them be heavy against the floor.', regions: ['calves', 'feet'] },
   ]
   const STEP_DURATION = 20
   const TOTAL = STEPS.length * STEP_DURATION
@@ -945,7 +945,11 @@ function BodyScanTool() {
         <p className="mt-1 text-xs text-right" style={{ color: CARDEA_MUTED }}>~3 min total</p>
       </div>
 
-      <div className="flex items-center gap-5">
+      <div className="flex items-center gap-4">
+        <BodySilhouette
+          highlighted={running || done ? (STEPS[stepIdx]?.regions ?? []) : []}
+          accentColor={CARDEA_DARK_GREEN}
+        />
         <div className="relative flex h-24 w-24 shrink-0 items-center justify-center">
           <svg className="absolute inset-0 h-full w-full -rotate-90" viewBox="0 0 100 100" aria-hidden>
             <circle cx="50" cy="50" r="40" fill="none" stroke={CARDEA_LIGHT_BLUE} strokeWidth="7" opacity={0.4} />
@@ -963,7 +967,7 @@ function BodyScanTool() {
             Step {stepIdx + 1} of {STEPS.length}
           </p>
           <p className="text-base leading-snug font-semibold" style={{ color: CARDEA_NAVY }}>
-            {done ? 'Scan complete. Rest here.' : STEPS[stepIdx]}
+            {done ? 'Scan complete. Rest here.' : STEPS[stepIdx]?.text}
           </p>
         </div>
       </div>
@@ -1961,13 +1965,6 @@ export default function WellnessTools() {
             </div>
           ) : null}
 
-          <div className="mt-4">
-            <ToolTile
-              toolId="micro-journal"
-              onOpen={(id) => void openTool(id, { saveCheckIn: true })}
-              count={toolUseCount(toolLog, 'micro-journal', checkInEmotion, wellnessDayKey)}
-            />
-          </div>
         </Section>
 
         <Section id="crisis" label="Crisis support">
