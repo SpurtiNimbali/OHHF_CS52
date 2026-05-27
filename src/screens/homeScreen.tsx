@@ -78,6 +78,11 @@ export function HomeScreen() {
     }
     if (entry) {
       markMoodCheckInSaved(moodId, entry.id)
+      if (moodId === 'numb') {
+        setCheckInSaved(true)
+        navigate('/wellness?tool=name-it')
+        return
+      }
     }
     setCheckInSaved(true)
     window.setTimeout(() => setCheckInSaved(false), 2500)

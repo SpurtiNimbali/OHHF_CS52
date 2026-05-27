@@ -19,20 +19,39 @@ export type JournalEntryRow = {
   prompt: string
   entry: string
   timestamp: string
+  prompt_id: number | null
+  tags: string[]
+}
+
+export type JournalEntryInsertOptions = {
+  promptId?: number | null
+  tags?: string[]
+}
+
+function normalizeTags(value: unknown): string[] {
+  if (!Array.isArray(value)) return []
+  return value.filter((tag): tag is string => typeof tag === 'string' && tag.trim().length > 0)
 }
 
 function normalizeRow(
   row: Record<string, unknown>,
-  fallback?: { prompt: string; entry: string },
+  fallback?: { prompt: string; entry: string; promptId?: number | null; tags?: string[] },
 ): JournalEntryRow | null {
   const entryText = typeof row.entry === 'string' ? row.entry : fallback?.entry ?? ''
   if (!entryText.trim()) return null
+  const promptIdRaw = row.prompt_id
+  const promptId =
+    typeof promptIdRaw === 'number'
+      ? promptIdRaw
+      : fallback?.promptId ?? null
   return {
     id: String(row.id),
     user_id: String(row.user_id),
     prompt: String(row.prompt ?? fallback?.prompt ?? ''),
     entry: entryText,
     timestamp: String(row.timestamp),
+    prompt_id: promptId,
+    tags: normalizeTags(row.tags ?? fallback?.tags),
   }
 }
 
@@ -40,16 +59,21 @@ async function insertJournalEntryDirect(
   userId: string,
   prompt: string,
   entry: string,
+  options: JournalEntryInsertOptions = {},
 ): Promise<JournalEntryRow | null> {
+  const payload: Record<string, unknown> = {
+    user_id: userId,
+    prompt: prompt.trim(),
+    entry,
+    timestamp: new Date().toISOString(),
+    tags: options.tags ?? [],
+  }
+  if (options.promptId != null) payload.prompt_id = options.promptId
+
   const { data, error } = await supabase
     .from('journal_entries')
-    .insert({
-      user_id: userId,
-      prompt: prompt.trim(),
-      entry,
-      timestamp: new Date().toISOString(),
-    })
-    .select('id, user_id, prompt, entry, timestamp')
+    .insert(payload)
+    .select('id, user_id, prompt, entry, timestamp, prompt_id, tags')
     .single()
 
   if (error) {
@@ -58,12 +82,18 @@ async function insertJournalEntryDirect(
     return null
   }
 
-  return normalizeRow(data as Record<string, unknown>, { prompt, entry })
+  return normalizeRow(data as Record<string, unknown>, {
+    prompt,
+    entry,
+    promptId: options.promptId ?? null,
+    tags: options.tags,
+  })
 }
 
 async function insertJournalEntryApi(
   prompt: string,
   entry: string,
+  options: JournalEntryInsertOptions = {},
 ): Promise<{ row: JournalEntryRow | null; error: string | null }> {
   const token = await getAccessToken()
   if (!token) {
@@ -73,7 +103,12 @@ async function insertJournalEntryApi(
   try {
     const res = await authFetch('/api/journal-entries', {
       method: 'POST',
-      body: JSON.stringify({ prompt, entry }),
+      body: JSON.stringify({
+        prompt,
+        entry,
+        prompt_id: options.promptId ?? null,
+        tags: options.tags ?? [],
+      }),
     })
     const body = (await res.json()) as { entry?: Record<string, unknown>; error?: string }
     if (!res.ok) {
@@ -82,7 +117,9 @@ async function insertJournalEntryApi(
         error: body.error ?? `Could not save (${res.status}). Is npm run server:dev running?`,
       }
     }
-    const row = body.entry ? normalizeRow(body.entry, { prompt, entry }) : null
+    const row = body.entry
+      ? normalizeRow(body.entry, { prompt, entry, promptId: options.promptId ?? null, tags: options.tags })
+      : null
     if (!row) return { row: null, error: 'Save failed — unexpected response.' }
     return { row, error: null }
   } catch (e) {
@@ -97,6 +134,7 @@ async function insertJournalEntryApi(
 export async function insertJournalEntry(
   prompt: string,
   entry: string,
+  options: JournalEntryInsertOptions = {},
 ): Promise<{ entry: JournalEntryRow | null; error: string | null }> {
   if (!isSupabaseConfigured) {
     return { entry: null, error: 'Supabase is not configured in .env.' }
@@ -112,10 +150,10 @@ export async function insertJournalEntry(
     return { entry: null, error: 'Write something before saving.' }
   }
 
-  const apiFirst = await insertJournalEntryApi(prompt, trimmed)
+  const apiFirst = await insertJournalEntryApi(prompt, trimmed, options)
   if (apiFirst.row) return { entry: apiFirst.row, error: null }
 
-  let row = await insertJournalEntryDirect(userId, prompt, trimmed)
+  let row = await insertJournalEntryDirect(userId, prompt, trimmed, options)
   if (!row) {
     const apiErr = apiFirst.error
     if (apiErr?.includes('server:dev') || apiErr?.includes('Network') || apiErr?.includes('fetch')) {
@@ -133,7 +171,7 @@ async function fetchJournalEntriesDirect(
 ): Promise<{ rows: JournalEntryRow[]; failed: boolean }> {
   const { data, error } = await supabase
     .from('journal_entries')
-    .select('id, user_id, prompt, entry, timestamp')
+    .select('id, user_id, prompt, entry, timestamp, prompt_id, tags')
     .eq('user_id', userId)
     .order('timestamp', { ascending: false })
     .limit(limit)
