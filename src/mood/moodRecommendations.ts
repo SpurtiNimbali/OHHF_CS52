@@ -6,7 +6,8 @@
 import type { MoodId } from './moodVariants'
 import {
   buildToolRoute,
-  isLiveWellnessToolId,
+  isWellnessToolId as isRegistryWellnessToolId,
+  type LiveMoodWellnessToolId,
   type WellnessToolId,
 } from '../lib/wellnessToolRegistry'
 
@@ -102,7 +103,7 @@ export function wellnessToolPath(toolId: LiveMoodWellnessToolId): string {
 }
 
 export function isWellnessToolId(value: string): value is WellnessToolId {
-  return isWellnessPageToolId(value)
+  return isRegistryWellnessToolId(value)
 }
 
 export function resolveSuggestedExercisesForMood(moodId: MoodId | null): LiveMoodWellnessToolId[] {

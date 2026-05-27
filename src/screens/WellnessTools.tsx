@@ -1600,6 +1600,7 @@ export default function WellnessTools() {
   }, [searchParams])
 
   const selectedMeta = selectedEmotion ? WELLNESS_EMOTIONS.find((e) => e.id === selectedEmotion) ?? null : null
+  const latestPersistedMoodId = useMemo((): MoodId | null => moodEntries[0]?.mood ?? null, [moodEntries])
   const suggestedExercises = useMemo(
     () => {
       const sourceMoodId = latestPersistedMoodId ?? moodId
@@ -1827,7 +1828,7 @@ export default function WellnessTools() {
             </div>
 
             <div className="mt-2 flex flex-wrap items-center justify-between gap-3">
-              <p className="text-xs leading-relaxed" style={{ color: CARDEA_MUTED }}>
+              <p className="text-sm leading-relaxed" style={{ color: '#3A525A' }}>
                 Feeling more than one? Pick Unsure.
               </p>
               <div className="flex items-center gap-2">

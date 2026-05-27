@@ -17,6 +17,14 @@ export type MoodEntryRow = {
 const LATEST_MOOD_ENTRY_KEY = 'cardea-latest-mood-entry-id'
 const SAVED_MOOD_CHECKIN_KEY = 'cardea-saved-mood-checkin'
 
+export const CHECKIN_SAVED_EVENT = 'cardea-check-in-saved'
+
+export function notifyCheckInSaved() {
+  if (typeof window !== 'undefined') {
+    window.dispatchEvent(new CustomEvent(CHECKIN_SAVED_EVENT))
+  }
+}
+
 type SavedMoodCheckIn = { moodId: MoodId; entryId: string }
 
 const RLS_SETUP_HINT =
@@ -150,6 +158,7 @@ async function insertMoodEntryApi(mood: MoodId): Promise<{ entry: MoodEntryRow |
 
 export async function insertMoodEntry(
   mood: MoodId,
+  options: { notify?: boolean } = {},
 ): Promise<{ entry: MoodEntryRow | null; error: string | null }> {
   if (!isSupabaseConfigured) {
     return { entry: null, error: 'Supabase is not configured in .env.' }
@@ -164,6 +173,7 @@ export async function insertMoodEntry(
   const apiFirst = await insertMoodEntryApi(mood)
   if (apiFirst.entry) {
     setSavedMoodCheckIn(mood, apiFirst.entry.id)
+    if (options.notify !== false) notifyCheckInSaved()
     return { entry: apiFirst.entry, error: null }
   }
 
@@ -177,6 +187,7 @@ export async function insertMoodEntry(
   }
 
   setSavedMoodCheckIn(mood, entry.id)
+  if (options.notify !== false) notifyCheckInSaved()
   return { entry, error: null }
 }
 
@@ -193,8 +204,9 @@ export async function saveMoodCheckInIfNeeded(
     }
   }
 
-  const result = await insertMoodEntry(mood)
+  const result = await insertMoodEntry(mood, { notify: false })
   if (result.entry) {
+    notifyCheckInSaved()
     return { ...result, alreadySaved: false }
   }
   return { entry: null, error: result.error, alreadySaved: false }
