@@ -62,8 +62,6 @@ import {
 import { ResourcesRightNav } from '../components/ResourcesRightNav'
 import { ReframesTool } from '../components/wellness/ReframesTool'
 import { SafePlaceTool } from '../components/wellness/SafePlaceTool'
-import { fetchMyReframes } from '../lib/userReframes'
-import { fetchSafePlaces } from '../lib/safePlaces'
 import { WELLNESS_TOOL_REGISTRY, type WellnessToolId } from '../lib/wellnessToolRegistry'
 
 type WellnessEmotion =
@@ -98,12 +96,6 @@ type ToolUseEntry = {
   emotion: WellnessEmotion | null
 }
 
-type Reflection = {
-  id: string
-  prompt: string
-  text: string
-  date: string
-}
 
 type StoredValue<T> = T | (() => T)
 
@@ -497,15 +489,9 @@ function Section({
   )
 }
 
-function ToolActions({
-  onDone,
-  onTryElse,
-}: {
-  onDone: () => void
-  onTryElse: () => void
-}) {
+function ToolActions({ onDone }: { onDone: () => void }) {
   return (
-    <div className="mt-6 flex flex-wrap gap-2 border-t pt-4" style={{ borderColor: 'rgba(25, 43, 63, 0.08)' }}>
+    <div className="mt-6 border-t pt-4" style={{ borderColor: 'rgba(25, 43, 63, 0.08)' }}>
       <button
         type="button"
         onClick={onDone}
@@ -513,14 +499,6 @@ function ToolActions({
         style={{ background: CARDEA_DARK_GREEN }}
       >
         Done
-      </button>
-      <button
-        type="button"
-        onClick={onTryElse}
-        className="rounded-xl border bg-white px-5 py-2.5 text-sm font-semibold"
-        style={{ borderColor: 'rgba(25, 43, 63, 0.16)', color: CARDEA_NAVY }}
-      >
-        Try something else
       </button>
     </div>
   )
@@ -590,15 +568,10 @@ function BreathingTool() {
   const orbScale = phaseLabel === 'Breathe in' ? 1.14 : phaseLabel === 'Breathe out' ? 0.82 : 1.02
   const mm = Math.floor(tick / 60).toString().padStart(2, '0')
   const ss = (tick % 60).toString().padStart(2, '0')
-  const heartColor = !running ? '#fda4af'
-    : phaseLabel === 'Breathe in' ? '#f472b6'
-    : phaseLabel === 'Hold' ? '#a78bfa'
-    : '#60a5fa'
-  const patternDescriptions = [
-    { title: 'Box Breathing', desc: 'Equal 4-count cycles: inhale, hold, exhale, hold. Used by Navy SEALs to reset focus and calm the nervous system under pressure.' },
-    { title: '4-7-8 Breathing', desc: 'Longer hold and extended exhale activate your parasympathetic rest response. Great for anxiety, racing thoughts, or winding down for sleep.' },
-    { title: 'Physiological Sigh', desc: 'Double inhale + long exhale. Stanford-researched as the fastest known way to reduce acute physiological stress in real time.' },
-  ]
+  const heartColor = !running ? CARDEA_LIGHT_BLUE
+    : phaseLabel === 'Breathe in' ? CARDEA_DARK_GREEN
+    : phaseLabel === 'Hold' ? CARDEA_LIGHT_BLUE
+    : CARDEA_NAVY
 
   useEffect(() => {
     if (!running) return
@@ -615,19 +588,9 @@ function BreathingTool() {
           <button key={p.id} type="button"
             onClick={() => { setPatternIdx(i); setTick(0); setRunning(false) }}
             className="rounded-full px-3 py-1.5 text-xs font-semibold transition-colors"
-            style={{ background: patternIdx === i ? '#db2777' : CARDEA_ALMOST_WHITE, color: patternIdx === i ? '#fff' : CARDEA_NAVY }}
+            style={{ background: patternIdx === i ? CARDEA_DARK_GREEN : CARDEA_ALMOST_WHITE, color: patternIdx === i ? '#fff' : CARDEA_NAVY }}
           >{p.label}</button>
         ))}
-      </div>
-
-      {/* Pattern description */}
-      <div className="mb-4 rounded-xl p-3" style={{ background: '#FFF0F5' }}>
-        <p className="text-xs font-bold mb-0.5" style={{ color: '#db2777' }}>
-          {patternDescriptions[patternIdx]?.title}
-        </p>
-        <p className="text-xs leading-relaxed" style={{ color: CARDEA_NAVY }}>
-          {patternDescriptions[patternIdx]?.desc}
-        </p>
       </div>
 
       <div className="flex flex-col items-center gap-4 py-2">
@@ -665,7 +628,7 @@ function BreathingTool() {
 
         <div className="flex gap-3">
           <button type="button" onClick={() => setRunning((r) => !r)}
-            className="rounded-xl px-5 py-2.5 text-sm font-semibold text-white" style={{ background: '#db2777' }}>
+            className="rounded-xl px-5 py-2.5 text-sm font-semibold text-white" style={{ background: CARDEA_DARK_GREEN }}>
             {running ? 'Pause' : tick === 0 ? 'Start' : 'Resume'}
           </button>
           <button type="button" onClick={reset}
@@ -869,11 +832,11 @@ function ColdResetTool() {
 }
 
 function MoveItOutTool() {
-  const CUES = [
-    { text: 'Shake out your hands', emoji: '🤲' },
-    { text: 'Stomp slowly in place', emoji: '🦶' },
-    { text: 'Push against a wall', emoji: '🧱' },
-    { text: 'Roll your shoulders back', emoji: '🔄' },
+  const CUES: { text: string; regions: BodyRegion[] }[] = [
+    { text: 'Shake out your hands', regions: ['hands'] },
+    { text: 'Stomp slowly in place', regions: ['feet', 'calves'] },
+    { text: 'Push against a wall', regions: ['arms', 'shoulders', 'chest'] },
+    { text: 'Roll your shoulders back', regions: ['shoulders'] },
   ]
   const DURATION = 60
   const [tick, setTick] = useState(0)
@@ -883,6 +846,8 @@ function MoveItOutTool() {
   const segmentDuration = DURATION / CUES.length
   const cueIdx = Math.min(Math.floor(tick / segmentDuration), CUES.length - 1)
   const currentCue = CUES[cueIdx]
+  const circumference = 2 * Math.PI * 54
+  const strokeDashoffset = circumference * (1 - tick / DURATION)
 
   useEffect(() => {
     if (!running || tick >= DURATION) return
@@ -891,28 +856,44 @@ function MoveItOutTool() {
   }, [running, tick])
 
   return (
-    <div className="space-y-5 text-center">
-      <div className="rounded-2xl p-6" style={{ background: `${CARDEA_DARK_GREEN}10` }}>
-        <div className="text-6xl mb-3">{running || done ? (currentCue?.emoji ?? '✓') : '🌿'}</div>
-        <p className="text-xl font-semibold" style={{ color: CARDEA_NAVY }}>
-          {done ? "That's it. How does your body feel?" : running ? (currentCue?.text ?? '') : 'Ready when you are'}
-        </p>
-        {running && !done && (
-          <p className="text-xs mt-2" style={{ color: CARDEA_MUTED }}>
-            next move in {Math.ceil(segmentDuration - (tick % segmentDuration))}s
-          </p>
-        )}
+    <div className="space-y-4">
+      <div className="flex flex-col items-center gap-4 py-2">
+        <div className="flex items-center gap-6">
+          <BodySilhouette
+            highlighted={running || done ? (currentCue?.regions ?? []) : []}
+            accentColor={CARDEA_DARK_GREEN}
+          />
+          <div className="flex flex-col items-center gap-3">
+            <div className="relative flex h-32 w-32 items-center justify-center">
+              <svg className="absolute inset-0 h-full w-full -rotate-90" viewBox="0 0 120 120" aria-hidden>
+                <circle cx="60" cy="60" r="54" fill="none" stroke={CARDEA_LIGHT_BLUE} strokeWidth="6" opacity={0.35} />
+                <circle cx="60" cy="60" r="54" fill="none"
+                  stroke={done ? CARDEA_DARK_GREEN : CARDEA_LIGHT_BLUE} strokeWidth="6"
+                  strokeLinecap="round" strokeDasharray={circumference} strokeDashoffset={strokeDashoffset}
+                  style={{ transition: 'stroke-dashoffset 1s linear' }} />
+              </svg>
+              <div className="text-center">
+                <span className="text-3xl font-bold" style={{ color: CARDEA_NAVY }}>{done ? '✓' : remaining}</span>
+                {!done && <span className="block text-xs" style={{ color: CARDEA_MUTED }}>sec</span>}
+              </div>
+            </div>
+            <p className="text-base font-semibold text-center max-w-[180px] leading-snug" style={{ color: CARDEA_NAVY }}>
+              {done ? "That's it. How does your body feel?" : running ? (currentCue?.text ?? '') : 'Ready when you are'}
+            </p>
+            {running && !done && (
+              <p className="text-xs" style={{ color: CARDEA_MUTED }}>
+                next move in {Math.ceil(segmentDuration - (tick % segmentDuration))}s
+              </p>
+            )}
+          </div>
+        </div>
+        <button type="button"
+          onClick={() => { if (done) { setTick(0); setRunning(true) } else setRunning((r) => !r) }}
+          className="rounded-xl px-6 py-2.5 text-sm font-semibold text-white"
+          style={{ background: CARDEA_DARK_GREEN }}>
+          {done ? 'Again' : running ? 'Pause' : tick === 0 ? 'Start' : 'Resume'}
+        </button>
       </div>
-      <div className="text-5xl font-bold tabular-nums" style={{ color: CARDEA_DARK_GREEN }}>
-        {done ? '✓' : remaining}
-      </div>
-      {!done && <p className="text-xs" style={{ color: CARDEA_MUTED }}>seconds left</p>}
-      <button type="button"
-        onClick={() => { if (done) { setTick(0); setRunning(true) } else setRunning((r) => !r) }}
-        className="rounded-xl px-6 py-3 text-sm font-semibold text-white"
-        style={{ background: CARDEA_DARK_GREEN }}>
-        {done ? 'Again' : running ? 'Pause' : tick === 0 ? 'Start' : 'Resume'}
-      </button>
     </div>
   )
 }
@@ -1216,139 +1197,6 @@ function NameItTool({ onOpenTool }: { onOpenTool: (toolId: ToolId) => void }) {
   )
 }
 
-function PastEntriesSection({
-  moodEntries,
-  journalRefreshKey = 0,
-}: {
-  moodEntries: MoodEntryRow[]
-  journalRefreshKey?: number
-}) {
-  const [journalRows, setJournalRows] = useState<JournalEntryRow[]>([])
-  const [reflections] = useLocalState<Reflection[]>(STORAGE.reflections, [])
-  const [userReframes, setUserReframes] = useState<Awaited<ReturnType<typeof fetchMyReframes>>>([])
-  const [safePlaces, setSafePlaces] = useState<Awaited<ReturnType<typeof fetchSafePlaces>>>([])
-
-  useEffect(() => {
-    let cancelled = false
-    ;(async () => {
-      const [rows, reframes, places] = await Promise.all([
-        fetchJournalEntries(50),
-        fetchMyReframes(50),
-        fetchSafePlaces(50),
-      ])
-      if (!cancelled) {
-        setJournalRows(rows)
-        setUserReframes(reframes)
-        setSafePlaces(places)
-      }
-    })()
-    return () => {
-      cancelled = true
-    }
-  }, [journalRefreshKey])
-
-  const entries = useMemo(() => {
-    const moodItems = moodEntries.map((row) => {
-      const mood = moodVariantFor(row.mood)
-      const emotion = WELLNESS_EMOTIONS.find((item) => item.moodId === row.mood)
-      return {
-        id: row.id,
-        date: row.timestamp,
-        type: 'Mood check-in',
-        prompt: '',
-        text: emotion?.label ?? mood.label,
-      }
-    })
-
-    const journals = journalRows.map((row) => {
-      const isReflection = row.prompt.startsWith(REFLECTION_PROMPT_PREFIX)
-      return {
-        id: row.id,
-        date: row.timestamp,
-        type: isReflection ? 'Reflection' : 'Micro-journal',
-        prompt: isReflection
-          ? row.prompt.slice(REFLECTION_PROMPT_PREFIX.length)
-          : isStandardMicroJournalPrompt(row.prompt) ? '' : row.prompt,
-        text: row.entry,
-      }
-    })
-
-    const parentReflections = reflections.map((entry) => ({
-      id: entry.id,
-      date: entry.date,
-      type: 'Parent reflection',
-      prompt: entry.prompt,
-      text: entry.text,
-    }))
-
-    const savedReframes = userReframes.map((entry) => ({
-      id: entry.id,
-      date: entry.timestamp,
-      type: 'Reframe',
-      prompt: entry.thought,
-      text: entry.reframe,
-    }))
-
-    const safePlaceEntries = safePlaces.map((place) => ({
-      id: place.id,
-      date: place.timestamp,
-      type: 'Safe place',
-      prompt: place.name,
-      text: place.description,
-    }))
-
-    return [
-      ...moodItems,
-      ...journals,
-      ...parentReflections,
-      ...savedReframes,
-      ...safePlaceEntries,
-    ].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
-  }, [journalRows, moodEntries, userReframes, reflections, safePlaces])
-
-  return (
-    <div className="rounded-3xl bg-white/85 p-5 shadow-sm">
-      {entries.length === 0 ? (
-        <p className="text-sm leading-relaxed" style={{ color: CARDEA_MUTED }}>
-          No saved entries yet. Your check-in notes, journal entries, reframes, and reflections will show here.
-        </p>
-      ) : (
-        <div className="space-y-3">
-          {entries.map((entry) => (
-            <article
-              key={`${entry.type}-${entry.id}`}
-              className="rounded-2xl border bg-[#f5f9f9] p-4"
-              style={{ borderColor: 'rgba(25,43,63,0.08)' }}
-            >
-              <div className="mb-2 flex flex-wrap items-center gap-2">
-                <span
-                  className="rounded-full bg-white px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.14em]"
-                  style={{ color: CARDEA_DARK_GREEN }}
-                >
-                  {entry.type}
-                </span>
-                <span className="text-xs" style={{ color: CARDEA_MUTED }}>
-                  {formatEntryDateTime(entry.date)}
-                </span>
-              </div>
-              {entry.prompt ? (
-                <p className="text-sm leading-relaxed" style={{ color: CARDEA_MUTED }}>
-                  {entry.prompt}
-                </p>
-              ) : null}
-              {entry.text ? (
-                <p className={`whitespace-pre-wrap text-sm leading-relaxed text-[#3A525A] ${entry.prompt ? 'mt-2' : ''}`}>
-                  {entry.text}
-                </p>
-              ) : null}
-            </article>
-          ))}
-        </div>
-      )}
-    </div>
-  )
-}
-
 function TodayNudgeCard() {
   const [allNudges, setAllNudges] = useState<Nudge[]>([])
   const [loading, setLoading] = useState(true)
@@ -1455,6 +1303,8 @@ function ReflectionPromptsPanel({
 }) {
   const [allPrompts, setAllPrompts] = useState<ReflectionPrompt[]>([])
   const [loading, setLoading] = useState(true)
+  const [shuffleEpoch, setShuffleEpoch] = useState(0)
+  const [shuffledOverride, setShuffledOverride] = useState<ReflectionPrompt[] | null>(null)
 
   useEffect(() => {
     void fetchReflectionPrompts().then((prompts) => {
@@ -1467,6 +1317,15 @@ function ReflectionPromptsPanel({
     () => pickDailyPrompts(allPrompts, moodId, 3),
     [allPrompts, moodId],
   )
+
+  function handleShuffle() {
+    if (allPrompts.length === 0) return
+    const pool = shuffleArray([...allPrompts])
+    setShuffledOverride(pool.slice(0, 3))
+    setShuffleEpoch((e) => e + 1)
+  }
+
+  const displayed = shuffledOverride ?? dailyPrompts
 
   if (loading) {
     return (
@@ -1482,7 +1341,7 @@ function ReflectionPromptsPanel({
     )
   }
 
-  if (dailyPrompts.length === 0) {
+  if (displayed.length === 0) {
     return (
       <p className="text-sm leading-relaxed" style={{ color: CARDEA_MUTED }}>
         No reflection prompts available right now. Check back later.
@@ -1491,29 +1350,49 @@ function ReflectionPromptsPanel({
   }
 
   return (
-    <div className="grid gap-3 md:grid-cols-3">
-      {dailyPrompts.map((prompt, i) => (
+    <div className="space-y-3">
+      <AnimatePresence mode="wait">
         <motion.div
-          key={prompt.id}
-          initial={{ opacity: 0, y: 10 }}
+          key={shuffleEpoch}
+          initial={{ opacity: 0, y: 6 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.25, delay: i * 0.06 }}
-          className="flex flex-col rounded-2xl border bg-white p-4 shadow-sm"
-          style={{ borderColor: CARDEA_LIGHT_BLUE }}
+          exit={{ opacity: 0, y: -6 }}
+          transition={{ duration: 0.2 }}
+          className="grid gap-3 md:grid-cols-3"
         >
-          <p className="mb-4 flex-1 text-sm font-semibold leading-relaxed text-[#192b3f]">
-            {prompt.prompt_text}
-          </p>
-          <button
-            type="button"
-            onClick={() => onReflect(prompt.prompt_text)}
-            className="self-start rounded-xl px-3 py-1.5 text-xs font-semibold text-white transition-opacity hover:opacity-90"
-            style={{ background: CARDEA_DARK_GREEN }}
-          >
-            Reflect →
-          </button>
+          {displayed.map((prompt, i) => (
+            <motion.div
+              key={`${shuffleEpoch}-${prompt.id}`}
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.25, delay: i * 0.06 }}
+              className="flex flex-col rounded-2xl border bg-white p-4 shadow-sm"
+              style={{ borderColor: CARDEA_LIGHT_BLUE }}
+            >
+              <p className="mb-4 flex-1 text-sm font-semibold leading-relaxed text-[#192b3f]">
+                {prompt.prompt_text}
+              </p>
+              <button
+                type="button"
+                onClick={() => onReflect(prompt.prompt_text)}
+                className="self-start rounded-xl px-3 py-1.5 text-xs font-semibold text-white transition-opacity hover:opacity-90"
+                style={{ background: CARDEA_DARK_GREEN }}
+              >
+                Reflect →
+              </button>
+            </motion.div>
+          ))}
         </motion.div>
-      ))}
+      </AnimatePresence>
+      <button
+        type="button"
+        onClick={handleShuffle}
+        className="flex items-center gap-1.5 rounded-xl border px-3 py-1.5 text-xs font-semibold transition-colors hover:bg-white"
+        style={{ borderColor: 'rgba(25,43,63,0.14)', color: CARDEA_MUTED }}
+      >
+        <RefreshCw className="h-3 w-3" aria-hidden />
+        Shuffle prompts
+      </button>
     </div>
   )
 }
@@ -1712,7 +1591,6 @@ export default function WellnessTools() {
   const [toolLog, setToolLog] = useLocalState<ToolUseEntry[]>(STORAGE.tools, [])
   const [checkInSaved, setCheckInSaved] = useState(false)
   const [checkInError, setCheckInError] = useState<string | null>(null)
-  const [journalRefreshKey, setJournalRefreshKey] = useState(0)
 
   const reloadMoodEntries = useCallback(async () => {
     const rows = await fetchMoodEntries(RECENT_MOOD_CHECKINS_LIMIT)
@@ -2178,10 +2056,6 @@ export default function WellnessTools() {
           </div>
         </Section>
 
-        <Section id="journal" label="Past entries">
-          <PastEntriesSection moodEntries={moodEntries} journalRefreshKey={journalRefreshKey} />
-        </Section>
-
         <footer className="mb-6 mt-16 flex flex-col items-center gap-2 text-center">
           <Sparkles className="h-4 w-4" style={{ color: CARDEA_DARK_GREEN }} />
           <p className="text-xs leading-relaxed" style={{ color: CARDEA_MUTED }}>
@@ -2216,15 +2090,11 @@ export default function WellnessTools() {
               toolId={activeTool}
               onOpenTool={openTool}
               onMoodEntriesChanged={reloadMoodEntries}
-              onJournalEntriesChanged={() => setJournalRefreshKey((k) => k + 1)}
               prefillText={activePrefill}
               moodId={moodId}
               onReflect={(prompt) => void openTool('micro-journal', { prefill: prompt })}
             />
-            <ToolActions
-              onDone={closeModal}
-              onTryElse={closeModal}
-            />
+            <ToolActions onDone={closeModal} />
           </motion.div>
         </div>
       ) : null}
