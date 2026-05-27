@@ -20,6 +20,7 @@ export {
   resolveSuggestedExercisesForMood,
   wellnessToolPath,
   isWellnessToolId,
+  resolveSuggestedExercisesForMood,
   type WellnessToolId,
 } from './moodRecommendations'
 export type { MoodCheckInChatState } from './moodCheckInNav'
