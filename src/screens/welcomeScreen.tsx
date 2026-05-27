@@ -1,19 +1,24 @@
-import React, { useEffect, useRef, useState } from 'react'
+import { useEffect, useRef, useState, type ReactNode } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { motion } from 'motion/react'
+import { motion, useReducedMotion } from 'motion/react'
+import {
+  CategoryAccent,
+  OnboardingAmbientOrbs,
+  OnboardingStepBanner,
+  WelcomeReassuranceRow,
+  type OnboardingVisualVariant,
+} from '../components/onboarding/onboardingVisuals'
 import { OnboardingProgressDots } from '../components/OnboardingProgressDots'
 import { supabase } from '../lib/supabaseClient'
 import { moodShellBackgroundClasses, MoodHeartFill, useMood } from '../mood'
 import {
+  CARDEA_ALMOST_WHITE,
   CARDEA_DARK_GREEN,
   CARDEA_FONT_PRIMARY,
+  CARDEA_LIGHT_BLUE,
   CARDEA_MUTED,
   CARDEA_NAVY,
 } from '../ui/cardeaTokens'
-
-/** Matches home hero title color */
-const HOME_HEADING_BLUE = '#062A4A'
-const HOME_BODY = '#3A525A'
 
 type OnboardingStep =
   | 'welcome'
@@ -70,107 +75,104 @@ export type DiagnosisCategoryAnswer = {
   detail: string
 }
 
-
-
-const stepTitleStyle: React.CSSProperties = {
-  fontFamily: "'Bebas Neue', sans-serif",
-  letterSpacing: '0.06em',
-  fontSize: 'clamp(1.5rem, 5vw, 2rem)',
-  lineHeight: 1.15,
-  margin: 0,
-  fontWeight: 700,
-  color: HOME_HEADING_BLUE,
-  minHeight: 66,
-  textAlign: 'center',
-  width: '100%',
+function OnboardingPrimaryButton({
+  children,
+  disabled,
+  onClick,
+}: {
+  children: ReactNode
+  disabled?: boolean
+  onClick: () => void
+}) {
+  return (
+    <button
+      type="button"
+      disabled={disabled}
+      onClick={onClick}
+      className="rounded-xl px-5 py-2.5 text-sm font-semibold text-white transition-opacity disabled:cursor-not-allowed disabled:opacity-40"
+      style={{ background: CARDEA_DARK_GREEN, fontFamily: CARDEA_FONT_PRIMARY }}
+    >
+      {children}
+    </button>
+  )
 }
 
-const stepSubtitleStyle: React.CSSProperties = {
-  fontFamily: CARDEA_FONT_PRIMARY,
-  fontSize: 18,
-  lineHeight: 1.35,
-  margin: 0,
-  fontWeight: 500,
-  color: HOME_BODY,
-  textAlign: 'center',
+function OnboardingSecondaryButton({
+  children,
+  onClick,
+}: {
+  children: ReactNode
+  onClick: () => void
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className="rounded-xl border px-5 py-2.5 text-sm font-semibold transition-colors"
+      style={{
+        borderColor: CARDEA_LIGHT_BLUE,
+        color: CARDEA_NAVY,
+        fontFamily: CARDEA_FONT_PRIMARY,
+      }}
+    >
+      {children}
+    </button>
+  )
 }
 
-const primaryButtonStyle: React.CSSProperties = {
-  border: 'none',
-  background: CARDEA_NAVY,
-  color: '#FFFFFF',
-  padding: '12px 28px',
-  borderRadius: 16,
-  fontSize: 16,
-  fontWeight: 600,
-  fontFamily: CARDEA_FONT_PRIMARY,
-  cursor: 'pointer',
-  minWidth: 168,
-  boxSizing: 'border-box',
-}
-
-const backButtonStyle: React.CSSProperties = {
-  border: '2px solid rgba(25, 43, 63, 0.18)',
-  background: 'transparent',
-  color: CARDEA_NAVY,
-  padding: '12px 28px',
-  borderRadius: 16,
-  fontSize: 16,
-  fontWeight: 600,
-  fontFamily: CARDEA_FONT_PRIMARY,
-  cursor: 'pointer',
-  minWidth: 168,
-  boxSizing: 'border-box',
-}
-
-const navRowStyle: React.CSSProperties = {
-  display: 'flex',
-  flexWrap: 'wrap',
-  gap: 12,
-  justifyContent: 'center',
-  alignItems: 'center',
-}
-
-function OnboardingFormLayout({
+function OnboardingStepCard({
+  eyebrow,
+  title,
+  subtitle,
+  bannerVariant,
+  footnote,
   children,
   nav,
   progressDots,
 }: {
-  children: React.ReactNode
-  nav: React.ReactNode
-  progressDots: React.ReactNode
+  eyebrow: string
+  title: string
+  subtitle: string
+  bannerVariant?: OnboardingVisualVariant
+  footnote?: string
+  children: ReactNode
+  nav: ReactNode
+  progressDots: ReactNode
 }) {
   return (
-    <div className="flex flex-1 min-h-0 w-full flex-col items-center px-5 sm:px-8 py-6 box-border">
-      <div
-        style={{
-          flex: 1,
-          minHeight: 0,
-          width: '100%',
-          maxWidth: 560,
-          display: 'flex',
-          flexDirection: 'column',
-          alignItems: 'stretch',
-          gap: 14,
-          boxSizing: 'border-box',
-        }}
-      >
-        {children}
-      </div>
-      <div
-        style={{
-          flexShrink: 0,
-          width: '100%',
-          maxWidth: 560,
-          display: 'flex',
-          flexDirection: 'column',
-          alignItems: 'center',
-          gap: 18,
-          paddingTop: 16,
-        }}
-      >
-        {nav}
-        {progressDots}
+    <div className="relative flex min-h-0 flex-1 flex-col px-5 py-8 sm:px-8">
+      <div className="relative z-[1] mx-auto flex w-full max-w-lg flex-1 flex-col sm:max-w-2xl">
+        <p
+          className="mb-3 text-xs font-bold uppercase tracking-[0.18em]"
+          style={{ color: CARDEA_MUTED }}
+        >
+          {eyebrow}
+        </p>
+        <div
+          className="flex min-h-0 flex-1 flex-col rounded-3xl border bg-white/85 p-5 shadow-sm backdrop-blur sm:p-6"
+          style={{ borderColor: 'rgba(25,43,63,0.08)' }}
+        >
+          {bannerVariant ? <OnboardingStepBanner variant={bannerVariant} /> : null}
+          <h1
+            className="mb-2 text-2xl text-[#062A4A] sm:text-3xl"
+            style={{ fontFamily: "'Bebas Neue', sans-serif", letterSpacing: '0.07em' }}
+          >
+            {title}
+          </h1>
+          <p className="mb-4 text-sm leading-relaxed text-[#3A525A]" style={{ fontFamily: CARDEA_FONT_PRIMARY }}>
+            {subtitle}
+          </p>
+          <div className="min-h-0 flex-1 overflow-y-auto">{children}</div>
+          {footnote ? (
+            <p className="mt-4 border-t pt-3 text-xs italic leading-relaxed" style={{ color: CARDEA_MUTED, borderColor: 'rgba(25,43,63,0.08)' }}>
+              {footnote}
+            </p>
+          ) : null}
+        </div>
+        <div className="mt-5 flex flex-col items-center gap-4">
+          {nav}
+          {progressDots}
+        </div>
       </div>
     </div>
   )
@@ -180,53 +182,41 @@ function AgeOptionList({
   groupLabel,
   value,
   onChange,
+  reduceMotion,
 }: {
   groupLabel: string
   value: string | null
   onChange: (next: (typeof ageOptions)[number]) => void
+  reduceMotion: boolean
 }) {
   return (
-    <div
-      role="radiogroup"
-      aria-label={groupLabel}
-      style={{
-        width: '100%',
-        display: 'flex',
-        flexDirection: 'column',
-        gap: 10,
-        textAlign: 'left',
-      }}
-    >
-      {ageOptions.map((label) => {
+    <div role="radiogroup" aria-label={groupLabel} className="space-y-2">
+      {ageOptions.map((label, index) => {
         const selected = value === label
         return (
-          <button
+          <motion.button
             key={label}
             type="button"
             role="radio"
             aria-checked={selected}
+            initial={reduceMotion ? false : { opacity: 0, y: 8 }}
+            animate={reduceMotion ? false : { opacity: 1, y: 0 }}
+            transition={
+              reduceMotion ? undefined : { duration: 0.28, delay: index * 0.035, ease: 'easeOut' }
+            }
             onClick={() => onChange(label)}
+            className={`w-full rounded-2xl border px-4 py-3 text-left text-sm font-semibold transition-all ${
+              selected ? 'shadow-sm' : 'bg-white hover:border-[#577568]/35'
+            }`}
             style={{
               fontFamily: CARDEA_FONT_PRIMARY,
-              display: 'block',
-              width: '100%',
-              textAlign: 'left',
-              padding: '12px 14px',
-              borderRadius: 16,
-              border: selected
-                ? `2px solid ${CARDEA_DARK_GREEN}`
-                : '1px solid rgba(25, 43, 63, 0.12)',
-              background: selected ? 'rgba(172, 183, 168, 0.52)' : '#FFFFFF',
-              cursor: 'pointer',
-              fontSize: 16,
-              fontWeight: 600,
+              borderColor: selected ? CARDEA_DARK_GREEN : 'rgba(25,43,63,0.08)',
+              background: selected ? 'rgba(87, 117, 104, 0.12)' : undefined,
               color: selected ? CARDEA_DARK_GREEN : CARDEA_NAVY,
-              boxSizing: 'border-box',
-              transition: 'border-color 120ms ease, background-color 120ms ease, color 120ms ease',
             }}
           >
             {label}
-          </button>
+          </motion.button>
         )
       })}
     </div>
@@ -235,44 +225,17 @@ function AgeOptionList({
 
 function PersonalizingSpinner() {
   return (
-    <>
-      <style>
-        {`
-          @keyframes ohhf-personalize-spin {
-            to { transform: rotate(360deg); }
-          }
-          .ohhf-personalize-spinner {
-            animation: ohhf-personalize-spin 0.95s linear infinite;
-          }
-          @media (prefers-reduced-motion: reduce) {
-            .ohhf-personalize-spinner {
-              animation-duration: 1.75s;
-            }
-          }
-        `}
-      </style>
-      <div
-        className="ohhf-personalize-spinner"
-        aria-hidden
-        style={{
-          width: 56,
-          height: 56,
-          borderRadius: '50%',
-          border: '3px solid rgba(25, 43, 63, 0.1)',
-          borderTopColor: CARDEA_NAVY,
-          borderRightColor: 'rgba(25, 43, 63, 0.32)',
-          marginTop: 22,
-          boxShadow: '0 4px 20px rgba(25, 43, 63, 0.08)',
-          boxSizing: 'border-box',
-        }}
-      />
-    </>
+    <div
+      className="mt-4 h-12 w-12 animate-spin rounded-full border-[3px] border-[rgba(25,43,63,0.1)] border-t-[#192b3f] motion-reduce:animate-[spin_1.75s_linear_infinite]"
+      aria-hidden
+    />
   )
 }
 
 export function WelcomeScreen() {
   const navigate = useNavigate()
   const { moodId, theme } = useMood()
+  const reduceMotion = useReducedMotion()
   const [step, setStep] = useState<OnboardingStep>('welcome')
   const [isSaving, setIsSaving] = useState(false)
   const [saveError, setSaveError] = useState<string | null>(null)
@@ -361,7 +324,6 @@ export function WelcomeScreen() {
           .update({
             diagnosis_age_category: answers.ageAtDiagnosis,
             current_age_category: answers.currentChildAge,
-            // Store only the title part (not the parenthesized detail shown in the UI).
             condition,
           })
           .eq('id', uid)
@@ -382,7 +344,6 @@ export function WelcomeScreen() {
     }
   }, [answers, didPersist, step])
 
-  // Final step: pause briefly for the “personalizing” moment, then go to Home.
   useEffect(() => {
     if (step !== 'personalizing') return
     if (saveError) return
@@ -393,268 +354,156 @@ export function WelcomeScreen() {
 
   const currentAgeOk = answers.currentChildAge != null
 
-  const showMiniHeader =
-    step === 'age-at-diagnosis' ||
-    step === 'current-age' ||
-    step === 'diagnosis-categories'
+  const stepNav = (back: () => void, continueDisabled: boolean, onContinue: () => void) => (
+    <div className="flex flex-wrap items-center justify-center gap-2">
+      <OnboardingSecondaryButton onClick={back}>Back</OnboardingSecondaryButton>
+      <OnboardingPrimaryButton disabled={continueDisabled} onClick={onContinue}>
+        Continue
+      </OnboardingPrimaryButton>
+    </div>
+  )
 
   return (
     <div
-      className={`min-h-screen flex flex-col transition-all duration-700 ${moodShellBackgroundClasses(moodId, theme.pageBg)}`}
+      className={`relative flex min-h-screen flex-col transition-all duration-700 ${moodShellBackgroundClasses(moodId, theme.pageBg)}`}
       style={{ fontFamily: CARDEA_FONT_PRIMARY, color: CARDEA_NAVY }}
     >
-      {showMiniHeader && (
-        <header
-          className="shrink-0 bg-white px-5 sm:px-8 py-4 shadow-sm border-b-4 border-transparent transition-all duration-700"
-          style={{ borderImage: theme.borderGradient }}
-        >
-          <p
-            className="text-center text-xs font-bold uppercase tracking-[0.2em]"
-            style={{ color: CARDEA_MUTED }}
-          >
-            Cardea
-          </p>
-        </header>
-      )}
-
-      <main className="flex flex-col flex-1 min-h-0 w-full box-border">
+      <OnboardingAmbientOrbs />
+      <div className="relative z-[1] flex min-h-0 flex-1 flex-col">
         {step === 'welcome' && (
           <>
             <motion.header
-              initial={{ opacity: 0, y: -12 }}
+              initial={{ opacity: 0, y: -16 }}
               animate={{ opacity: 1, y: 0 }}
-              className="bg-white px-5 sm:px-8 pt-10 pb-8 shadow-sm border-b-4 border-transparent transition-all duration-700"
+              className="border-b-4 border-transparent bg-white px-5 pb-8 pt-10 shadow-sm transition-all duration-700 sm:px-8"
               style={{ borderImage: theme.borderGradient }}
             >
               <p
-                className="text-center text-xs font-bold uppercase tracking-[0.2em] mb-3"
+                className="mb-5 text-center text-xs font-bold uppercase tracking-[0.2em]"
                 style={{ color: CARDEA_MUTED }}
               >
                 Cardea
               </p>
-              <motion.div
-                initial={{ scale: 0.92 }}
-                animate={{ scale: 1 }}
-                className="flex items-center justify-center mb-4"
-              >
-                <MoodHeartFill
-                  theme={theme}
-                  size={52}
-                  viewBox="0 0 100 100"
-                  pathD="M50 85C50 85 20 65 20 40C20 25 30 15 40 15C45 15 50 20 50 20C50 20 55 15 60 15C70 15 80 25 80 40C80 65 50 85 50 85Z"
-                  stroke={theme.heartStroke}
-                  strokeWidth={2}
-                />
-              </motion.div>
+
+              <div className="mx-auto mb-5 max-w-md px-0 sm:max-w-lg">
+                <OnboardingStepBanner variant="welcome" />
+              </div>
 
               <h1
-                className="text-3xl sm:text-4xl text-center mb-2"
-                style={{
-                  fontFamily: "'Bebas Neue', sans-serif",
-                  letterSpacing: '0.06em',
-                  color: HOME_HEADING_BLUE,
-                }}
+                className="mb-2 text-center text-3xl text-[#062A4A] sm:text-4xl"
+                style={{ fontFamily: "'Bebas Neue', sans-serif", letterSpacing: '0.06em' }}
               >
                 Welcome.
               </h1>
-              <p
-                className="text-center text-lg sm:text-xl max-w-md mx-auto mb-3 font-medium leading-snug"
-                style={{ color: HOME_BODY }}
-              >
+              <p className="mx-auto mb-3 max-w-md text-center text-lg font-medium leading-snug text-[#3A525A] sm:text-xl">
                 You are not alone in this journey.
               </p>
+              <WelcomeReassuranceRow />
               <p
-                className="text-center text-sm sm:text-base max-w-xl mx-auto leading-relaxed"
+                className="mx-auto mt-4 max-w-xl text-center text-sm leading-relaxed sm:text-base"
                 style={{ color: CARDEA_MUTED }}
               >
-                Caring for a child with complex medical needs can feel overwhelming.
-                <br />
-                You don’t have to navigate it alone.
-                <br />
-                This space is here to support you — gently and at your pace.
+                Caring for a child with complex medical needs can feel overwhelming. You don&apos;t have to navigate it
+                alone. This space is here to support you — gently and at your pace.
               </p>
             </motion.header>
 
-            <div className="flex flex-col items-center px-5 sm:px-8 py-8 pb-10 gap-4 w-full max-w-lg mx-auto sm:max-w-xl">
-              <button
-                type="button"
-                onClick={() => setStep('age-at-diagnosis')}
-                style={{
-                  ...primaryButtonStyle,
-                  boxShadow: '0 8px 24px rgba(25, 43, 63, 0.12)',
-                }}
-              >
+            <div className="mx-auto flex w-full max-w-lg flex-col items-center gap-5 px-5 py-8 sm:max-w-2xl sm:px-8">
+              <OnboardingPrimaryButton onClick={() => setStep('age-at-diagnosis')}>
                 Continue
-              </button>
-              <OnboardingProgressDots className="text-[#192b3f]" totalSteps={4} currentStep={0} />
+              </OnboardingPrimaryButton>
+              <OnboardingProgressDots totalSteps={4} currentStep={0} />
             </div>
           </>
         )}
 
         {step === 'age-at-diagnosis' && (
-          <OnboardingFormLayout
-            nav={
-              <div style={navRowStyle}>
-                <button type="button" onClick={() => setStep('welcome')} style={backButtonStyle}>
-                  Back
-                </button>
-                <button
-                  type="button"
-                  disabled={answers.ageAtDiagnosis == null}
-                  onClick={() => setStep('current-age')}
-                  style={{
-                    ...primaryButtonStyle,
-                    opacity: answers.ageAtDiagnosis == null ? 0.45 : 1,
-                    cursor: answers.ageAtDiagnosis == null ? 'not-allowed' : 'pointer',
-                  }}
-                >
-                  Continue
-                </button>
-              </div>
-            }
-            progressDots={<OnboardingProgressDots className="text-[#192b3f]" totalSteps={4} currentStep={1} />}
+          <OnboardingStepCard
+            eyebrow="Getting to know you · step 1 of 3"
+            title="What was your child's age at diagnosis?"
+            subtitle="This helps us tailor resources and support to your caregiving stage."
+            bannerVariant="timeline"
+            footnote="There is no wrong answer — choose what feels closest."
+            nav={stepNav(
+              () => setStep('welcome'),
+              answers.ageAtDiagnosis == null,
+              () => setStep('current-age'),
+            )}
+            progressDots={<OnboardingProgressDots totalSteps={4} currentStep={1} />}
           >
-            <h1 style={stepTitleStyle}>What was your child&apos;s age at diagnosis?</h1>
-            <p style={stepSubtitleStyle}>
-              This helps us tailor resources and support to your caregiving stage.
-            </p>
-            <div
-              style={{
-                flex: 1,
-                minHeight: 0,
-                width: '100%',
-                alignSelf: 'stretch',
-                marginTop: 6,
-                overflowY: 'auto',
-                WebkitOverflowScrolling: 'touch',
-              }}
-            >
-              <AgeOptionList
-                groupLabel="Child age at diagnosis"
-                value={answers.ageAtDiagnosis}
-                onChange={(next) =>
-                  setAnswers((prev) => ({
-                    ...prev,
-                    ageAtDiagnosis: next,
-                  }))
-                }
-              />
-            </div>
-          </OnboardingFormLayout>
+            <AgeOptionList
+              groupLabel="Child age at diagnosis"
+              value={answers.ageAtDiagnosis}
+              reduceMotion={reduceMotion ?? false}
+              onChange={(next) =>
+                setAnswers((prev) => ({
+                  ...prev,
+                  ageAtDiagnosis: next,
+                }))
+              }
+            />
+          </OnboardingStepCard>
         )}
 
         {step === 'current-age' && (
-          <OnboardingFormLayout
-            nav={
-              <div style={navRowStyle}>
-                <button type="button" onClick={() => setStep('age-at-diagnosis')} style={backButtonStyle}>
-                  Back
-                </button>
-                <button
-                  type="button"
-                  disabled={!currentAgeOk}
-                  onClick={() => setStep('diagnosis-categories')}
-                  style={{
-                    ...primaryButtonStyle,
-                    opacity: currentAgeOk ? 1 : 0.45,
-                    cursor: currentAgeOk ? 'pointer' : 'not-allowed',
-                  }}
-                >
-                  Continue
-                </button>
-              </div>
-            }
-            progressDots={<OnboardingProgressDots className="text-[#192b3f]" totalSteps={4} currentStep={2} />}
+          <OnboardingStepCard
+            eyebrow="Getting to know you · step 2 of 3"
+            title="What is your child's current age?"
+            subtitle="This helps us tailor resources and support to your caregiving stage."
+            bannerVariant="growth"
+            footnote="You can change your answers later in your profile when that is available."
+            nav={stepNav(
+              () => setStep('age-at-diagnosis'),
+              !currentAgeOk,
+              () => setStep('diagnosis-categories'),
+            )}
+            progressDots={<OnboardingProgressDots totalSteps={4} currentStep={2} />}
           >
-            <h1 style={stepTitleStyle}>What is your child&apos;s current age?</h1>
-            <p style={stepSubtitleStyle}>
-              This helps us tailor resources and support to your caregiving stage.
-            </p>
-            <div
-              style={{
-                flex: 1,
-                minHeight: 0,
-                width: '100%',
-                alignSelf: 'stretch',
-                marginTop: 6,
-                overflowY: 'auto',
-                WebkitOverflowScrolling: 'touch',
-              }}
-            >
-              <AgeOptionList
-                groupLabel="Child current age range"
-                value={answers.currentChildAge}
-                onChange={(next) =>
-                  setAnswers((prev) => ({
-                    ...prev,
-                    currentChildAge: next,
-                  }))
-                }
-              />
-            </div>
-          </OnboardingFormLayout>
+            <AgeOptionList
+              groupLabel="Child current age range"
+              value={answers.currentChildAge}
+              reduceMotion={reduceMotion ?? false}
+              onChange={(next) =>
+                setAnswers((prev) => ({
+                  ...prev,
+                  currentChildAge: next,
+                }))
+              }
+            />
+          </OnboardingStepCard>
         )}
 
         {step === 'diagnosis-categories' && (
-          <OnboardingFormLayout
-            nav={
-              <div style={navRowStyle}>
-                <button type="button" onClick={() => setStep('current-age')} style={backButtonStyle}>
-                  Back
-                </button>
-                <button
-                  type="button"
-                  disabled={answers.diagnosisCategories.length === 0}
-                  onClick={() => setStep('personalizing')}
-                  style={{
-                    ...primaryButtonStyle,
-                    opacity: answers.diagnosisCategories.length === 0 ? 0.45 : 1,
-                    cursor: answers.diagnosisCategories.length === 0 ? 'not-allowed' : 'pointer',
-                  }}
-                >
-                  Continue
-                </button>
-              </div>
-            }
-            progressDots={<OnboardingProgressDots className="text-[#192b3f]" totalSteps={4} currentStep={3} />}
+          <OnboardingStepCard
+            eyebrow="Getting to know you · step 3 of 3"
+            title="Which diagnosis categories fit your family?"
+            subtitle="You can pick more than one."
+            bannerVariant="constellation"
+            footnote="Pick all that apply — we use this only to shape what you see first."
+            nav={stepNav(
+              () => setStep('current-age'),
+              answers.diagnosisCategories.length === 0,
+              () => setStep('personalizing'),
+            )}
+            progressDots={<OnboardingProgressDots totalSteps={4} currentStep={3} />}
           >
-            <h1 style={stepTitleStyle}>Which diagnosis categories fit your family?</h1>
-            <p style={stepSubtitleStyle}>You can pick more than one.</p>
-            <div
-              role="group"
-              aria-label="Diagnosis categories"
-              style={{
-                flex: 1,
-                minHeight: 0,
-                width: '100%',
-                alignSelf: 'stretch',
-                marginTop: 6,
-                display: 'flex',
-                flexDirection: 'column',
-                gap: 10,
-                textAlign: 'left',
-                overflowY: 'auto',
-              }}
-            >
-              {diagnosisCategoryOptions.map((cat) => {
+            <div role="group" aria-label="Diagnosis categories" className="space-y-2">
+              {diagnosisCategoryOptions.map((cat, index) => {
                 const checked = answers.diagnosisCategories.some((d) => d.id === cat.id)
                 return (
-                  <label
+                  <motion.label
                     key={cat.id}
+                    initial={reduceMotion ? false : { opacity: 0, y: 6 }}
+                    animate={reduceMotion ? false : { opacity: 1, y: 0 }}
+                    transition={
+                      reduceMotion ? undefined : { duration: 0.26, delay: index * 0.04, ease: 'easeOut' }
+                    }
+                    className={`flex cursor-pointer items-start gap-3 rounded-2xl border px-4 py-3 transition-all ${
+                      checked ? 'shadow-sm' : 'bg-white hover:border-[#577568]/35'
+                    }`}
                     style={{
-                      fontFamily: CARDEA_FONT_PRIMARY,
-                      display: 'flex',
-                      alignItems: 'flex-start',
-                      gap: 10,
-                      padding: '10px 12px',
-                      borderRadius: 16,
-                      border: checked
-                        ? `2px solid ${CARDEA_DARK_GREEN}`
-                        : '1px solid rgba(25, 43, 63, 0.12)',
-                      background: checked ? 'rgba(172, 183, 168, 0.52)' : '#FFFFFF',
-                      cursor: 'pointer',
-                      fontSize: 15,
-                      fontWeight: 500,
+                      borderColor: checked ? CARDEA_DARK_GREEN : 'rgba(25,43,63,0.08)',
+                      background: checked ? 'rgba(87, 117, 104, 0.12)' : CARDEA_ALMOST_WHITE,
                       color: checked ? CARDEA_DARK_GREEN : CARDEA_NAVY,
                     }}
                   >
@@ -662,73 +511,64 @@ export function WelcomeScreen() {
                       type="checkbox"
                       checked={checked}
                       onChange={() => toggleDiagnosisCategory(cat)}
-                      style={{
-                        marginTop: 1,
-                        width: 16,
-                        height: 16,
-                        flexShrink: 0,
-                        cursor: 'pointer',
-                        accentColor: checked ? CARDEA_DARK_GREEN : CARDEA_NAVY,
-                      }}
+                      className="mt-0.5 h-4 w-4 shrink-0 cursor-pointer accent-[#577568]"
                     />
-                    <span style={{ lineHeight: 1.45 }}>
-                      <span style={{ fontWeight: 600 }}>{cat.title}</span>
-                      <span style={{ fontWeight: 500 }}> ({cat.detail})</span>
+                    <CategoryAccent categoryId={cat.id} />
+                    <span className="min-w-0 flex-1 text-sm leading-relaxed" style={{ fontFamily: CARDEA_FONT_PRIMARY }}>
+                      <span className="font-semibold">{cat.title}</span>
+                      <span className="font-medium"> ({cat.detail})</span>
                     </span>
-                  </label>
+                  </motion.label>
                 )
               })}
             </div>
-          </OnboardingFormLayout>
+          </OnboardingStepCard>
         )}
 
         {step === 'personalizing' && (
-          <div
-            className="flex flex-1 items-center justify-center w-full px-5"
-            style={{ minHeight: '50vh' }}
-          >
+          <div className="relative flex flex-1 items-center justify-center px-5 py-10 sm:px-8">
             <div
               role="status"
               aria-live="polite"
               aria-busy="true"
-              style={{
-                display: 'flex',
-                flexDirection: 'column',
-                alignItems: 'center',
-                gap: 8,
-                maxWidth: 480,
-                textAlign: 'center',
-              }}
+              className="w-full max-w-md rounded-3xl border bg-white/85 p-8 text-center shadow-sm backdrop-blur"
+              style={{ borderColor: 'rgba(25,43,63,0.08)' }}
             >
+              <div className="mb-5 flex justify-center">
+                <motion.div
+                  animate={reduceMotion ? undefined : { scale: [1, 1.04, 1] }}
+                  transition={reduceMotion ? undefined : { duration: 2.4, repeat: Infinity, ease: 'easeInOut' }}
+                >
+                  <MoodHeartFill
+                    theme={theme}
+                    size={44}
+                    viewBox="0 0 100 100"
+                    pathD="M50 85C50 85 20 65 20 40C20 25 30 15 40 15C45 15 50 20 50 20C50 20 55 15 60 15C70 15 80 25 80 40C80 65 50 85 50 85Z"
+                    stroke={theme.heartStroke}
+                    strokeWidth={2}
+                  />
+                </motion.div>
+              </div>
+              <div
+                className="mx-auto mb-5 h-1 w-24 rounded-full"
+                style={{ background: `linear-gradient(90deg, transparent, ${CARDEA_LIGHT_BLUE}, transparent)` }}
+                aria-hidden
+              />
               <p
-                style={{
-                  fontFamily: "'Bebas Neue', sans-serif",
-                  letterSpacing: '0.05em',
-                  fontSize: 'clamp(1.25rem, 4vw, 1.75rem)',
-                  lineHeight: 1.35,
-                  margin: 0,
-                  fontWeight: 700,
-                  color: HOME_HEADING_BLUE,
-                }}
+                className="text-2xl text-[#062A4A]"
+                style={{ fontFamily: "'Bebas Neue', sans-serif", letterSpacing: '0.07em' }}
               >
                 Personalizing your support experience...
               </p>
-              <div aria-label="Loading">
+              <p className="mt-2 text-xs leading-relaxed" style={{ color: CARDEA_MUTED }}>
+                Just a moment.
+              </p>
+              <div className="flex justify-center" aria-label="Loading">
                 <PersonalizingSpinner />
               </div>
-              {saveError && (
-                <div style={{ marginTop: 10, textAlign: 'center' }}>
-                  <p
-                    role="alert"
-                    style={{
-                      margin: 0,
-                      fontFamily: CARDEA_FONT_PRIMARY,
-                      fontSize: 14,
-                      lineHeight: 1.45,
-                      fontWeight: 600,
-                      color: '#9B1C31',
-                    }}
-                  >
+              {saveError ? (
+                <div className="mt-4">
+                  <p role="alert" className="text-sm font-semibold leading-relaxed text-[#9B1C31]">
                     {saveError}
                   </p>
                   <button
@@ -737,23 +577,18 @@ export function WelcomeScreen() {
                       setDidPersist(false)
                       setSaveError(null)
                     }}
-                    style={{
-                      marginTop: 10,
-                      ...primaryButtonStyle,
-                      opacity: isSaving ? 0.55 : 1,
-                      cursor: isSaving ? 'not-allowed' : 'pointer',
-                    }}
                     disabled={isSaving}
+                    className="mt-3 rounded-xl px-5 py-2.5 text-sm font-semibold text-white disabled:opacity-40"
+                    style={{ background: CARDEA_DARK_GREEN }}
                   >
                     Retry
                   </button>
                 </div>
-              )}
+              ) : null}
             </div>
           </div>
         )}
-      </main>
+      </div>
     </div>
   )
 }
-

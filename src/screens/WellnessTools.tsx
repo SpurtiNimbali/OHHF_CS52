@@ -1583,7 +1583,9 @@ function ToolContent({
       />
     )
   }
-  if (toolId === 'reframes') return <ReframesTool />
+  if (toolId === 'reframes') {
+    return <ReframesTool onMineChanged={onJournalEntriesChanged} />
+  }
   if (toolId === 'safe-place') return <SafePlaceTool />
   if (toolId === 'today-nudge') {
     return (

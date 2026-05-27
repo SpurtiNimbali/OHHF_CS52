@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from 'react'
-import { ArrowRight } from 'lucide-react'
+import { ArrowRight, Trash2 } from 'lucide-react'
 import {
+  deleteUserReframe,
   fetchMyReframes,
   fetchStarterReframes,
   insertUserReframe,
@@ -44,7 +45,7 @@ function ReframeCard({ thought, reframe }: { thought: string; reframe: string })
   )
 }
 
-export function ReframesTool() {
+export function ReframesTool({ onMineChanged }: { onMineChanged?: () => void }) {
   const [view, setView] = useState<View>('browse')
   const [starters, setStarters] = useState<UserReframeRow[]>(FALLBACK_STARTERS)
   const [mine, setMine] = useState<UserReframeRow[]>([])
@@ -56,6 +57,8 @@ export function ReframesTool() {
   const [saving, setSaving] = useState(false)
   const [saveError, setSaveError] = useState<string | null>(null)
   const [saveOk, setSaveOk] = useState(false)
+  const [deleting, setDeleting] = useState(false)
+  const [deleteError, setDeleteError] = useState<string | null>(null)
 
   const reload = useCallback(async () => {
     setLoading(true)
@@ -98,6 +101,33 @@ export function ReframesTool() {
       setSaveOk(false)
       setView('mine')
     }, 600)
+  }
+
+  async function handleDeleteCurrent() {
+    if (!mineCurrent) return
+    setDeleting(true)
+    setDeleteError(null)
+    const { ok, error } = await deleteUserReframe(mineCurrent.id)
+    setDeleting(false)
+    if (!ok) {
+      setDeleteError(error ?? 'Could not delete.')
+      return
+    }
+    const removedId = mineCurrent.id
+    const len = mine.length
+    const removedIndex = mine.findIndex((r) => r.id === removedId)
+    const next = mine.filter((r) => r.id !== removedId)
+    const eff = len > 0 ? mineCardIndex % len : 0
+    let newEff = eff
+    if (removedIndex >= 0 && next.length > 0) {
+      if (eff > removedIndex) newEff = eff - 1
+      else if (eff === removedIndex) newEff = Math.min(eff, next.length - 1)
+    }
+
+    setMine(next)
+    setMineCardIndex(next.length === 0 ? 0 : newEff)
+
+    onMineChanged?.()
   }
 
   return (
@@ -222,6 +252,11 @@ export function ReframesTool() {
               {mineCurrent ? (
                 <ReframeCard thought={mineCurrent.thought} reframe={mineCurrent.reframe} />
               ) : null}
+              {deleteError ? (
+                <p className="text-sm text-[#9B1C31]" role="alert">
+                  {deleteError}
+                </p>
+              ) : null}
               <div className="flex flex-wrap gap-2">
                 <button
                   type="button"
@@ -238,6 +273,16 @@ export function ReframesTool() {
                   style={{ borderColor: CARDEA_DARK_GREEN, color: CARDEA_DARK_GREEN }}
                 >
                   Write your own
+                </button>
+                <button
+                  type="button"
+                  disabled={deleting || !mineCurrent}
+                  onClick={() => void handleDeleteCurrent()}
+                  className="inline-flex items-center gap-1.5 rounded-xl border border-[#dcb0b8] px-4 py-2 text-sm font-semibold text-[#9B1C31] disabled:opacity-40"
+                  aria-label="Delete this saved reframe"
+                >
+                  <Trash2 className="h-4 w-4 shrink-0" aria-hidden />
+                  {deleting ? 'Deleting…' : 'Delete'}
                 </button>
               </div>
             </>

@@ -75,4 +75,34 @@ router.post('/', async (req: Request, res: Response) => {
   return res.status(201).json({ reframe: data })
 })
 
+router.delete('/:id', async (req: Request, res: Response) => {
+  const userId = await getUserIdFromRequest(req)
+  if (!userId) {
+    return res.status(401).json({ error: 'Sign in required' })
+  }
+
+  const id = typeof req.params.id === 'string' ? req.params.id.trim() : ''
+  if (!id) {
+    return res.status(400).json({ error: 'id is required' })
+  }
+
+  const { data, error } = await supabase
+    .from('user_reframes')
+    .delete()
+    .eq('id', id)
+    .eq('user_id', userId)
+    .select('id')
+
+  if (error) {
+    console.error('[user-reframes] delete error:', error)
+    return res.status(500).json({ error: error.message })
+  }
+
+  if (!data?.length) {
+    return res.status(404).json({ error: 'Reframe not found' })
+  }
+
+  return res.status(204).send()
+})
+
 export default router
