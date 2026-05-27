@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useMemo, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { motion } from 'motion/react'
 import { Heart, Sparkles } from 'lucide-react'
@@ -17,12 +17,10 @@ import {
 } from '../mood'
 import {
   ensureMoodEntryForChat,
-  fetchLatestMoodEntry,
   insertMoodEntry,
   markMoodCheckInSaved,
   clearMoodCheckInSession,
 } from '../lib/moodEntries'
-import { resolveRecommendedToolsForMood } from '../mood/moodRecommendations'
 import { CARDEA_FONT_PRIMARY, CARDEA_MUTED, CARDEA_NAVY } from '../ui/cardeaTokens'
 
 const WELLNESS_MOOD_LOG_KEY = 'cardea-wellness-mood-log'
@@ -66,35 +64,8 @@ export function HomeScreen() {
   const [checkInSaved, setCheckInSaved] = useState(false)
   const [checkInError, setCheckInError] = useState<string | null>(null)
   const [showMoodCheckIn, setShowMoodCheckIn] = useState(false)
-  const [latestPersistedMoodId, setLatestPersistedMoodId] = useState<MoodId | null>(null)
-  const [hasResolvedLatestPersistedMood, setHasResolvedLatestPersistedMood] = useState(false)
 
   const personalizedCards = useMemo(() => pickHomeCardsForMood(moodId), [moodId])
-  const recommendationMoodId = hasResolvedLatestPersistedMood ? (latestPersistedMoodId ?? moodId) : null
-  const recommendedTools = useMemo(
-    () => resolveRecommendedToolsForMood(recommendationMoodId),
-    [recommendationMoodId],
-  )
-  const recommendationSourceLabel = latestPersistedMoodId
-    ? 'Based on your latest saved mood check-in.'
-    : moodId
-      ? 'Based on your current mood selection until you save a check-in.'
-      : null
-
-  useEffect(() => {
-    let cancelled = false
-
-    ;(async () => {
-      const latestEntry = await fetchLatestMoodEntry()
-      if (cancelled) return
-      setLatestPersistedMoodId((current) => current ?? latestEntry?.mood ?? null)
-      setHasResolvedLatestPersistedMood(true)
-    })()
-
-    return () => {
-      cancelled = true
-    }
-  }, [])
 
   async function saveMoodCheckIn() {
     if (!moodId) return
@@ -107,8 +78,6 @@ export function HomeScreen() {
     }
     if (entry) {
       markMoodCheckInSaved(moodId, entry.id)
-      setLatestPersistedMoodId(entry.mood)
-      setHasResolvedLatestPersistedMood(true)
     }
     setCheckInSaved(true)
     window.setTimeout(() => setCheckInSaved(false), 2500)
@@ -125,8 +94,6 @@ export function HomeScreen() {
     }
     if (entry) {
       markMoodCheckInSaved(moodId, entry.id)
-      setLatestPersistedMoodId(entry.mood)
-      setHasResolvedLatestPersistedMood(true)
     }
     navigate('/chat', {
       state: {
@@ -267,51 +234,6 @@ export function HomeScreen() {
               ))}
             </div>
           </motion.section>
-
-          {recommendedTools.length > 0 ? (
-            <motion.section
-              initial={{ opacity: 0, y: 18 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.34 }}
-            >
-              <div className="mb-4">
-                <h2 className="text-sm font-medium text-[#3A525A]" style={{ fontFamily: CARDEA_FONT_PRIMARY }}>
-                  Recommended wellness tools
-                </h2>
-                {recommendationSourceLabel ? (
-                  <p
-                    className="mt-1 text-xs leading-relaxed text-[#acb7a8]"
-                    style={{ fontFamily: CARDEA_FONT_PRIMARY }}
-                  >
-                    {recommendationSourceLabel}
-                  </p>
-                ) : null}
-              </div>
-              <div className="space-y-3">
-                {recommendedTools.map((tool) => (
-                  <Link
-                    key={tool.slug}
-                    to={tool.route}
-                    className="flex items-center gap-4 rounded-2xl border bg-white p-4 shadow-sm transition hover:shadow-md"
-                    style={{ borderColor: 'rgba(25,43,63,0.08)', fontFamily: CARDEA_FONT_PRIMARY }}
-                  >
-                    <div className="min-w-0 flex-1">
-                      <p
-                        className="mb-1 text-[11px] font-bold uppercase tracking-[0.16em]"
-                        style={{ color: CARDEA_MUTED }}
-                      >
-                        {tool.section}
-                      </p>
-                      <h3 className="text-sm font-semibold text-[#062A4A]">{tool.label}</h3>
-                    </div>
-                    <span className="text-2xl font-light text-[#A8C5E6]" aria-hidden>
-                      →
-                    </span>
-                  </Link>
-                ))}
-              </div>
-            </motion.section>
-          ) : null}
 
           {!moodId ? (
             <motion.section

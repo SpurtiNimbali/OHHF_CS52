@@ -17,6 +17,7 @@ export {
   MOOD_WELLNESS_PRIMARY_SECONDARY,
   MOOD_HOME_CARD_ORDER,
   DEFAULT_HOME_CARD_ORDER,
+  resolveSuggestedExercisesForMood,
   wellnessToolPath,
   isWellnessToolId,
   resolveSuggestedExercisesForMood,
