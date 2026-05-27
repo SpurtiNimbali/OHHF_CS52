@@ -1601,8 +1601,16 @@ export default function WellnessTools() {
 
   const selectedMeta = selectedEmotion ? WELLNESS_EMOTIONS.find((e) => e.id === selectedEmotion) ?? null : null
   const suggestedExercises = useMemo(
-    () => resolveSuggestedExercisesForMood(selectedEmotion ?? moodId) as ToolId[],
-    [moodId, selectedEmotion],
+    () => {
+      const sourceMoodId = latestPersistedMoodId ?? moodId
+      const baseSuggestions = resolveSuggestedExercisesForMood(sourceMoodId)
+
+      if (!sourceMoodId) return baseSuggestions as ToolId[]
+
+      const dynamicTools = baseSuggestions.filter((toolId) => toolId !== 'micro-journal').slice(0, 3)
+      return [...new Set<ToolId>([...(dynamicTools as ToolId[]), 'micro-journal'])]
+    },
+    [latestPersistedMoodId, moodId],
   )
   const recentMoods = useMemo(() => {
     if (moodEntries.length > 0) {

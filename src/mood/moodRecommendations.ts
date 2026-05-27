@@ -7,12 +7,11 @@ import type { MoodId } from './moodVariants'
 import {
   buildToolRoute,
   isLiveWellnessToolId,
-  WELLNESS_TOOL_REGISTRY,
   type WellnessToolId,
 } from '../lib/wellnessToolRegistry'
 
 /** Primary wellness tool surfaced on the home “Wellness tools” card */
-export const MOOD_PRIMARY_WELLNESS_TOOL: Record<MoodId, WellnessToolId> = {
+export const MOOD_PRIMARY_WELLNESS_TOOL: Record<MoodId, LiveMoodWellnessToolId> = {
   overwhelmed: 'breathing',
   exhausted: 'physical-regulation',
   angry: 'physical-regulation',
@@ -40,7 +39,7 @@ export const MOOD_WELLNESS_HOME_DESCRIPTION: Record<MoodId, string> = {
 }
 
 /** “Suggested Exercises” on the wellness page (4 per mood) */
-export const MOOD_SUGGESTED_EXERCISES: Record<MoodId, WellnessToolId[]> = {
+export const MOOD_SUGGESTED_EXERCISES: Record<MoodId, LiveMoodWellnessToolId[]> = {
   overwhelmed: ['breathing', 'grounding', 'micro-journal', 'today-nudge'],
   exhausted: ['physical-regulation', 'breathing', 'micro-journal', 'today-nudge'],
   angry: ['physical-regulation', 'reframes', 'grounding', 'micro-journal'],
@@ -56,7 +55,7 @@ export const MOOD_SUGGESTED_EXERCISES: Record<MoodId, WellnessToolId[]> = {
 /** Primary + secondary tiles in “Tools for your mood” */
 export const MOOD_WELLNESS_PRIMARY_SECONDARY: Record<
   MoodId,
-  { primary: WellnessToolId; secondary: WellnessToolId }
+  { primary: LiveMoodWellnessToolId; secondary: LiveMoodWellnessToolId }
 > = {
   overwhelmed: { primary: 'breathing', secondary: 'grounding' },
   exhausted: { primary: 'physical-regulation', secondary: 'breathing' },
@@ -91,58 +90,22 @@ export const DEFAULT_HOME_CARD_ORDER = [
   'wellness-tools',
 ] as const
 
-const DEFAULT_SUGGESTED_EXERCISES: WellnessToolId[] = [
+const DEFAULT_SUGGESTED_EXERCISES: LiveMoodWellnessToolId[] = [
   'breathing',
   'grounding',
   'reframes',
   'micro-journal',
 ]
 
-export function wellnessToolPath(toolId: WellnessToolId): string {
+export function wellnessToolPath(toolId: LiveMoodWellnessToolId): string {
   return buildToolRoute(toolId)
 }
 
 export function isWellnessToolId(value: string): value is WellnessToolId {
-  return isLiveWellnessToolId(value)
+  return isWellnessPageToolId(value)
 }
 
-export function resolveSuggestedExercisesForMood(moodId: MoodId | null): WellnessToolId[] {
+export function resolveSuggestedExercisesForMood(moodId: MoodId | null): LiveMoodWellnessToolId[] {
   if (!moodId) return DEFAULT_SUGGESTED_EXERCISES
   return MOOD_SUGGESTED_EXERCISES[moodId]
-}
-
-export type RecommendedWellnessToolLink = {
-  slug: WellnessToolId
-  label: string
-  route: string
-  section: string
-}
-
-export function resolveRecommendedToolsForMood(
-  moodId: MoodId | null,
-  { limit = 3 }: { limit?: number } = {},
-): RecommendedWellnessToolLink[] {
-  if (!moodId) return []
-
-  const primary = MOOD_PRIMARY_WELLNESS_TOOL[moodId]
-  const suggested = resolveSuggestedExercisesForMood(moodId)
-  const ordered = [primary, ...suggested]
-
-  const seen = new Set<WellnessToolId>()
-  const results: RecommendedWellnessToolLink[] = []
-
-  for (const toolId of ordered) {
-    if (seen.has(toolId)) continue
-    seen.add(toolId)
-    const tool = WELLNESS_TOOL_REGISTRY[toolId]
-    results.push({
-      slug: toolId,
-      label: tool.label,
-      route: tool.route,
-      section: 'Wellness',
-    })
-    if (results.length >= limit) break
-  }
-
-  return results
 }
