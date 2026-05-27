@@ -6,8 +6,7 @@
 import type { MoodId } from './moodVariants'
 import {
   buildToolRoute,
-  isWellnessToolId as isWellnessPageToolId,
-  WELLNESS_TOOL_REGISTRY,
+  isWellnessToolId as isRegistryWellnessToolId,
   type LiveMoodWellnessToolId,
   type WellnessToolId,
 } from '../lib/wellnessToolRegistry'
@@ -104,46 +103,10 @@ export function wellnessToolPath(toolId: LiveMoodWellnessToolId): string {
 }
 
 export function isWellnessToolId(value: string): value is WellnessToolId {
-  return isWellnessPageToolId(value)
+  return isRegistryWellnessToolId(value)
 }
 
 export function resolveSuggestedExercisesForMood(moodId: MoodId | null): LiveMoodWellnessToolId[] {
   if (!moodId) return DEFAULT_SUGGESTED_EXERCISES
   return MOOD_SUGGESTED_EXERCISES[moodId]
-}
-
-export type RecommendedWellnessToolLink = {
-  slug: LiveMoodWellnessToolId
-  label: string
-  route: string
-  section: string
-}
-
-export function resolveRecommendedToolsForMood(
-  moodId: MoodId | null,
-  { limit = 3 }: { limit?: number } = {},
-): RecommendedWellnessToolLink[] {
-  if (!moodId) return []
-
-  const primary = MOOD_PRIMARY_WELLNESS_TOOL[moodId]
-  const suggested = resolveSuggestedExercisesForMood(moodId)
-  const ordered = [primary, ...suggested]
-
-  const seen = new Set<LiveMoodWellnessToolId>()
-  const results: RecommendedWellnessToolLink[] = []
-
-  for (const toolId of ordered) {
-    if (seen.has(toolId)) continue
-    seen.add(toolId)
-    const tool = WELLNESS_TOOL_REGISTRY[toolId]
-    results.push({
-      slug: toolId,
-      label: tool.label,
-      route: tool.route ?? buildToolRoute(toolId),
-      section: 'Wellness',
-    })
-    if (results.length >= limit) break
-  }
-
-  return results
 }

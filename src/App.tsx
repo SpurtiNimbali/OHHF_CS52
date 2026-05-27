@@ -12,12 +12,14 @@ import ChatScreen from './screens/ChatScreen'
 import ChatCitationsScreen from './screens/ChatCitationsScreen'
 import WellnessTools from './screens/WellnessTools'
 import { ResourcesRightNav } from './components/ResourcesRightNav'
+import { CheckInSavedBarHost } from './components/ui/CheckInSavedBar'
 import { MoodProvider } from './mood'
 
 function App() {
   return (
     <BrowserRouter>
       <MoodProvider>
+        <CheckInSavedBarHost />
         <Routes>
           <Route path="/" element={<Navigate to="/home" replace />} />
           <Route path="/auth" element={<AuthLandingScreen />} />

@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import { ArrowRight } from 'lucide-react'
 import {
   fetchMyReframes,
@@ -48,7 +48,8 @@ export function ReframesTool() {
   const [view, setView] = useState<View>('browse')
   const [starters, setStarters] = useState<UserReframeRow[]>(FALLBACK_STARTERS)
   const [mine, setMine] = useState<UserReframeRow[]>([])
-  const [cardIndex, setCardIndex] = useState(0)
+  const [browseCardIndex, setBrowseCardIndex] = useState(0)
+  const [mineCardIndex, setMineCardIndex] = useState(0)
   const [thought, setThought] = useState('')
   const [reframe, setReframe] = useState('')
   const [loading, setLoading] = useState(true)
@@ -68,8 +69,15 @@ export function ReframesTool() {
     void reload()
   }, [reload])
 
-  const deck = useMemo(() => starters, [starters])
-  const current = deck[cardIndex % Math.max(deck.length, 1)]
+  const browseDeck = starters
+  const browseCurrent = browseDeck[browseCardIndex % Math.max(browseDeck.length, 1)]
+  const mineDeck = mine
+  const mineCurrent = mineDeck[mineCardIndex % Math.max(mineDeck.length, 1)]
+
+  useEffect(() => {
+    if (mine.length === 0) return
+    setMineCardIndex((i) => (i >= mine.length ? mine.length - 1 : i))
+  }, [mine.length])
 
   async function handleSaveCustom() {
     setSaving(true)
@@ -85,6 +93,7 @@ export function ReframesTool() {
     setReframe('')
     setSaveOk(true)
     setMine((prev) => [row, ...prev])
+    setMineCardIndex(0)
     window.setTimeout(() => {
       setSaveOk(false)
       setView('mine')
@@ -123,11 +132,13 @@ export function ReframesTool() {
 
       {view === 'browse' && !loading ? (
         <>
-          {current ? <ReframeCard thought={current.thought} reframe={current.reframe} /> : null}
+          {browseCurrent ? (
+            <ReframeCard thought={browseCurrent.thought} reframe={browseCurrent.reframe} />
+          ) : null}
           <div className="flex flex-wrap gap-2">
             <button
               type="button"
-              onClick={() => setCardIndex((i) => i + 1)}
+              onClick={() => setBrowseCardIndex((i) => i + 1)}
               className="rounded-xl px-4 py-2 text-sm font-semibold text-white"
               style={{ background: CARDEA_NAVY }}
             >
@@ -191,27 +202,47 @@ export function ReframesTool() {
       ) : null}
 
       {view === 'mine' && !loading ? (
-        <div className="space-y-3">
+        <>
           {mine.length === 0 ? (
-            <p className="text-sm leading-relaxed" style={{ color: CARDEA_MUTED }}>
-              No saved reframes yet. Use &ldquo;Write your own&rdquo; from Browse cards.
-            </p>
+            <div className="space-y-3">
+              <p className="text-sm leading-relaxed" style={{ color: CARDEA_MUTED }}>
+                No saved reframes yet. Use &ldquo;Write your own&rdquo; from Browse cards.
+              </p>
+              <button
+                type="button"
+                onClick={() => setView('write')}
+                className="rounded-xl border px-4 py-2 text-sm font-semibold"
+                style={{ borderColor: CARDEA_DARK_GREEN, color: CARDEA_DARK_GREEN }}
+              >
+                Write your own
+              </button>
+            </div>
           ) : (
-            mine.map((row) => (
-              <div key={row.id} className="rounded-2xl border bg-white p-4" style={{ borderColor: 'rgba(25,43,63,0.08)' }}>
-                <ReframeCard thought={row.thought} reframe={row.reframe} />
+            <>
+              {mineCurrent ? (
+                <ReframeCard thought={mineCurrent.thought} reframe={mineCurrent.reframe} />
+              ) : null}
+              <div className="flex flex-wrap gap-2">
+                <button
+                  type="button"
+                  onClick={() => setMineCardIndex((i) => i + 1)}
+                  className="rounded-xl px-4 py-2 text-sm font-semibold text-white"
+                  style={{ background: CARDEA_NAVY }}
+                >
+                  Next reframe
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setView('write')}
+                  className="rounded-xl border px-4 py-2 text-sm font-semibold"
+                  style={{ borderColor: CARDEA_DARK_GREEN, color: CARDEA_DARK_GREEN }}
+                >
+                  Write your own
+                </button>
               </div>
-            ))
+            </>
           )}
-          <button
-            type="button"
-            onClick={() => setView('write')}
-            className="rounded-xl border px-4 py-2 text-sm font-semibold"
-            style={{ borderColor: CARDEA_DARK_GREEN, color: CARDEA_DARK_GREEN }}
-          >
-            Write your own
-          </button>
-        </div>
+        </>
       ) : null}
     </div>
   )

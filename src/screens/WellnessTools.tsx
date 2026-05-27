@@ -7,6 +7,7 @@ import {
   BookOpen,
   Brain,
   ChevronRight,
+  ChevronLeft,
   Coffee,
   Ear,
   Eye,
@@ -58,8 +59,24 @@ import {
 import { ResourcesRightNav } from '../components/ResourcesRightNav'
 import { ReframesTool } from '../components/wellness/ReframesTool'
 import { SafePlaceTool } from '../components/wellness/SafePlaceTool'
+import { CrisisSupportPanel } from '../components/wellness/CrisisSupportPanel'
 import { fetchMyReframes } from '../lib/userReframes'
 import { fetchSafePlaces } from '../lib/safePlaces'
+import {
+  fetchReflectionPrompts,
+  pickDailyPrompts,
+  type ReflectionPrompt,
+} from '../lib/reflectionPrompts'
+import {
+  consumePendingJournalDraft,
+  defaultMicroJournalDraft,
+  formatJournalTag,
+  isStandardMicroJournalPrompt,
+  microJournalDraftFromReflection,
+  MICRO_JOURNAL_DEFAULT_PROMPT,
+  savePendingJournalDraft,
+  type MicroJournalDraft,
+} from '../lib/microJournal'
 import {
   fetchToolUsage,
   insertToolUsage,
@@ -179,7 +196,7 @@ const TOOL_META: Record<ToolId, {
     category: 'Connect',
     icon: Heart,
   },
-  'crisis-reset': { title: 'I need help right now', short: 'a guided reset and resources', category: 'Crisis', icon: AlertCircle },
+  'crisis-reset': { title: 'I need help right now', short: 'Go slowly — grounding, hotlines, and support', category: 'Crisis', icon: AlertCircle },
 }
 
 const nudges = [
@@ -190,24 +207,6 @@ const nudges = [
   'laugh about something silly together.',
   'you are allowed to enjoy them.',
 ]
-
-const reflectionPrompts = [
-  'when did we last do something fun?',
-  'what does connection look like for us right now?',
-  'what small joy can we create today?',
-]
-
-/** Stored in journal_entries.prompt for standard micro-journal saves (not shown in history UI). */
-const MICRO_JOURNAL_STORED_PROMPT =
-  "Write down how you're feeling today. Use your own words — there's no right format."
-
-function isStandardMicroJournalPrompt(prompt: string) {
-  return (
-    prompt === MICRO_JOURNAL_STORED_PROMPT ||
-    prompt === 'How are you feeling today?' ||
-    prompt === 'Write down your feelings'
-  )
-}
 
 const emotionFamilies: Record<string, string[]> = {
   joy: ['happy', 'grateful', 'proud', 'playful', 'relieved'],
@@ -979,14 +978,25 @@ function BodyScanTool() {
   )
 }
 
-function MicroJournalTool({ onEntriesChanged }: { onEntriesChanged?: () => void }) {
-  const savePrompt = MICRO_JOURNAL_STORED_PROMPT
+function MicroJournalTool({
+  draft,
+  onEntriesChanged,
+}: {
+  draft: MicroJournalDraft
+  onEntriesChanged?: () => void
+}) {
   const [text, setText] = useState('')
   const [saved, setSaved] = useState(false)
   const [saveError, setSaveError] = useState<string | null>(null)
   const [saving, setSaving] = useState(false)
   const [history, setHistory] = useState<JournalEntryRow[]>([])
   const [historyLoading, setHistoryLoading] = useState(true)
+  const [historyIndex, setHistoryIndex] = useState(0)
+
+  const displayPrompt = draft.prompt.trim() || MICRO_JOURNAL_DEFAULT_PROMPT
+  const savePrompt = isStandardMicroJournalPrompt(displayPrompt)
+    ? MICRO_JOURNAL_DEFAULT_PROMPT
+    : displayPrompt
 
   const reloadHistory = useCallback(async () => {
     setHistoryLoading(true)
@@ -999,12 +1009,21 @@ function MicroJournalTool({ onEntriesChanged }: { onEntriesChanged?: () => void 
     void reloadHistory()
   }, [reloadHistory])
 
+  useEffect(() => {
+    setHistoryIndex((idx) => Math.min(idx, Math.max(history.length - 1, 0)))
+  }, [history.length])
+
+  const activeHistoryEntry = history[historyIndex] ?? null
+
   async function handleSave() {
     const trimmed = text.trim()
     if (!trimmed || saving) return
     setSaving(true)
     setSaveError(null)
-    const { entry, error } = await insertJournalEntry(savePrompt, trimmed)
+    const { entry, error } = await insertJournalEntry(savePrompt, trimmed, {
+      promptId: draft.promptId ?? null,
+      tags: draft.tags,
+    })
     if (error) {
       setSaveError(error)
       setSaving(false)
@@ -1014,6 +1033,7 @@ function MicroJournalTool({ onEntriesChanged }: { onEntriesChanged?: () => void 
     setSaved(true)
     if (entry) {
       setHistory((prev) => [entry, ...prev.filter((r) => r.id !== entry.id)].slice(0, 40))
+      setHistoryIndex(0)
     } else {
       await reloadHistory()
     }
@@ -1024,7 +1044,21 @@ function MicroJournalTool({ onEntriesChanged }: { onEntriesChanged?: () => void 
 
   return (
     <div className="space-y-6">
-      <p className="text-base leading-relaxed text-[#192b3f]">{MICRO_JOURNAL_STORED_PROMPT}</p>
+      <p className="text-base leading-relaxed text-[#192b3f]">{displayPrompt}</p>
+
+      {draft.tags.length > 0 ? (
+        <div className="flex flex-wrap gap-1.5">
+          {draft.tags.map((tag) => (
+            <span
+              key={tag}
+              className="rounded-full bg-[#577568]/10 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.08em]"
+              style={{ color: CARDEA_DARK_GREEN }}
+            >
+              {formatJournalTag(tag)}
+            </span>
+          ))}
+        </div>
+      ) : null}
 
       <textarea
         value={text}
@@ -1069,31 +1103,75 @@ function MicroJournalTool({ onEntriesChanged }: { onEntriesChanged?: () => void 
             No entries yet. What you save will show up here.
           </p>
         ) : (
-          <ul className="space-y-4">
-            {history.map((row) => (
-              <li
-                key={row.id}
-                className="rounded-2xl border bg-[#f5f9f9] px-4 py-3"
-                style={{ borderColor: 'rgba(25,43,63,0.08)' }}
+          <div
+            className="rounded-2xl border bg-[#f5f9f9]"
+            style={{ borderColor: 'rgba(25,43,63,0.08)' }}
+          >
+            <div
+              className="flex items-center justify-between gap-2 border-b px-3 py-2"
+              style={{ borderColor: 'rgba(25,43,63,0.08)' }}
+            >
+              <button
+                type="button"
+                onClick={() => setHistoryIndex((idx) => Math.max(idx - 1, 0))}
+                disabled={historyIndex <= 0}
+                className="flex h-8 w-8 items-center justify-center rounded-full disabled:opacity-30"
+                style={{ color: CARDEA_NAVY }}
+                aria-label="Previous entry"
               >
-                <p className="text-xs" style={{ color: CARDEA_MUTED }}>
-                  {formatEntryDateTime(row.timestamp)}
-                </p>
-                {row.prompt && !isStandardMicroJournalPrompt(row.prompt) ? (
-                  <p className="mt-1 text-sm leading-relaxed" style={{ color: CARDEA_MUTED }}>
-                    {row.prompt}
+                <ChevronLeft className="h-4 w-4" />
+              </button>
+              <p className="text-center text-xs font-semibold" style={{ color: CARDEA_MUTED }}>
+                {historyIndex + 1} of {history.length}
+                {activeHistoryEntry ? (
+                  <span className="block font-normal">{formatEntryDateTime(activeHistoryEntry.timestamp)}</span>
+                ) : null}
+              </p>
+              <button
+                type="button"
+                onClick={() => setHistoryIndex((idx) => Math.min(idx + 1, history.length - 1))}
+                disabled={historyIndex >= history.length - 1}
+                className="flex h-8 w-8 items-center justify-center rounded-full disabled:opacity-30"
+                style={{ color: CARDEA_NAVY }}
+                aria-label="Next entry"
+              >
+                <ChevronRight className="h-4 w-4" />
+              </button>
+            </div>
+
+            {activeHistoryEntry ? (
+              <div className="max-h-52 overflow-y-auto px-4 py-3">
+                {activeHistoryEntry.prompt && !isStandardMicroJournalPrompt(activeHistoryEntry.prompt) ? (
+                  <p className="text-sm leading-relaxed" style={{ color: CARDEA_MUTED }}>
+                    {activeHistoryEntry.prompt}
                   </p>
+                ) : null}
+                {activeHistoryEntry.tags.length > 0 ? (
+                  <div className={`flex flex-wrap gap-1.5 ${activeHistoryEntry.prompt && !isStandardMicroJournalPrompt(activeHistoryEntry.prompt) ? 'mt-2' : ''}`}>
+                    {activeHistoryEntry.tags.map((tag) => (
+                      <span
+                        key={tag}
+                        className="rounded-full bg-white px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.08em]"
+                        style={{ color: CARDEA_DARK_GREEN }}
+                      >
+                        {formatJournalTag(tag)}
+                      </span>
+                    ))}
+                  </div>
                 ) : null}
                 <p
                   className={`whitespace-pre-wrap text-sm leading-relaxed text-[#3A525A] ${
-                    row.prompt && !isStandardMicroJournalPrompt(row.prompt) ? 'mt-2' : 'mt-1'
+                    (activeHistoryEntry.prompt && !isStandardMicroJournalPrompt(activeHistoryEntry.prompt)) ||
+                    activeHistoryEntry.tags.length > 0
+                      ? 'mt-2'
+                      : ''
                   }`}
                 >
-                  {row.entry}
+                  {activeHistoryEntry.entry}
                 </p>
-              </li>
-            ))}
-          </ul>
+              </div>
+            ) : null}
+          </div>
         )}
       </div>
     </div>
@@ -1217,6 +1295,7 @@ function PastEntriesSection({
       type: 'Micro-journal',
       prompt: isStandardMicroJournalPrompt(row.prompt) ? '' : row.prompt,
       text: row.entry,
+      tags: row.tags,
     }))
 
     const parentReflections = reflections.map((entry) => ({
@@ -1282,8 +1361,27 @@ function PastEntriesSection({
                   {entry.prompt}
                 </p>
               ) : null}
+              {'tags' in entry && Array.isArray(entry.tags) && entry.tags.length > 0 ? (
+                <div className={`flex flex-wrap gap-1.5 ${entry.prompt ? 'mt-2' : ''}`}>
+                  {entry.tags.map((tag) => (
+                    <span
+                      key={tag}
+                      className="rounded-full bg-white px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.08em]"
+                      style={{ color: CARDEA_DARK_GREEN }}
+                    >
+                      {formatJournalTag(tag)}
+                    </span>
+                  ))}
+                </div>
+              ) : null}
               {entry.text ? (
-                <p className={`whitespace-pre-wrap text-sm leading-relaxed text-[#3A525A] ${entry.prompt ? 'mt-2' : ''}`}>
+                <p
+                  className={`whitespace-pre-wrap text-sm leading-relaxed text-[#3A525A] ${
+                    entry.prompt || ('tags' in entry && Array.isArray(entry.tags) && entry.tags.length > 0)
+                      ? 'mt-2'
+                      : ''
+                  }`}
+                >
                   {entry.text}
                 </p>
               ) : null}
@@ -1323,97 +1421,95 @@ function TodayNudgeCard() {
   )
 }
 
-function ReflectionPromptsPanel({ onJournal }: { onJournal: () => void }) {
-  const [reflections, setReflections] = useLocalState<Reflection[]>(STORAGE.reflections, [])
-  const [openPrompt, setOpenPrompt] = useState<string | null>(null)
-  const [text, setText] = useState('')
+function ReflectionPromptsPanel({
+  moodId,
+  selectedPromptId,
+  onOpenJournal,
+}: {
+  moodId?: MoodId | null
+  selectedPromptId?: number | null
+  onOpenJournal: (prompt: ReflectionPrompt) => void
+}) {
+  const [prompts, setPrompts] = useState<ReflectionPrompt[]>([])
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    let cancelled = false
+    ;(async () => {
+      setLoading(true)
+      const all = await fetchReflectionPrompts()
+      if (cancelled) return
+      setPrompts(pickDailyPrompts(all, moodId ?? null))
+      setLoading(false)
+    })()
+    return () => {
+      cancelled = true
+    }
+  }, [moodId])
+
+  if (loading) {
+    return (
+      <p className="text-sm" style={{ color: CARDEA_MUTED }}>
+        loading reflection prompts…
+      </p>
+    )
+  }
+
   return (
     <div className="grid gap-3 md:grid-cols-3">
-      {reflectionPrompts.map((prompt) => (
-        <div
-          key={prompt}
-          className="rounded-2xl border bg-white p-4 shadow-sm"
-          style={{ borderColor: CARDEA_LIGHT_BLUE }}
-        >
-          <p className="mb-3 text-sm font-semibold text-[#192b3f]">{prompt}</p>
-          {openPrompt === prompt ? (
-            <>
-              <textarea
-                value={text}
-                onChange={(e) => setText(e.target.value)}
-                className="min-h-[90px] w-full rounded-xl border bg-[#f5f9f9] p-3 text-sm"
-              />
-              <button
-                type="button"
-                onClick={() => {
-                  if (!text.trim()) return
-                  setReflections([
-                    { id: makeId('reflection'), prompt, text: text.trim(), date: new Date().toISOString() },
-                    ...reflections,
-                  ])
-                  setText('')
-                  setOpenPrompt(null)
-                }}
-                className="mt-2 rounded-lg px-3 py-1.5 text-xs font-semibold text-white"
-                style={{ background: CARDEA_DARK_GREEN }}
-              >
-                Save
-              </button>
-            </>
-          ) : (
-            <button
-              type="button"
-              onClick={() => setOpenPrompt(prompt)}
-              className="text-xs font-semibold"
-              style={{ color: CARDEA_DARK_GREEN }}
-            >
+      {prompts.map((prompt) => {
+        const selected = selectedPromptId === prompt.id
+        return (
+          <button
+            key={prompt.id}
+            type="button"
+            onClick={() => onOpenJournal(prompt)}
+            className={`rounded-2xl border bg-white p-4 text-left shadow-sm transition-colors hover:bg-[#f5f9f9] ${
+              selected ? 'ring-2 ring-[#577568]/40' : ''
+            }`}
+            style={{ borderColor: selected ? CARDEA_DARK_GREEN : CARDEA_LIGHT_BLUE }}
+          >
+            <p className="mb-3 text-sm font-semibold text-[#192b3f]">{prompt.prompt_text}</p>
+            <span className="text-xs font-semibold" style={{ color: CARDEA_DARK_GREEN }}>
               Reflect →
-            </button>
-          )}
-          <button type="button" onClick={onJournal} className="ml-3 text-xs font-semibold" style={{ color: CARDEA_MUTED }}>
-            journal
+            </span>
           </button>
-        </div>
-      ))}
+        )
+      })}
     </div>
   )
 }
 
-function TodayNudgeTool({ onJournal }: { onJournal: () => void }) {
+function TodayNudgeTool({
+  moodId,
+  selectedPromptId,
+  onOpenJournal,
+}: {
+  moodId?: MoodId | null
+  selectedPromptId?: number | null
+  onOpenJournal: (prompt: ReflectionPrompt) => void
+}) {
   return (
     <div className="space-y-4">
       <TodayNudgeCard />
-      <ReflectionPromptsPanel onJournal={onJournal} />
+      <ReflectionPromptsPanel
+        moodId={moodId}
+        selectedPromptId={selectedPromptId}
+        onOpenJournal={onOpenJournal}
+      />
     </div>
   )
 }
 
-function CrisisResetTool() {
-  const steps = [
-    'put both feet on the floor.',
-    'look for one safe object nearby.',
-    'take one longer exhale.',
-    'text or call someone now.',
-  ]
-  const [idx, setIdx] = useState(0)
+function CrisisResetTool({ onOpenTool }: { onOpenTool?: (toolId: ToolId) => void }) {
   return (
-    <div className="space-y-4">
-      <div className="rounded-2xl border bg-[#fff7f7] p-5" style={{ borderColor: 'rgba(220, 38, 38, 0.18)' }}>
-        <p className="text-lg font-semibold text-[#9B1C31]">{steps[idx]}</p>
-        <button
-          type="button"
-          onClick={() => setIdx((i) => Math.min(i + 1, steps.length - 1))}
-          className="mt-4 rounded-xl px-4 py-2 text-sm font-semibold text-white"
-          style={{ background: '#9B1C31' }}
-        >
-          {idx >= steps.length - 1 ? 'Stay with this' : 'Next'}
-        </button>
-      </div>
-      <div className="rounded-2xl bg-white p-4 text-sm leading-relaxed text-[#192b3f]">
-        if you might hurt yourself or someone else, call <strong>988</strong> in the U.S.
-        or go to the nearest emergency room.
-      </div>
-    </div>
+    <CrisisSupportPanel
+      onOpenTool={
+        onOpenTool
+          ? (toolId) => onOpenTool(toolId)
+          : undefined
+      }
+    />
   )
 }
 
@@ -1460,11 +1556,19 @@ function ToolContent({
   onOpenTool,
   onMoodEntriesChanged,
   onJournalEntriesChanged,
+  microJournalDraft,
+  moodId,
+  selectedReflectionPromptId,
+  onOpenJournalFromReflection,
 }: {
   toolId: ToolId
   onOpenTool: (toolId: ToolId) => void
   onMoodEntriesChanged?: () => void
   onJournalEntriesChanged?: () => void
+  microJournalDraft: MicroJournalDraft
+  moodId?: MoodId | null
+  selectedReflectionPromptId?: number | null
+  onOpenJournalFromReflection: (prompt: ReflectionPrompt) => void
 }) {
   if (toolId === 'breathing') return <BreathingTool />
   if (toolId === 'grounding') return <GroundingTool />
@@ -1472,12 +1576,26 @@ function ToolContent({
   if (toolId === 'mood-check-in') return <MoodCheckInTool onSaved={onMoodEntriesChanged} />
   if (toolId === 'name-it') return <NameItTool onOpenTool={onOpenTool} />
   if (toolId === 'micro-journal') {
-    return <MicroJournalTool onEntriesChanged={onJournalEntriesChanged} />
+    return (
+      <MicroJournalTool
+        draft={microJournalDraft}
+        onEntriesChanged={onJournalEntriesChanged}
+      />
+    )
   }
   if (toolId === 'reframes') return <ReframesTool />
   if (toolId === 'safe-place') return <SafePlaceTool />
-  if (toolId === 'today-nudge') return <TodayNudgeTool onJournal={() => onOpenTool('micro-journal')} />
-  return <CrisisResetTool />
+  if (toolId === 'today-nudge') {
+    return (
+      <TodayNudgeTool
+        moodId={moodId}
+        selectedPromptId={selectedReflectionPromptId}
+        onOpenJournal={onOpenJournalFromReflection}
+      />
+    )
+  }
+  if (toolId === 'crisis-reset') return <CrisisResetTool onOpenTool={onOpenTool} />
+  return null
 }
 
 function MoodCheckInTool({ onSaved }: { onSaved?: () => void }) {
@@ -1561,6 +1679,8 @@ export default function WellnessTools() {
   const [checkInSaved, setCheckInSaved] = useState(false)
   const [checkInError, setCheckInError] = useState<string | null>(null)
   const [journalRefreshKey, setJournalRefreshKey] = useState(0)
+  const [microJournalDraft, setMicroJournalDraft] = useState<MicroJournalDraft>(defaultMicroJournalDraft)
+  const [selectedReflectionPromptId, setSelectedReflectionPromptId] = useState<number | null>(null)
 
   const reloadMoodEntries = useCallback(async () => {
     const rows = await fetchMoodEntries(RECENT_MOOD_CHECKINS_LIMIT)
@@ -1598,9 +1718,10 @@ export default function WellnessTools() {
   }, [reloadToolUsage])
 
   useEffect(() => {
-    const pending = sessionStorage.getItem('cardea-wellness-pending-journal-prompt')
+    const pending = consumePendingJournalDraft()
     if (pending) {
-      sessionStorage.removeItem('cardea-wellness-pending-journal-prompt')
+      setMicroJournalDraft(pending)
+      if (pending.promptId) setSelectedReflectionPromptId(pending.promptId)
       setActiveTool('micro-journal')
     }
   }, [])
@@ -1615,6 +1736,26 @@ export default function WellnessTools() {
   }, [searchParams])
 
   const selectedMeta = selectedEmotion ? WELLNESS_EMOTIONS.find((e) => e.id === selectedEmotion) ?? null : null
+  const latestPersistedMoodId = useMemo((): MoodId | null => moodEntries[0]?.mood ?? null, [moodEntries])
+  const reflectionMoodId = latestPersistedMoodId ?? moodId
+
+  const openJournalFromReflection = useCallback(
+    (prompt: ReflectionPrompt) => {
+      const next = microJournalDraftFromReflection(prompt, reflectionMoodId)
+      setMicroJournalDraft(next)
+      setSelectedReflectionPromptId(prompt.id)
+      savePendingJournalDraft(next)
+      setActiveTool('micro-journal')
+      void insertToolUsage('micro-journal').then(({ row }) => {
+        if (row) {
+          setToolUsage((prev) => [row, ...prev.filter((r) => r.id !== row.id)])
+        } else {
+          void reloadToolUsage()
+        }
+      })
+    },
+    [reflectionMoodId, reloadToolUsage],
+  )
   const suggestedExercises = useMemo(
     () => {
       const sourceMoodId = latestPersistedMoodId ?? moodId
@@ -1658,7 +1799,7 @@ export default function WellnessTools() {
     return `linear-gradient(90deg, ${colors.join(', ')})`
   }, [recentMoodSummaries])
 
-  async function saveCheckInFromSelection(options?: { showSavedToast?: boolean }): Promise<boolean> {
+  async function saveCheckInFromSelection(): Promise<boolean> {
     if (!selectedMeta) return true
     setCheckInError(null)
     setMoodLog([
@@ -1669,7 +1810,7 @@ export default function WellnessTools() {
       },
       ...moodLog,
     ].slice(0, 80))
-    const { entry, error, alreadySaved } = await saveMoodCheckInIfNeeded(selectedMeta.moodId)
+    const { entry, error } = await saveMoodCheckInIfNeeded(selectedMeta.moodId)
     if (error) {
       setCheckInError(error)
       return false
@@ -1679,10 +1820,6 @@ export default function WellnessTools() {
       setMoodEntries((prev) =>
         [entry, ...prev.filter((r) => r.id !== entry.id)].slice(0, RECENT_MOOD_CHECKINS_LIMIT),
       )
-      if (options?.showSavedToast && !alreadySaved) {
-        setCheckInSaved(true)
-        window.setTimeout(() => setCheckInSaved(false), 1800)
-      }
     } else {
       await reloadMoodEntries()
     }
@@ -1690,7 +1827,13 @@ export default function WellnessTools() {
   }
 
   async function saveMoodCheckIn() {
-    await saveCheckInFromSelection({ showSavedToast: true })
+    const ok = await saveCheckInFromSelection()
+    if (!ok) return
+    setCheckInSaved(true)
+    window.setTimeout(() => setCheckInSaved(false), 1800)
+    if (selectedMeta?.moodId === 'numb') {
+      void openTool('name-it')
+    }
   }
 
   async function openMoodChat() {
@@ -1704,7 +1847,9 @@ export default function WellnessTools() {
       },
       ...moodLog,
     ].slice(0, 80))
-    const { entry, entryId: moodEntryId, error } = await ensureMoodEntryForChat(selectedMeta.moodId)
+    const { entry, entryId: moodEntryId, error } = await ensureMoodEntryForChat(
+      selectedMeta.moodId,
+    )
     if (error) {
       setCheckInError(error)
       return
@@ -1728,8 +1873,12 @@ export default function WellnessTools() {
 
   async function openTool(toolId: ToolId, options?: { saveCheckIn?: boolean }) {
     if (options?.saveCheckIn && selectedMeta) {
-      const ok = await saveCheckInFromSelection({ showSavedToast: true })
+      const ok = await saveCheckInFromSelection()
       if (!ok) return
+    }
+    if (toolId === 'micro-journal') {
+      setMicroJournalDraft(defaultMicroJournalDraft())
+      setSelectedReflectionPromptId(null)
     }
     setActiveTool(toolId)
     const { row } = await insertToolUsage(toolId)
@@ -1840,9 +1989,30 @@ export default function WellnessTools() {
               ))}
             </div>
 
-            <p className="mt-2 text-xs leading-relaxed" style={{ color: CARDEA_MUTED }}>
-              Feeling more than one? Pick Unsure.
-            </p>
+            <div className="mt-2 flex flex-wrap items-center justify-between gap-3">
+              <p className="text-sm leading-relaxed" style={{ color: '#3A525A' }}>
+                Feeling more than one? Pick Unsure.
+              </p>
+              <div className="flex items-center gap-2">
+                {checkInSaved && (
+                  <span className="text-xs font-semibold" style={{ color: CARDEA_DARK_GREEN }}>
+                    saved
+                  </span>
+                )}
+                <button
+                  type="button"
+                  disabled={!selectedMeta}
+                  onClick={() => void saveMoodCheckIn()}
+                  className="rounded-full px-4 py-2 text-xs font-semibold text-white disabled:opacity-40"
+                  style={{ background: CARDEA_DARK_GREEN }}
+                >
+                  Save check-in
+                </button>
+              </div>
+            </div>
+            {checkInError ? (
+              <p className="mt-2 text-xs leading-relaxed text-[#9B1C31]">{checkInError}</p>
+            ) : null}
 
             <div className="mt-4 rounded-2xl border bg-white/85 p-4 shadow-sm" style={{ borderColor: 'rgba(25,43,63,0.08)' }}>
               <p className="mb-3 text-sm font-semibold text-[#192b3f]">
@@ -1858,30 +2028,9 @@ export default function WellnessTools() {
                 Open chat
                 <ArrowRight className="h-4 w-4" aria-hidden />
               </button>
-              {checkInError ? (
-                <p className="mt-2 text-xs leading-relaxed text-[#9B1C31]">{checkInError}</p>
-              ) : null}
-              <div className="mt-3 flex flex-wrap items-center justify-between gap-3">
-                <p className="text-xs leading-relaxed" style={{ color: CARDEA_MUTED }}>
-                  two questions. one minute.
-                </p>
-                <div className="flex items-center gap-2">
-                  {checkInSaved && (
-                    <span className="text-xs font-semibold" style={{ color: CARDEA_DARK_GREEN }}>
-                      saved
-                    </span>
-                  )}
-                  <button
-                    type="button"
-                    disabled={!selectedMeta}
-                    onClick={() => void saveMoodCheckIn()}
-                    className="rounded-full px-4 py-2 text-xs font-semibold text-white disabled:opacity-40"
-                    style={{ background: CARDEA_DARK_GREEN }}
-                  >
-                    Save check-in
-                  </button>
-                </div>
-              </div>
+              <p className="mt-3 text-xs leading-relaxed" style={{ color: CARDEA_MUTED }}>
+                two questions. one minute.
+              </p>
             </div>
 
             {selectedMeta ? (
@@ -1979,12 +2128,12 @@ export default function WellnessTools() {
                   I need help right now
                 </h3>
                 <p className="mt-1 text-sm leading-relaxed" style={{ color: CARDEA_MUTED }}>
-                  A guided 4-step reset. Takes about 60 seconds.
+                  Go slowly — grounding questions, hotlines, and Cardea support.
                 </p>
               </div>
             </div>
             <span className="hidden rounded-xl bg-[#9B1C31] px-4 py-2 text-sm font-semibold text-white sm:inline-flex">
-              Start now →
+              Open →
             </span>
           </button>
         </Section>
@@ -2038,7 +2187,11 @@ export default function WellnessTools() {
               <p className="mb-3 text-xs font-bold uppercase tracking-[0.18em]" style={{ color: CARDEA_MUTED }}>
                 Reflection prompts
               </p>
-              <ReflectionPromptsPanel onJournal={() => openTool('micro-journal')} />
+              <ReflectionPromptsPanel
+                moodId={reflectionMoodId}
+                selectedPromptId={selectedReflectionPromptId}
+                onOpenJournal={openJournalFromReflection}
+              />
             </div>
           </div>
         </Section>
@@ -2082,6 +2235,10 @@ export default function WellnessTools() {
               onOpenTool={openTool}
               onMoodEntriesChanged={reloadMoodEntries}
               onJournalEntriesChanged={() => setJournalRefreshKey((k) => k + 1)}
+              microJournalDraft={microJournalDraft}
+              moodId={reflectionMoodId}
+              selectedReflectionPromptId={selectedReflectionPromptId}
+              onOpenJournalFromReflection={openJournalFromReflection}
             />
             <ToolActions
               onDone={() => setActiveTool(null)}

@@ -14,5 +14,5 @@ export {
   resolveSuggestedExercisesForMood,
   wellnessToolPath,
   isWellnessToolId,
-  type WellnessToolId,
 } from '../mood/moodRecommendations'
+export type { WellnessToolId } from '../lib/wellnessToolRegistry'

@@ -10,3 +10,32 @@
     transform: translateY(0);
   }
 }
+
+@keyframes safePlaceSceneDrift {
+  0%,
+  100% {
+    transform: scale(1.02) translateY(0);
+  }
+  50% {
+    transform: scale(1.05) translateY(-4px);
+  }
+}
+
+@keyframes safePlaceGlowPulse {
+  0%,
+  100% {
+    opacity: 0.55;
+  }
+  50% {
+    opacity: 0.85;
+  }
+}
+
+.safe-place-scene-animate {
+  animation: safePlaceSceneDrift 12s ease-in-out infinite;
+  transform-origin: center center;
+}
+
+.safe-place-glow {
+  animation: safePlaceGlowPulse 6s ease-in-out infinite;
+}
