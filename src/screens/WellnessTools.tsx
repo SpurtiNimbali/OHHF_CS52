@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState, type ReactNode } from 'react'
-import { Link, useNavigate, useSearchParams } from 'react-router-dom'
+import { useNavigate, useSearchParams } from 'react-router-dom'
 import {
   Activity,
   AlertCircle,
@@ -123,12 +123,6 @@ const WELLNESS_EMOTIONS: Array<{
     secondary: tools.secondary as ToolId,
   }
 })
-
-/** Maps global mood (home + tools) to check-in chip selection. */
-function wellnessEmotionFromMoodId(moodId: MoodId | null): WellnessEmotion | null {
-  if (!moodId) return null
-  return WELLNESS_EMOTIONS.find((e) => e.moodId === moodId)?.id ?? null
-}
 
 const TOOL_META: Record<ToolId, {
   title: string
@@ -483,10 +477,8 @@ function Section({
 
 function ToolActions({
   onDone,
-  onTryElse,
 }: {
   onDone: () => void
-  onTryElse: () => void
 }) {
   return (
     <div className="mt-6 flex flex-wrap gap-2 border-t pt-4" style={{ borderColor: 'rgba(25, 43, 63, 0.08)' }}>
@@ -497,14 +489,6 @@ function ToolActions({
         style={{ background: CARDEA_DARK_GREEN }}
       >
         Done
-      </button>
-      <button
-        type="button"
-        onClick={onTryElse}
-        className="rounded-xl border bg-white px-5 py-2.5 text-sm font-semibold"
-        style={{ borderColor: 'rgba(25, 43, 63, 0.16)', color: CARDEA_NAVY }}
-      >
-        Try something else
       </button>
     </div>
   )
@@ -1631,8 +1615,6 @@ export default function WellnessTools() {
   }, [searchParams])
 
   const selectedMeta = selectedEmotion ? WELLNESS_EMOTIONS.find((e) => e.id === selectedEmotion) ?? null : null
-  const checkInEmotion = selectedEmotion ?? wellnessEmotionFromMoodId(moodId)
-  const latestPersistedMoodId = moodEntries[0]?.mood ?? null
   const suggestedExercises = useMemo(
     () => {
       const sourceMoodId = latestPersistedMoodId ?? moodId
@@ -2103,7 +2085,6 @@ export default function WellnessTools() {
             />
             <ToolActions
               onDone={() => setActiveTool(null)}
-              onTryElse={() => setActiveTool(null)}
             />
           </motion.div>
         </div>
