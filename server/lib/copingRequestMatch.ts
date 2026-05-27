@@ -1,12 +1,13 @@
 import { loadEmotionMap, safeDetectedEmotion } from './emotionMapLoader.js'
 import {
   resolveSelectedTool,
+  toWellnessToolChatCard,
   type ResolvedWellnessTool,
   type WellnessToolId,
 } from '../../src/lib/wellnessToolRegistry.js'
 
 export type CopingExercisePayload = { name: string; steps: string[] }
-export type CopingToolPayload = { name: string; route: string }
+export type CopingToolPayload = { name: string; route: string; description: string }
 
 export type CopingMatch = {
   exercise: CopingExercisePayload
@@ -73,7 +74,8 @@ function fallbackToolIdForEmotion(emotionId: string): WellnessToolId {
 
 function toToolPayload(tool: ResolvedWellnessTool | null): CopingToolPayload | null {
   if (!tool) return null
-  return { name: tool.label, route: tool.route }
+  const card = toWellnessToolChatCard(tool)
+  return { name: card.name, route: card.route, description: card.description }
 }
 
 function withCanonicalSelectedTool(

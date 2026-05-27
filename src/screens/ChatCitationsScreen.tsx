@@ -11,7 +11,6 @@ const FONT = 'Inter, system-ui, sans-serif'
 export type ChatCitationSource = {
   id: string
   title: string
-  description: string
   url?: string
 }
 
@@ -132,12 +131,7 @@ export default function ChatCitationsScreen() {
                   }}
                 >
                   <p style={{ margin: '0 0 8px', fontSize: '0.72rem', fontWeight: 700, color: GREEN }}>Source {index + 1}</p>
-                  <h2 style={{ margin: '0 0 10px', fontSize: '1rem', fontWeight: 700, color: NAVY, lineHeight: 1.35 }}>{c.title}</h2>
-                  {c.description ? (
-                    <p style={{ margin: '0 0 12px', fontSize: '0.875rem', color: '#374151', lineHeight: 1.6, whiteSpace: 'pre-wrap' }}>
-                      {c.description}
-                    </p>
-                  ) : null}
+                  <h2 style={{ margin: '0 0 12px', fontSize: '1rem', fontWeight: 700, color: NAVY, lineHeight: 1.35 }}>{c.title}</h2>
                   {c.url ? (
                     <a
                       href={c.url}

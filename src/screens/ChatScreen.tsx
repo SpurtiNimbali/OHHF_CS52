@@ -22,7 +22,6 @@ const FONT       = 'Inter, system-ui, sans-serif'
 interface Citation {
   id: string
   title: string
-  description: string
   url?: string
   type: 'hotline' | 'exercise' | 'article'
 }
@@ -58,7 +57,7 @@ interface Message {
   companion?: {
     emotionChips?: string[] | null
     exercise?: { name: string; steps: string[] } | null
-    toolCards?: { name: string; route: string }[] | null
+    toolCards?: { name: string; route: string; description?: string }[] | null
     uiRedirect?: { label: string; destination: string } | null
     detectedEmotion?: string | null
   }
@@ -501,14 +500,10 @@ function MessageBubble({
   message,
   onOpenCitations,
   onReflectChip,
-  onExerciseTried,
-  onExerciseSkip,
 }: {
   message: Message
   onOpenCitations: (citations: Citation[]) => void
   onReflectChip?: (chip: string, emotionId: string | null) => void
-  onExerciseTried?: (exerciseName?: string) => void
-  onExerciseSkip?: () => void
 }) {
   const navigate = useNavigate()
   const isUser = message.role === 'user'
@@ -639,84 +634,32 @@ function MessageBubble({
             </div>
           </div>
         )}
-        {!isUser && message.companion?.exercise && (
-          <div
-            style={{
-              marginTop: 10,
-              width: '100%',
-              padding: 12,
-              borderRadius: 12,
-              background: OFF_WHITE,
-              border: `1px solid ${LIGHT_BLUE}`,
-              boxSizing: 'border-box',
-            }}
-          >
-            <p style={{ margin: '0 0 6px', fontSize: '0.78rem', fontWeight: 700, color: NAVY }}>
-              {message.companion.exercise.name}
-            </p>
-            <ol style={{ margin: '0 0 10px', paddingLeft: '1.1em', fontSize: '0.75rem', color: NAVY }}>
-              {message.companion.exercise.steps.map((s, i) => (
-                <li key={i} style={{ margin: '0 0 4px', lineHeight: 1.5 }}>
-                  {s}
-                </li>
-              ))}
-            </ol>
-            <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-              <button
-                type="button"
-                onClick={() =>
-                  onExerciseTried?.(message.companion?.exercise?.name)
-                }
-                style={{
-                  padding: '8px 12px',
-                  borderRadius: 10,
-                  border: 'none',
-                  background: GREEN,
-                  color: '#fff',
-                  fontWeight: 650,
-                  fontSize: '0.75rem',
-                  cursor: 'pointer',
-                  fontFamily: FONT,
-                }}
-              >
-                I tried this
-              </button>
-              <button
-                type="button"
-                onClick={() => onExerciseSkip?.()}
-                style={{
-                  padding: '8px 12px',
-                  borderRadius: 10,
-                  border: `1.5px solid ${LIGHT_BLUE}`,
-                  background: '#fff',
-                  color: NAVY,
-                  fontWeight: 650,
-                  fontSize: '0.75rem',
-                  cursor: 'pointer',
-                  fontFamily: FONT,
-                }}
-              >
-                Not right now
-              </button>
-            </div>
-          </div>
-        )}
         {!isUser &&
           message.companion?.toolCards &&
-          message.companion.toolCards.length > 0 &&
-          !message.companion?.exercise && (
+          message.companion.toolCards.length > 0 && (
           <div style={{ marginTop: 8, width: '100%', display: 'flex', flexDirection: 'column', gap: 6 }}>
             <p style={{ margin: 0, fontSize: '0.7rem', fontWeight: 650, color: MUTED }}>
-              {message.companion.toolCards.length === 1 ? 'Wellness tool' : 'Gentle tools nearby'}
+              {message.companion.toolCards.length === 1
+                ? 'Wellness tool'
+                : message.companion.toolCards.some((t) => t.description)
+                  ? 'Wellness tools in the app'
+                  : 'Gentle tools nearby'}
             </p>
-            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
+            <div
+              style={{
+                display: 'flex',
+                flexDirection: message.companion.toolCards.some((t) => t.description) ? 'column' : 'row',
+                flexWrap: message.companion.toolCards.some((t) => t.description) ? 'nowrap' : 'wrap',
+                gap: 8,
+              }}
+            >
               {message.companion.toolCards.map((t) => (
                 <button
                   key={t.route + t.name}
                   type="button"
                   onClick={() => navigate(t.route)}
                   style={{
-                    padding: '8px 12px',
+                    padding: t.description ? '10px 12px' : '8px 12px',
                     borderRadius: 10,
                     border: `1.5px solid ${LIGHT_BLUE}`,
                     background: '#fff',
@@ -724,9 +667,25 @@ function MessageBubble({
                     fontWeight: 600,
                     cursor: 'pointer',
                     fontFamily: FONT,
+                    textAlign: 'left',
+                    width: t.description ? '100%' : undefined,
                   }}
                 >
-                  {t.name}
+                  <span style={{ display: 'block', color: NAVY }}>{t.name}</span>
+                  {t.description ? (
+                    <span
+                      style={{
+                        display: 'block',
+                        marginTop: 4,
+                        fontSize: '0.7rem',
+                        fontWeight: 400,
+                        lineHeight: 1.45,
+                        color: MUTED,
+                      }}
+                    >
+                      {t.description}
+                    </span>
+                  ) : null}
                 </button>
               ))}
             </div>
@@ -913,7 +872,7 @@ export default function ChatScreen() {
           nextStage?: CompanionStageApi
           emotionChips?: string[] | null
           exercise?: { name: string; steps: string[] } | null
-          toolCards?: { name: string; route: string }[] | null
+          toolCards?: { name: string; route: string; description?: string }[] | null
           uiRedirect?: { label: string; destination: string } | null
           crisis?: boolean
           detectedEmotion?: string | null
@@ -933,7 +892,6 @@ export default function ChatScreen() {
         const citations: Citation[] | undefined = data.citations?.map((c) => ({
           id: c.chunkId,
           title: c.title,
-          description: c.excerpt,
           url: c.sourceUrl || undefined,
           type: 'article',
         }))
@@ -1009,20 +967,6 @@ export default function ChatScreen() {
     [handleSend],
   )
 
-  const handleExerciseTried = useCallback(
-    (exerciseName?: string) => {
-      handleSend('Checking in.', {
-        conversationStage: 'invite',
-        inviteExerciseName: exerciseName ?? null,
-      })
-    },
-    [handleSend],
-  )
-
-  const handleExerciseSkip = useCallback(() => {
-    setConvStage('open')
-  }, [])
-
   const handleKeyDown = (e: KeyboardEvent<HTMLTextAreaElement>) => {
     if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleSend(value) }
   }
@@ -1081,8 +1025,6 @@ export default function ChatScreen() {
                   message={msg}
                   onOpenCitations={openCitations}
                   onReflectChip={handleReflectChip}
-                  onExerciseTried={handleExerciseTried}
-                  onExerciseSkip={handleExerciseSkip}
                 />
               ))}
               {isLoading && <LoadingBubble key="loading" />}
