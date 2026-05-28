@@ -121,8 +121,6 @@ const CHIPS = [
   "Something's been sitting heavy on me",
   "I'm worried about what's ahead",
   'Help me calm my body down',
-  "I'm overwhelmed by care logistics",
-  'Explain something in plain language',
   "I'm not sure what I'm feeling",
 ]
 
