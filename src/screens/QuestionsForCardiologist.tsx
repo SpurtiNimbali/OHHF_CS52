@@ -260,6 +260,8 @@ export default function QuestionsForCardiologist() {
   const customInputRef = useRef<HTMLInputElement>(null)
   const [expandedSavedId, setExpandedSavedId] = useState<string | null>(null)
   const [savedMeta, setSavedMeta] = useState<Record<string, SavedQuestionMeta>>({})
+  const [savingGeneratedId, setSavingGeneratedId] = useState<string | null>(null)
+  const [savedGeneratedIds, setSavedGeneratedIds] = useState<Set<string>>(() => new Set())
   useEffect(() => {
     let cancelled = false
     ;(async () => {

@@ -6,13 +6,23 @@
 import type { MoodId } from './moodVariants'
 import {
   buildToolRoute,
-  isWellnessToolId as isRegistryWellnessToolId,
-  type LiveMoodWellnessToolId,
+  isLiveWellnessToolId,
+  WELLNESS_TOOL_REGISTRY,
   type WellnessToolId,
+  type WellnessToolSection,
 } from '../lib/wellnessToolRegistry'
 
+export type { WellnessToolId }
+
+export type RecommendedWellnessTool = {
+  slug: WellnessToolId
+  label: string
+  route: string
+  section: WellnessToolSection
+}
+
 /** Primary wellness tool surfaced on the home “Wellness tools” card */
-export const MOOD_PRIMARY_WELLNESS_TOOL: Record<MoodId, LiveMoodWellnessToolId> = {
+export const MOOD_PRIMARY_WELLNESS_TOOL: Record<MoodId, WellnessToolId> = {
   overwhelmed: 'breathing',
   exhausted: 'physical-regulation',
   angry: 'physical-regulation',
@@ -40,7 +50,7 @@ export const MOOD_WELLNESS_HOME_DESCRIPTION: Record<MoodId, string> = {
 }
 
 /** “Suggested Exercises” on the wellness page (4 per mood) */
-export const MOOD_SUGGESTED_EXERCISES: Record<MoodId, LiveMoodWellnessToolId[]> = {
+export const MOOD_SUGGESTED_EXERCISES: Record<MoodId, WellnessToolId[]> = {
   overwhelmed: ['breathing', 'grounding', 'micro-journal', 'today-nudge'],
   exhausted: ['physical-regulation', 'breathing', 'micro-journal', 'today-nudge'],
   angry: ['physical-regulation', 'reframes', 'grounding', 'micro-journal'],
@@ -56,7 +66,7 @@ export const MOOD_SUGGESTED_EXERCISES: Record<MoodId, LiveMoodWellnessToolId[]> 
 /** Primary + secondary tiles in “Tools for your mood” */
 export const MOOD_WELLNESS_PRIMARY_SECONDARY: Record<
   MoodId,
-  { primary: LiveMoodWellnessToolId; secondary: LiveMoodWellnessToolId }
+  { primary: WellnessToolId; secondary: WellnessToolId }
 > = {
   overwhelmed: { primary: 'breathing', secondary: 'grounding' },
   exhausted: { primary: 'physical-regulation', secondary: 'breathing' },
@@ -91,22 +101,42 @@ export const DEFAULT_HOME_CARD_ORDER = [
   'wellness-tools',
 ] as const
 
-const DEFAULT_SUGGESTED_EXERCISES: LiveMoodWellnessToolId[] = [
+const DEFAULT_SUGGESTED_EXERCISES: WellnessToolId[] = [
   'breathing',
   'grounding',
   'reframes',
   'micro-journal',
 ]
 
-export function wellnessToolPath(toolId: LiveMoodWellnessToolId): string {
+export function wellnessToolPath(toolId: WellnessToolId): string {
   return buildToolRoute(toolId)
 }
 
 export function isWellnessToolId(value: string): value is WellnessToolId {
-  return isRegistryWellnessToolId(value)
+  return isLiveWellnessToolId(value)
 }
 
-export function resolveSuggestedExercisesForMood(moodId: MoodId | null): LiveMoodWellnessToolId[] {
+export function resolveSuggestedExercisesForMood(moodId: MoodId | null): WellnessToolId[] {
   if (!moodId) return DEFAULT_SUGGESTED_EXERCISES
   return MOOD_SUGGESTED_EXERCISES[moodId]
+}
+
+export function resolveRecommendedToolsForMood(
+  moodId: MoodId | null,
+  options: { limit?: number } = {},
+): RecommendedWellnessTool[] {
+  if (!moodId) return []
+
+  const limit = options.limit ?? 4
+  return resolveSuggestedExercisesForMood(moodId)
+    .slice(0, limit)
+    .map((toolId) => {
+      const tool = WELLNESS_TOOL_REGISTRY[toolId]
+      return {
+        slug: tool.id,
+        label: tool.label,
+        route: buildToolRoute(toolId),
+        section: tool.section,
+      }
+    })
 }
