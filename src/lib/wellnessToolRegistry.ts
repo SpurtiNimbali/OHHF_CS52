@@ -149,6 +149,7 @@ const EXTRA_ALIASES: Record<string, WellnessToolId> = {
   reframing: 'reframes',
   reframe: 'reframes',
   'safe place': 'safe-place',
+  'safe space': 'safe-place',
   'safe place visualization': 'safe-place',
   'name it to tame it': 'name-it',
   'name it': 'name-it',

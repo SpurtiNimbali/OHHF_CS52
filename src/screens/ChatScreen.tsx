@@ -6,7 +6,7 @@ import { isMoodCheckInChatState } from '../mood/moodCheckInNav'
 import { markMoodEntryIfChat } from '../lib/moodEntries'
 import ReactMarkdown from 'react-markdown'
 import type { Components } from 'react-markdown'
-import { MessageCircle, Heart, Shield, ArrowUp, ArrowLeft, CircleHelp, BookOpen, Users } from 'lucide-react'
+import { MessageCircle, Heart, Shield, ArrowUp, ArrowLeft, CircleHelp, BookOpen, Users, ChevronRight, Wind, Sparkles, RefreshCw, Activity, Tag } from 'lucide-react'
 
 // ── Brand tokens ──────────────────────────────────────────────────────────────
 
@@ -121,8 +121,6 @@ const CHIPS = [
   "Something's been sitting heavy on me",
   "I'm worried about what's ahead",
   'Help me calm my body down',
-  "I'm overwhelmed by care logistics",
-  'Explain something in plain language',
   "I'm not sure what I'm feeling",
 ]
 
@@ -529,6 +527,46 @@ function MessageBubble({
     textUnderlineOffset: 2,
     textAlign: 'left',
   }
+  const iconWrapStyle: CSSProperties = {
+    display: 'inline-flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    width: 34,
+    height: 34,
+    borderRadius: 10,
+    background: LIGHT_BLUE,
+    border: `1px solid rgba(25, 43, 63, 0.08)`,
+    flexShrink: 0,
+  }
+  const parseToolIdFromRoute = (route: string): string | null => {
+    const qIndex = route.indexOf('?')
+    if (qIndex === -1) return null
+    const search = route.slice(qIndex + 1)
+    const params = new URLSearchParams(search)
+    const value = params.get('tool')
+    return value ? value.trim().toLowerCase() : null
+  }
+  const toolIconForCard = (tool: { name: string; route: string }): typeof Wind => {
+    const toolId = parseToolIdFromRoute(tool.route)
+    if (toolId === 'breathing') return Wind
+    if (toolId === 'grounding') return Sparkles
+    if (toolId === 'micro-journal') return BookOpen
+    if (toolId === 'reframes') return RefreshCw
+    if (toolId === 'safe-place') return Heart
+    if (toolId === 'physical-regulation') return Activity
+    if (toolId === 'today-nudge') return Heart
+    if (toolId === 'name-it') return Tag
+    const n = tool.name.toLowerCase()
+    if (n.includes('breath')) return Wind
+    if (n.includes('ground')) return Sparkles
+    if (n.includes('journal')) return BookOpen
+    if (n.includes('reframe')) return RefreshCw
+    if (n.includes('safe place')) return Heart
+    if (n.includes('physical regulation')) return Activity
+    if (n.includes('nudge')) return Heart
+    if (n.includes('name it')) return Tag
+    return Wind
+  }
 
   return (
     <motion.div
@@ -653,41 +691,73 @@ function MessageBubble({
                 gap: 8,
               }}
             >
-              {message.companion.toolCards.map((t) => (
-                <button
+              {message.companion.toolCards.map((t) => {
+                const ToolIcon = toolIconForCard(t)
+                return (
+                <motion.button
                   key={t.route + t.name}
                   type="button"
                   onClick={() => navigate(t.route)}
+                  whileHover={{ y: -1 }}
+                  whileTap={{ scale: 0.995 }}
                   style={{
-                    padding: t.description ? '10px 12px' : '8px 12px',
-                    borderRadius: 10,
-                    border: `1.5px solid ${LIGHT_BLUE}`,
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 10,
+                    padding: '11px 12px',
+                    borderRadius: 12,
+                    border: `1px solid ${LIGHT_BLUE}`,
                     background: '#fff',
-                    fontSize: '0.75rem',
-                    fontWeight: 600,
+                    boxShadow: '0 1px 4px rgba(25,43,63,0.06)',
                     cursor: 'pointer',
                     fontFamily: FONT,
                     textAlign: 'left',
                     width: t.description ? '100%' : undefined,
+                    minWidth: t.description ? undefined : 190,
+                    transition: 'box-shadow 0.18s ease, border-color 0.18s ease, transform 0.12s ease',
+                  }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.borderColor = GREEN
+                    e.currentTarget.style.boxShadow = '0 4px 10px rgba(25,43,63,0.10)'
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.borderColor = LIGHT_BLUE
+                    e.currentTarget.style.boxShadow = '0 1px 4px rgba(25,43,63,0.06)'
                   }}
                 >
-                  <span style={{ display: 'block', color: NAVY }}>{t.name}</span>
-                  {t.description ? (
-                    <span
-                      style={{
-                        display: 'block',
-                        marginTop: 4,
-                        fontSize: '0.7rem',
-                        fontWeight: 400,
-                        lineHeight: 1.45,
-                        color: MUTED,
-                      }}
-                    >
-                      {t.description}
+                  <span
+                    aria-hidden
+                    style={iconWrapStyle}
+                  >
+                    <ToolIcon style={{ width: 18, height: 18, color: NAVY }} strokeWidth={2} />
+                  </span>
+                  <span style={{ display: 'block', minWidth: 0, flex: 1 }}>
+                    <span style={{ display: 'block', color: NAVY, fontSize: '0.76rem', fontWeight: 700 }}>
+                      {t.name}
                     </span>
-                  ) : null}
-                </button>
-              ))}
+                    {t.description ? (
+                      <span
+                        style={{
+                          display: 'block',
+                          marginTop: 3,
+                          fontSize: '0.69rem',
+                          fontWeight: 400,
+                          lineHeight: 1.45,
+                          color: MUTED,
+                        }}
+                      >
+                        {t.description}
+                      </span>
+                    ) : null}
+                  </span>
+                  <ChevronRight
+                    style={{ width: 16, height: 16, color: MUTED, flexShrink: 0 }}
+                    strokeWidth={2}
+                    aria-hidden
+                  />
+                </motion.button>
+                )
+              })}
             </div>
           </div>
         )}
