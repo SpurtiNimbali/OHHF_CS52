@@ -201,3 +201,72 @@ export async function insertUserReframe(
   }
   return { row: direct, error: null }
 }
+
+async function deleteReframeDirect(userId: string, id: string): Promise<boolean> {
+  const { data, error } = await supabase
+    .from('user_reframes')
+    .delete()
+    .eq('id', id)
+    .eq('user_id', userId)
+    .select('id')
+
+  if (error) {
+    console.warn('[user_reframes] delete failed:', formatSupabaseClientError(error))
+    if (isRlsError(error)) console.warn('[user_reframes]', RLS_SETUP_HINT)
+    return false
+  }
+
+  return Array.isArray(data) && data.length > 0
+}
+
+async function deleteReframeApi(id: string): Promise<{ ok: boolean; error: string | null }> {
+  const token = await getAccessToken()
+  if (!token) {
+    return { ok: false, error: 'Sign in required to delete your reframe.' }
+  }
+
+  try {
+    const res = await authFetch(`/api/user-reframes/${encodeURIComponent(id)}`, {
+      method: 'DELETE',
+    })
+    if (res.status === 204) {
+      return { ok: true, error: null }
+    }
+    const body = (await res.json().catch(() => ({}))) as { error?: string }
+    if (res.status === 404) {
+      return { ok: false, error: body.error ?? 'Reframe not found.' }
+    }
+    return { ok: false, error: body.error ?? `Could not delete (${res.status}).` }
+  } catch (e) {
+    const msg = e instanceof Error ? e.message : 'Network error'
+    return { ok: false, error: `${msg}. Start the API with npm run server:dev.` }
+  }
+}
+
+export async function deleteUserReframe(id: string): Promise<{ ok: boolean; error: string | null }> {
+  if (!isSupabaseConfigured) {
+    return { ok: false, error: 'Supabase is not configured in .env.' }
+  }
+
+  const trimmed = id.trim()
+  if (!trimmed) {
+    return { ok: false, error: 'Invalid reframe id.' }
+  }
+
+  const userId = await ensureAuthUserId()
+  if (!userId) {
+    return { ok: false, error: 'Sign in required to delete your reframe.' }
+  }
+
+  const apiFirst = await deleteReframeApi(trimmed)
+  if (apiFirst.ok) {
+    return { ok: true, error: null }
+  }
+
+  const direct = await deleteReframeDirect(userId, trimmed)
+  if (direct) {
+    return { ok: true, error: null }
+  }
+
+  return { ok: false, error: apiFirst.error ?? RLS_SETUP_HINT }
+}
