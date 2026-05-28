@@ -23,18 +23,29 @@ const VENTING_ONLY_RE =
 const MEDICAL_BREATH_DISTRESS_RE =
   /\b(?:can'?t|cannot)\s+breathe\b/i
 
-const EXPLICIT_COPING_ASK_RE =
-  /\b(?:help\s+me|need\s+(?:a\s+|an\s+)?|want\s+(?:a\s+|an\s+)?|give\s+me|walk\s+me\s+through|guide\s+me\s+(?:through|with)|can\s+you\s+(?:help|guide|walk)|show\s+me|lead\s+me\s+through|i\s+need\s+to)\b/i
+const ASK_PATTERN =
+  /\b(?:can\s+you|help\s+me|guide\s+me|walk\s+me\s+through|give\s+me|show\s+me|i\s+want|i\s+need|let['’]s\s+do|can\s+we\s+do)\b/i
 
 const DIRECT_COPING_RE =
   /\b(?:breathing\s+exercise|box\s+breathing|4-7-8|physiological\s+sigh|grounding\s+exercise|5-4-3-2-1|body\s+scan|safe\s+place|calm(?:\s+me)?\s+down|help\s+me\s+calm|slow\s+my\s+breathing|breathe\s+with\s+me)\b/i
 
-const BREATHING_RE = /\b(?:breathing\s+exercise|box\s+breathing|4-7-8|physiological\s+sigh|guided\s+breathing|slow\s+(?:my\s+)?breathing|breathe\s+(?:with\s+me|slower|slowly)|breath\s+work)\b/i
-const GROUNDING_RE = /\b(?:grounding|5-4-3-2-1|ground\s+me)\b/i
-const SAFE_PLACE_RE = /\b(?:safe\s+place|visualization)\b/i
-const BODY_SCAN_RE = /\b(?:body\s+scan|body\s+check-?in)\b/i
-const JOURNALING_RE = /\b(?:journaling|journal(?:ing)?|micro-?journal(?:ing)?)\b/i
-const REFRAMES_RE = /\b(?:refram(?:e|es|ing))\b/i
+const BREATHING_CONCEPT_RE =
+  /\b(?:breath|breathe|breathing|breathing\s+exercise|guided\s+breathing|box\s+breathing|4-7-8|physiological\s+sigh|breath\s+work|slow\s+(?:my\s+)?breathing)\b/i
+const GROUNDING_CONCEPT_RE = /\b(?:ground|grounding|grounding\s+exercise|5-4-3-2-1|ground\s+me)\b/i
+const JOURNALING_CONCEPT_RE = /\b(?:journal|journaling|micro-?journal(?:ing)?)\b/i
+const REFRAMES_CONCEPT_RE = /\b(?:refram(?:e|es|ing))\b/i
+const SAFE_PLACE_CONCEPT_RE = /\b(?:safe\s+place|visualization)\b/i
+const PHYSICAL_REGULATION_CONCEPT_RE =
+  /\b(?:body\s+scan|body\s+check-?in|cold\s+reset|move\s+it\s+out|physical\s+regulation)\b/i
+const TOOL_CONCEPT_PATTERN =
+  /\b(?:breath|breathe|breathing|guided\s+breathing|ground|grounding|5-4-3-2-1|journal|journaling|micro-?journal|refram(?:e|es|ing)|safe\s+place|visualization|body\s+scan|cold\s+reset|move\s+it\s+out|physical\s+regulation|tool|exercise|practice)\b/i
+
+const BREATHING_RE = BREATHING_CONCEPT_RE
+const GROUNDING_RE = GROUNDING_CONCEPT_RE
+const SAFE_PLACE_RE = SAFE_PLACE_CONCEPT_RE
+const BODY_SCAN_RE = PHYSICAL_REGULATION_CONCEPT_RE
+const JOURNALING_RE = JOURNALING_CONCEPT_RE
+const REFRAMES_RE = REFRAMES_CONCEPT_RE
 const CALM_RE = /\b(?:calm(?:\s+me)?\s+down|help\s+me\s+calm|need\s+to\s+calm)\b/i
 const STOP_RE = /\b(?:stop\s+skill|dbt\s+stop)\b/i
 
@@ -112,6 +123,15 @@ function breathingMatch(): CopingMatch {
   }
 }
 
+function normalizeMessageForMatching(message: string): string {
+  return message
+    .toLowerCase()
+    .replace(/[’‘]/g, "'")
+    .replace(/[^\w\s'-]+/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim()
+}
+
 function pickByKeywords(normalized: string): CopingMatch | null {
   if (BREATHING_RE.test(normalized)) return breathingMatch()
   if (GROUNDING_RE.test(normalized)) {
@@ -153,29 +173,27 @@ function pickByKeywords(normalized: string): CopingMatch | null {
 }
 
 export function looksLikeVentingOnly(message: string): boolean {
-  const n = message.toLowerCase().replace(/\s+/g, ' ').trim()
+  const n = normalizeMessageForMatching(message)
   const distress =
     VENTING_ONLY_RE.test(n) ||
-    (MEDICAL_BREATH_DISTRESS_RE.test(n) && !EXPLICIT_COPING_ASK_RE.test(n) && !DIRECT_COPING_RE.test(n))
+    (MEDICAL_BREATH_DISTRESS_RE.test(n) && !ASK_PATTERN.test(n) && !DIRECT_COPING_RE.test(n))
   if (!distress) return false
-  return !EXPLICIT_COPING_ASK_RE.test(n) && !DIRECT_COPING_RE.test(n)
+  return !ASK_PATTERN.test(n) && !DIRECT_COPING_RE.test(n)
 }
 
 /** Heuristic backup when the classifier labels EMOTIONAL but the user asked for a concrete practice. */
 export function looksLikeCopingRequest(message: string): boolean {
-  const n = message.toLowerCase().replace(/\s+/g, ' ').trim()
-  if (!n || looksLikeVentingOnly(message)) return false
-  if (MEDICAL_BREATH_DISTRESS_RE.test(n) && !EXPLICIT_COPING_ASK_RE.test(n) && !DIRECT_COPING_RE.test(n)) {
+  const n = normalizeMessageForMatching(message)
+  if (!n) return false
+
+  const askPlusToolConcept = ASK_PATTERN.test(n) && TOOL_CONCEPT_PATTERN.test(n)
+  if (looksLikeVentingOnly(message) && !askPlusToolConcept) return false
+
+  if (MEDICAL_BREATH_DISTRESS_RE.test(n) && !askPlusToolConcept && !DIRECT_COPING_RE.test(n)) {
     return false
   }
   if (DIRECT_COPING_RE.test(n)) return true
-  if (
-    EXPLICIT_COPING_ASK_RE.test(n) &&
-    /\b(?:calm|breath|breathe|ground(?:ing)?|relax|meditat|exercise|practice|tool)\b/i.test(n)
-  ) {
-    return true
-  }
-  return false
+  return askPlusToolConcept
 }
 
 export function matchCopingRequest(
@@ -183,7 +201,7 @@ export function matchCopingRequest(
   detectedEmotion: string | null,
   emotionCheckIn: string | null,
 ): CopingMatch {
-  const normalized = message.toLowerCase().replace(/\s+/g, ' ').trim()
+  const normalized = normalizeMessageForMatching(message)
   const byKeyword = pickByKeywords(normalized)
   if (byKeyword) return byKeyword
 
@@ -214,9 +232,9 @@ export function matchCopingRequest(
 }
 
 export function shouldUseCopingBranch(intent: string, message: string): boolean {
-  if (intent === 'COPING_REQUEST') return true
-  if (intent === 'EMOTIONAL' || intent === 'AMBIGUOUS') {
-    return looksLikeCopingRequest(message) && !looksLikeVentingOnly(message)
+  if (looksLikeVentingOnly(message)) return false
+  if (intent === 'COPING_REQUEST' || intent === 'EMOTIONAL' || intent === 'AMBIGUOUS') {
+    return looksLikeCopingRequest(message)
   }
   return false
 }

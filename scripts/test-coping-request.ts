@@ -10,27 +10,42 @@ import {
 } from '../server/lib/copingRequestMatch.js'
 
 const shouldBeCoping = [
-  'help me calm down',
-  'I need a breathing exercise',
-  'can you guide me through grounding',
-  'walk me through box breathing',
-  'show me a body scan',
+  'can you give me a breathing exercise',
+  'i need help breathing',
+  'help me breathe',
+  'give me grounding',
+  'i want to journal',
+  'help me reframe this thought',
+  'i need a safe place visualization',
+  'walk me through a body scan',
 ]
 
 const shouldBeVenting = [
-  "I'm freaking out",
-  'panicking right now',
-  "I can't breathe",
-  'spiraling and melting down',
+  "i'm panicking and can't breathe",
+  "i can't breathe",
 ]
 
 const shouldNotBeCoping = [
-  "I'm freaking out",
-  "I can't breathe",
+  "i'm panicking and can't breathe",
+  "i'm overwhelmed",
+  'i need help',
+  'i feel awful',
+  "i'm scared",
+  "i can't breathe",
   'what is a ventricular septal defect',
 ]
 
 let failed = 0
+const expectedToolByPrompt: Record<string, string> = {
+  'can you give me a breathing exercise': 'Guided breathing',
+  'i need help breathing': 'Guided breathing',
+  'help me breathe': 'Guided breathing',
+  'give me grounding': '5-4-3-2-1 Grounding',
+  'i want to journal': 'Micro-journal',
+  'help me reframe this thought': 'Reframes',
+  'i need a safe place visualization': 'Safe Place Visualization',
+  'walk me through a body scan': 'Physical regulation',
+}
 
 for (const msg of shouldBeCoping) {
   if (!looksLikeCopingRequest(msg)) {
@@ -50,6 +65,17 @@ for (const msg of shouldBeCoping) {
     console.error('FAIL (expected live selected tool):', msg, m.selectedTool)
     failed++
   }
+  if (m.selectedTool?.name !== expectedToolByPrompt[msg]) {
+    console.error(
+      'FAIL (expected canonical selected tool):',
+      msg,
+      'expected=',
+      expectedToolByPrompt[msg],
+      'actual=',
+      m.selectedTool?.name,
+    )
+    failed++
+  }
 }
 
 for (const msg of shouldBeVenting) {
@@ -64,6 +90,19 @@ for (const msg of shouldNotBeCoping) {
     console.error('FAIL (expected not coping):', msg)
     failed++
   }
+  if (shouldUseCopingBranch('COPING_REQUEST', msg)) {
+    console.error('FAIL (COPING_REQUEST must not force coping branch):', msg)
+    failed++
+  }
+  if (shouldUseCopingBranch('EMOTIONAL', msg)) {
+    console.error('FAIL (expected not coping branch on EMOTIONAL):', msg)
+    failed++
+  }
+}
+
+if (!shouldUseCopingBranch('COPING_REQUEST', 'i need help breathing')) {
+  console.error('FAIL (expected strict gate to allow explicit coping): i need help breathing')
+  failed++
 }
 
 const breathing = matchCopingRequest('breathing exercise please', 'scared', null)
