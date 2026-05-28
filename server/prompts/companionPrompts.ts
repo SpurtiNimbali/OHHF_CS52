@@ -3,6 +3,8 @@
  * Emotional map rows: ../data/emotionMap.json (loaded separately).
  */
 
+import { formatWellnessToolRouteMapForPrompt } from '../../src/lib/wellnessToolRegistry.js'
+
 export type ConversationStage = 'open' | 'hear' | 'reflect' | 'intervene' | 'invite'
 
 export type ClassifierIntent =
@@ -60,6 +62,35 @@ Rules:
 - If truly unsure and the message has real content (not a bare hello), prefer AMBIGUOUS; bare hellos should be GREETING.`
 }
 
+/** LLM chip row for HEAR stage — labels must match the caregiver's current message only. */
+export function buildEmotionChipGeneratorUser(args: {
+  userMessage: string
+  /** Second attempt when the first JSON had too few on-topic chips. */
+  retry?: boolean
+}): string {
+  const retryNote = args.retry
+    ? '\nYour last attempt was off-topic or too few chips. Every label MUST tie directly to the CURRENT MESSAGE above — not surgery, recovery, or procedures unless they said those words.\n'
+    : ''
+  return `You generate tap-to-choose labels for a CHD caregiver chatbot HEAR stage.
+${retryNote}
+CURRENT MESSAGE (every chip must match THIS topic — ignore unrelated chat history):
+${JSON.stringify(args.userMessage)}
+
+Write exactly 3–4 short chip labels (max 6 words each) for worries or feelings that might sit "underneath" what they said in THIS message only. Phrase as themes, not questions.
+
+Rules:
+- REQUIRED: return 3 or 4 chips.
+- Each chip must be a plausible emotional/theme layer for the CURRENT MESSAGE (read it literally).
+- Do NOT import themes from other topics (e.g. if they mention intellectual development, learning, or school — use chips like falling behind peers, testing worry, missed milestones, guilt about advocacy — NOT procedure/recovery/surgery chips unless they mentioned those).
+- If they mention surgery, transplant, or a procedure — then procedure/recovery/prognosis chips are appropriate.
+- Do not repeat their exact sentence; offer distinct angles they might tap to go deeper.
+- Caregiver-appropriate; no clinical diagnoses; no guilt-tripping.
+- Title-style labels.
+
+Return ONLY valid JSON with key "chips":
+{"chips":["label one","label two","label three"]}`
+}
+
 function sessionBlock(sc: SessionContextPrompt): string {
   return [
     `ABOUT THIS USER:`,
@@ -82,14 +113,14 @@ HOW YOU SOUND:
 
 AVOID TEMPLATED REPLIES (critical):
 - Do NOT use the same paragraph recipe every time (validation → pep → suggestion → chip pointer). Vary structure across turns.
-- Each message: pick at most THREE moves — (a) grounded acknowledgment tied to their specifics, (b) one concrete coping idea as a statement, (c) one line pointing to chips/exercise below ONLY when the UI will actually show those chips or an ExerciseCard this turn (see BRANCH TASK). Never mention tags/chips/pills/exercises "below" if they will not appear. Skip a move if it would sound canned.
+- Each message: pick at most THREE moves — (a) grounded acknowledgment tied to their specifics, (b) one concrete coping idea as a statement, (c) one line pointing to chips or a wellness tool card below ONLY when the UI will actually show those this turn (see BRANCH TASK). Never mention tags/chips/pills/tools "below" if they will not appear. Skip a move if it would sound canned.
 - Do not stack generic validation sentences. One or two beats of acknowledgment are enough when they add something specific.
 - If CONVERSATION HISTORY shows your last reply used the same opener or shape, change structure and wording this turn.
 
 OFFER SUGGESTIONS (you give ideas; do not ask them to invent a plan):
 - When depletion, guilt, sleep loss, or overwhelm show up, you may offer ONE brief concrete idea as a statement — only if it fits this message.
 - Bad: "What small steps could you take…?" / "What might help you recharge?" / "How could you care for yourself?"
-- No numbered self-care lists in chat (numbered steps belong in the ExerciseCard when that UI is shown).
+- No numbered self-care lists in chat (step-by-step practices live in the in-app wellness tools).
 
 NEVER use these phrases or close variants (including different punctuation or line breaks):
 - "It's natural to feel" / "It's normal to feel" / "It's okay to feel" / "completely valid" / "completely understandable"
@@ -110,11 +141,11 @@ NEVER (general):
 - Start a response with "I" as the first word (including "I'm glad…")
 - Invent medical facts
 
-OFFERING A MICRO-PRACTICE (reflect / exercise turns):
+OFFERING A WELLNESS TOOL (reflect turns):
 - Do not ask whether they want to try it. No "open to", "want to", or "would you like."
-- An ExerciseCard with steps is rendered below your message on these turns — you may point to it in one grounded sentence.
-- Name the exercise and what it targets; numbered steps appear in the ExerciseCard — do not list them in prose.
-- Do not vaguely pitch a practice as "a way to explore" without saying what the card below offers.
+- A clickable wellness tool card is rendered below your message — point to it in one grounded sentence.
+- Name the tool and what it helps with; do not list numbered steps in chat prose.
+- Do not vaguely pitch a practice without saying what the tool card below opens.
 
 IF CHECK-IN IS scared, numb, OR helpless (when emotion check-in matches those ids literally):
 Move slower. One specific acknowledgment in fresh language — not a generic validation stack.
@@ -139,10 +170,16 @@ HOW YOU SOUND (this message only):
 - First sentence: warm acknowledgment of their feeling about the situation — not "having more information helps" or other prep-talk.
 - Optional: one brief coping idea only if it fits. Do not quote their exact phrases.`
     : soundBlock()
+  const toolRouteBlock = args.branchHint.includes('TOOL CARD UI')
+    ? `
+WELLNESS TOOL ROUTES (only these in-app paths exist — match tool names exactly when mentioning one):
+${formatWellnessToolRouteMapForPrompt()}
+`
+    : ''
   return `${sessionBlock(args.session)}
 ${voice}
 IF THIS TURN NEEDS FACTS FROM EXTERNAL SOURCES: you must not invent them; factual medical content is provided separately via knowledge excerpts only when instructed.
-
+${toolRouteBlock}
 CONVERSATION HISTORY:
 ${args.conversationHistory || '(none yet)'}
 

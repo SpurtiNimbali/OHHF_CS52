@@ -8,6 +8,7 @@ import {
 import {
   buildClassifierUser,
   buildCompanionSystem,
+  buildEmotionChipGeneratorUser,
   buildHybridUnifiedSystem,
   buildInformationalRagSystem,
   buildWelcomeOpenerSystem,
@@ -22,9 +23,12 @@ import {
   matchCopingRequest,
   shouldUseCopingBranch,
 } from './copingRequestMatch.js'
-import { loadEmotionMap, safeDetectedEmotion, splitUnderneathIntoChipOptions } from './emotionMapLoader.js'
+import { loadEmotionMap, safeDetectedEmotion } from './emotionMapLoader.js'
 import {
+  buildToolRoute,
+  listAllWellnessToolsForChat,
   resolveSelectedTool,
+  toWellnessToolChatCard,
   type ResolvedWellnessTool,
   type WellnessToolId,
 } from '../../src/lib/wellnessToolRegistry.js'
@@ -80,7 +84,7 @@ export type CompanionChatRequest = {
 }
 
 export type CompanionExercisePayload = { name: string; steps: string[] }
-export type CompanionToolPayload = { name: string; route: string }
+export type CompanionToolPayload = { name: string; route: string; description?: string }
 export type CompanionUiRedirect = { label: string; destination: string }
 
 export type KbChatResult = {
@@ -130,7 +134,8 @@ function fallbackToolIdForEmotion(emotionId: string): WellnessToolId {
 
 function toCompanionToolPayload(tool: ResolvedWellnessTool | null): CompanionToolPayload | null {
   if (!tool) return null
-  return { name: tool.label, route: tool.route }
+  const card = toWellnessToolChatCard(tool)
+  return { name: card.name, route: card.route, description: card.description }
 }
 
 function clip(s: string, n: number): string {
@@ -553,12 +558,48 @@ const UI_CHIP_POINTER_RE =
 const UI_EXERCISE_POINTER_RE =
   /\b(exercise|practice|grounding|steps|card|micro-?practice)\s+below\b|\btry\s+the\s+(exercise|practice)\s+below\b/i
 
+/** Assistant prose that points at a wellness tool card rendered below the message. */
+const UI_TOOL_POINTER_RE =
+  /\b(wellness\s+)?tool\s+below\b|\b(use|try|open)\s+(the\s+)?['"]?[\w\s-]+['"]?\s+tool\b/i
+
 function answerReferencesEmotionChips(text: string): boolean {
   return UI_CHIP_POINTER_RE.test(text)
 }
 
 function answerReferencesExercise(text: string): boolean {
   return UI_EXERCISE_POINTER_RE.test(text)
+}
+
+function answerReferencesWellnessTool(text: string): boolean {
+  return UI_TOOL_POINTER_RE.test(text) || /\bbelow\b[^\n.]{0,100}\b(guided\s+breathing|safe\s+place|grounding|name\s+it)\b/i.test(text)
+}
+
+function answerMentionsToolName(answer: string, toolName: string): boolean {
+  const a = answer.toLowerCase()
+  const n = toolName.toLowerCase()
+  if (a.includes(n)) return true
+  return /\b(wellness\s+tool|tool\s+card)\b/.test(a) && /\bbelow\b/.test(a)
+}
+
+/** When a tool card is attached, prose must name it — avoid a orphan link with no setup. */
+function ensureWellnessToolMentioned(answer: string, tool: CompanionToolPayload): string {
+  if (answerMentionsToolName(answer, tool.name)) return answer
+  const raw = (tool.description ?? '').trim().replace(/\.$/, '')
+  const lower = raw ? raw.charAt(0).toLowerCase() + raw.slice(1) : ''
+
+  // Make the one-line blurb read naturally in a sentence without sounding pasted.
+  let naturalTail = lower
+  naturalTail = naturalTail.replace(/^use your\b/i, 'it uses your')
+  naturalTail = naturalTail.replace(/^pick\b/i, 'it helps you pick')
+  naturalTail = naturalTail.replace(/^a few words\b/i, 'it gives you a quick place to put a few words')
+  naturalTail = naturalTail.replace(/^three\b/i, 'it offers three')
+  naturalTail = naturalTail.replace(/^90 seconds of\b/i, "it’s about 90 seconds of")
+
+  const suffix = naturalTail
+    ? `The **${tool.name}** tool below can help — ${naturalTail}.`
+    : `The **${tool.name}** tool below can help right now.`
+  const trimmed = answer.trim()
+  return trimmed ? `${trimmed.replace(/\s+$/, '')} ${suffix}` : suffix
 }
 
 function stripSentencesMatching(text: string, re: RegExp): string {
@@ -578,13 +619,14 @@ type CompanionUiAlignInput = {
   answer: string
   emotionChips: string[] | null
   exercise: CompanionExercisePayload | null
-  /** Chip labels available this turn (emotion-map underneath split). */
+  toolCards?: CompanionToolPayload[] | null
+  /** Chip labels available this turn (generated or attached). */
   availableChips?: string[]
 }
 
-/** Keep assistant copy aligned with chips / ExerciseCard actually attached to the message. */
+/** Keep assistant copy aligned with chips / ExerciseCard / tool cards actually attached to the message. */
 function alignCompanionUiPayload(input: CompanionUiAlignInput): CompanionUiAlignInput {
-  let { answer, emotionChips, exercise, availableChips } = input
+  let { answer, emotionChips, exercise, toolCards, availableChips } = input
   const chipsAvailable = (availableChips?.length ?? 0) > 0
 
   if (answerReferencesEmotionChips(answer)) {
@@ -599,7 +641,15 @@ function alignCompanionUiPayload(input: CompanionUiAlignInput): CompanionUiAlign
     answer = stripSentencesMatching(answer, UI_EXERCISE_POINTER_RE)
   }
 
-  return { answer, emotionChips, exercise, availableChips }
+  if (answerReferencesWellnessTool(answer) && !toolCards?.length) {
+    answer = stripSentencesMatching(answer, UI_TOOL_POINTER_RE)
+    answer = stripSentencesMatching(
+      answer,
+      /\b[^\n.]*\b(guided\s+breathing|safe\s+place|grounding|name\s+it|wellness\s+tool)[^\n.]*\bbelow\b[^\n.]*/i,
+    )
+  }
+
+  return { answer, emotionChips, exercise, toolCards, availableChips }
 }
 
 async function classifyUserIntent(args: {
@@ -746,6 +796,109 @@ function stripMissingBlock(answer: string): string {
   return answer.slice(0, i).trimEnd()
 }
 
+function looksLikeWellnessToolLinksRequest(message: string): boolean {
+  const n = message
+    .toLowerCase()
+    .replace(/[^a-z0-9\s]/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim()
+
+  const hasWellness = /\bwellness\b/.test(n)
+  const hasTooling = /\b(tool|tools|exercise|exercises|practice|practices)\b/.test(n)
+  const asksToNavigate = /\b(link|links|url|urls|page|pages|route|routes|navigate|go to|open|where)\b/.test(n)
+  const asksForAll = /\b(all|every|each|everything|whole|complete)\b/.test(n)
+
+  // Example trigger:
+  // - "Can you provide links to all of the wellness tools offered in this app?"
+  // Also allow variations like "where can I find the wellness tool pages"
+  return hasWellness && hasTooling && asksToNavigate && (asksForAll || /\bapp\b/.test(n) || /\boffer(ed)?\b/.test(n))
+}
+
+function buildAllWellnessToolCards(): CompanionToolPayload[] {
+  return listAllWellnessToolsForChat()
+}
+
+function normalizeChipLabel(s: string): string {
+  const t = s.trim().replace(/\s+/g, ' ')
+  if (!t) return t
+  return t.charAt(0).toUpperCase() + t.slice(1)
+}
+
+function normalizeChipMatchKey(s: string): string {
+  return s
+    .toLowerCase()
+    .replace(/[^a-z0-9\s]/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim()
+}
+
+function filterChipsAvoidingUserRepeat(message: string, chips: string[]): string[] {
+  const msg = normalizeChipMatchKey(message)
+  if (!msg) return chips
+  return chips.filter((chip) => {
+    const c = normalizeChipMatchKey(chip)
+    if (!c) return false
+    if (msg === c) return false
+    if (msg.includes(c) && c.length >= 8) return false
+    return true
+  })
+}
+
+function parseEmotionChipsJson(raw: string): string[] {
+  const trimmed = raw.trim()
+  const jsonSlice = trimmed.match(/\{[\s\S]*\}/)?.[0] ?? trimmed
+  const parsed = JSON.parse(jsonSlice) as unknown
+  let items: unknown[] | null = null
+  if (Array.isArray(parsed)) items = parsed
+  else if (parsed && typeof parsed === 'object') {
+    const o = parsed as Record<string, unknown>
+    const candidate = o.chips ?? o.labels ?? o.options ?? o.themes
+    if (Array.isArray(candidate)) items = candidate
+  }
+  if (!items) return []
+  const seen = new Set<string>()
+  const out: string[] = []
+  for (const item of items) {
+    if (typeof item !== 'string') continue
+    const label = normalizeChipLabel(item.slice(0, 80))
+    const key = label.toLowerCase()
+    if (!label || seen.has(key)) continue
+    seen.add(key)
+    out.push(label)
+    if (out.length >= 4) break
+  }
+  return out
+}
+
+/** Contextual underneath chips for HEAR — generated from the current user message only. */
+async function generateEmotionChips(userMessage: string, retry = false): Promise<string[]> {
+  try {
+    const res = await getLlmClient().chat.completions.create({
+      model: resolveLlmModel(MAIN_CHAT_MODEL),
+      temperature: retry ? 0.25 : 0.4,
+      max_tokens: 220,
+      response_format: { type: 'json_object' },
+      messages: [
+        { role: 'system', content: 'You only output valid compact JSON matching the user schema.' },
+        { role: 'user', content: buildEmotionChipGeneratorUser({ userMessage, retry }) },
+      ],
+    })
+    const raw = res.choices[0]?.message?.content
+    if (!raw) return []
+    return parseEmotionChipsJson(raw)
+  } catch {
+    return []
+  }
+}
+
+async function resolveHearEmotionChips(userMessage: string): Promise<string[]> {
+  let chips = filterChipsAvoidingUserRepeat(userMessage, await generateEmotionChips(userMessage))
+  if (chips.length < 3) {
+    chips = filterChipsAvoidingUserRepeat(userMessage, await generateEmotionChips(userMessage, true))
+  }
+  return chips.slice(0, 4)
+}
+
 export async function runCompanionChat(req: CompanionChatRequest): Promise<CompanionChatResult> {
   const trimmed = req.message.trim()
   if (!trimmed) throw new Error('Empty message')
@@ -778,6 +931,28 @@ export async function runCompanionChat(req: CompanionChatRequest): Promise<Compa
       crisis: true,
       detectedEmotion: null,
       classifierIntent: 'CRISIS',
+    }
+  }
+
+  // Deterministic shortcut: when the user asks for wellness tool links/pages/routes,
+  // return a structured in-app navigation list (tool cards) instead of trying to
+  // satisfy it through the RAG/informational prompt constraints.
+  if (looksLikeWellnessToolLinksRequest(trimmed)) {
+    const toolCards = buildAllWellnessToolCards()
+    return {
+      answer: 'Here are the wellness tools in the app. Tap a tool to open it.',
+      nextStage: 'open',
+      emotionChips: null,
+      exercise: null,
+      toolCards,
+      uiRedirect: null,
+      citations: [],
+      suggestedQuestions: [],
+      uiRedirects: [],
+      retrieved: [],
+      crisis: false,
+      detectedEmotion: null,
+      classifierIntent: 'TOOL_LINKS',
     }
   }
 
@@ -849,7 +1024,7 @@ export async function runCompanionChat(req: CompanionChatRequest): Promise<Compa
       ),
     )
     const toolUiHint = selectedTool
-      ? `TOOL CARD UI: One clickable wellness tool card for "${selectedTool.name}" WILL appear below. If you mention an in-app tool in prose, ONLY name "${selectedTool.name}".`
+      ? `TOOL CARD UI: One clickable wellness tool card for "${selectedTool.name}" WILL appear below — this opens the in-app tool (no step list in chat). If you mention an in-app tool in prose, ONLY name "${selectedTool.name}".`
       : 'TOOL CARD UI: Do NOT mention an in-app wellness tool or card below.'
 
     const sys = buildCompanionSystem({
@@ -859,7 +1034,7 @@ export async function runCompanionChat(req: CompanionChatRequest): Promise<Compa
       selectedEmotion: row.id,
       selectedUnderneath: underneath,
       branchHint:
-        `They named what's underneath (${underneath}) while focused on emotion "${row.feeling}" (${row.id}). Modalities described as ${row.modalities.join(', ')} (${row.modalityReason}). Potential benefits clinicians note: ${row.benefits.join('; ')}. Validate their reality without stock phrases — paraphrase in plain language; do not quote their message back. EXERCISE UI: An ExerciseCard with steps for "${row.exercise.name}" WILL appear directly below your message. ${toolUiHint} In one or two grounded sentences, point them to the steps below for right now.${selectedTool ? ` If you mention a tool, use "${selectedTool.name}" exactly and no other in-app tool name.` : ''} Do NOT ask what steps they could take or what they need; do NOT ask permission to try it; do NOT list numbered steps in prose (the card shows steps).`,
+        `They named what's underneath (${underneath}) while focused on emotion "${row.feeling}" (${row.id}). Modalities described as ${row.modalities.join(', ')} (${row.modalityReason}). Potential benefits clinicians note: ${row.benefits.join('; ')}. Validate their reality without stock phrases — paraphrase in plain language; do not quote their message back. ${toolUiHint} Write 2–3 short sentences: acknowledge what they named, then REQUIRED final sentence that names the wellness tool and points to the card below (e.g. "Open **${selectedTool?.name ?? 'the tool'}** below when you want to try it.").${selectedTool ? ` Use "${selectedTool.name}" exactly — no other in-app tool name. Do not mention a separate "feelings wheel".` : ''} Do NOT ask what steps they could take or what they need; do NOT ask permission to try it; do NOT list numbered steps in prose.`,
     })
 
     const messages: ChatCompletionMessageParam[] = [
@@ -878,22 +1053,22 @@ export async function runCompanionChat(req: CompanionChatRequest): Promise<Compa
     )
     const suggested = await suggestFollowUps(trimmed, stripMissingBlock(answer))
 
-    const exercisePayload: CompanionExercisePayload = {
-      name: row.exercise.name,
-      steps: [...row.exercise.steps],
+    const toolCards = selectedTool ? [selectedTool] : null
+    if (selectedTool) {
+      answer = ensureWellnessToolMentioned(answer, selectedTool)
     }
-
     ;({ answer } = alignCompanionUiPayload({
       answer,
       emotionChips: null,
-      exercise: exercisePayload,
+      exercise: null,
+      toolCards,
     }))
     return {
       answer,
-      nextStage: 'invite',
+      nextStage: 'open',
       emotionChips: null,
-      exercise: exercisePayload,
-      toolCards: selectedTool ? [selectedTool] : null,
+      exercise: null,
+      toolCards,
       uiRedirect: null,
       citations: [],
       suggestedQuestions: suggested,
@@ -927,7 +1102,7 @@ export async function runCompanionChat(req: CompanionChatRequest): Promise<Compa
       selectedEmotion: coping.emotionId,
       selectedUnderneath: null,
       branchHint:
-        `They asked for a specific calming practice or exercise (classifier=${cls.intent === 'COPING_REQUEST' ? 'COPING_REQUEST' : 'EMOTIONAL+heuristic'}). Skip emotion-map chips — go straight to the live in-app tool. ${toolUiHint} In one or two grounded sentences, acknowledge the stress briefly and point them to the tool card below for right now.${selectedTool ? ` If you mention the tool in prose, use "${selectedTool.name}" exactly and no other in-app tool name.` : ''} Do NOT mention steps below, an exercise card below, or numbered instructions in prose. Do NOT ask permission to try it; do NOT ask what is underneath or mention tags/chips below.`,
+        `They asked for a specific calming practice or exercise (classifier=${cls.intent === 'COPING_REQUEST' ? 'COPING_REQUEST' : 'EMOTIONAL+heuristic'}). Skip emotion-map chips — go straight to the live in-app tool. ${toolUiHint} In 2 short sentences, acknowledge the stress briefly, then REQUIRED: name the wellness tool and point to the card below.${selectedTool ? ` Use "${selectedTool.name}" exactly and no other in-app tool name.` : ''} Do NOT mention steps below, an exercise card below, or numbered instructions in prose. Do NOT ask permission to try it; do NOT ask what is underneath or mention tags/chips below.`,
     })
 
     const messages: ChatCompletionMessageParam[] = [
@@ -946,14 +1121,23 @@ export async function runCompanionChat(req: CompanionChatRequest): Promise<Compa
     )
     const suggested = await suggestFollowUps(trimmed, stripMissingBlock(answer))
 
-    ;({ answer } = alignCompanionUiPayload({ answer, emotionChips: null, exercise: null }))
+    const copingToolCards = selectedTool ? [selectedTool] : null
+    if (selectedTool) {
+      answer = ensureWellnessToolMentioned(answer, selectedTool)
+    }
+    ;({ answer } = alignCompanionUiPayload({
+      answer,
+      emotionChips: null,
+      exercise: null,
+      toolCards: copingToolCards,
+    }))
 
     return {
       answer,
       nextStage: 'open',
       emotionChips: null,
       exercise: null,
-      toolCards: selectedTool ? [selectedTool] : null,
+      toolCards: copingToolCards,
       uiRedirect: null,
       citations: [],
       suggestedQuestions: suggested,
@@ -1094,16 +1278,7 @@ export async function runCompanionChat(req: CompanionChatRequest): Promise<Compa
     const emotionId = classifierEmotion ?? checkinEm ?? 'unknown'
     const row = emotionMap.get(emotionId) ?? emotionMap.get('unknown')
 
-    const chipOptions = row?.underneath ? splitUnderneathIntoChipOptions(row.underneath) : []
-    const chipBlock =
-      chipOptions.length > 0
-        ? chipOptions.map((c, i) => `${i + 1}. ${c}`).join('\n')
-        : '(none — invite them to name what is underneath in their own words)'
-
-    const chipUiRule =
-      chipOptions.length > 0
-        ? `CHIP UI: Tap-to-choose tags WILL appear directly below your message. If you mention tags/chips/pills below, keep it to one short line (e.g. "tap what fits below").`
-        : `CHIP UI: No tag row appears below this message — do NOT mention tags, chips, pills, themes, or options "below".`
+    const chipGenPromise = resolveHearEmotionChips(trimmed)
 
     const sys = buildCompanionSystem({
       session: sessionToPrompt(session),
@@ -1113,14 +1288,13 @@ export async function runCompanionChat(req: CompanionChatRequest): Promise<Compa
       selectedUnderneath: null,
       branchHint: `They're sharing emotionally (classifier=${cls.intent}). Write like a calm, specific human — not a therapy script. Do NOT open by restating their message ("You're feeling X and Y…"). Start with a fresh sentence about what this moment is like for a parent. Mention today's check-in (${session.emotionCheckIn ?? 'none'}) only if it fits naturally.
 
-${chipUiRule}
+CHIP UI: 3–4 tap-to-choose tags tailored to their message WILL appear directly below your reply (you do not write the labels). You may add one short line pointing to the tags below (e.g. "tap what fits below") — do not list specific tag text in prose.
 
-CHIP ROW (for UI only — do not list these themes in prose):
-${chipBlock}
+NO TOOL OR EXERCISE UI this turn: Do NOT mention any in-app wellness tool, Guided Breathing, Safe Place, grounding tool, or anything "below" except the tag row. Tools and exercises come after they tap a tag.
 
 SHAPE THIS REPLY (vary from prior turns in CONVERSATION HISTORY):
 - 2–4 short paragraphs; no fixed template. Often 2–3 is enough.
-- Include at most: one grounded acknowledgment, OR one concrete coping idea as a statement, OR (only when CHIP UI says tags will appear) one line pointing to the tags below — pick what helps this message; skip what sounds canned.
+- Include at most: one grounded acknowledgment, OR one concrete coping idea as a statement, OR one line pointing to the tags below — pick what helps this message; skip what sounds canned.
 - Do NOT ask what small steps they could take. Do NOT use "wondering what's underneath" questions — pills handle that.`,
     })
 
@@ -1138,19 +1312,22 @@ SHAPE THIS REPLY (vary from prior turns in CONVERSATION HISTORY):
       },
     ]
 
-    let answer = polishCompanionEmotionalAnswer(
-      await openAiMessages(messages, MAIN_CHAT_MODEL, 1000, 0.44),
-      trimmed,
-    )
+    const [answerRaw, generatedChips] = await Promise.all([
+      openAiMessages(messages, MAIN_CHAT_MODEL, 1000, 0.44),
+      chipGenPromise,
+    ])
+
+    let answer = polishCompanionEmotionalAnswer(answerRaw, trimmed)
 
     const suggested = await suggestFollowUps(trimmed, stripMissingBlock(answer))
 
-    let chips = chipOptions.length > 0 ? chipOptions : null
+    let chips = generatedChips.length > 0 ? generatedChips : null
     ;({ answer, emotionChips: chips } = alignCompanionUiPayload({
       answer,
       emotionChips: chips,
       exercise: null,
-      availableChips: chipOptions,
+      toolCards: null,
+      availableChips: chips ?? undefined,
     }))
 
     return {

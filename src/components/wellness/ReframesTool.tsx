@@ -1,6 +1,7 @@
-import { useCallback, useEffect, useMemo, useState } from 'react'
-import { ArrowRight } from 'lucide-react'
+import { useCallback, useEffect, useState } from 'react'
+import { ArrowRight, Trash2 } from 'lucide-react'
 import {
+  deleteUserReframe,
   fetchMyReframes,
   fetchStarterReframes,
   insertUserReframe,
@@ -44,17 +45,20 @@ function ReframeCard({ thought, reframe }: { thought: string; reframe: string })
   )
 }
 
-export function ReframesTool() {
+export function ReframesTool({ onMineChanged }: { onMineChanged?: () => void }) {
   const [view, setView] = useState<View>('browse')
   const [starters, setStarters] = useState<UserReframeRow[]>(FALLBACK_STARTERS)
   const [mine, setMine] = useState<UserReframeRow[]>([])
-  const [cardIndex, setCardIndex] = useState(0)
+  const [browseCardIndex, setBrowseCardIndex] = useState(0)
+  const [mineCardIndex, setMineCardIndex] = useState(0)
   const [thought, setThought] = useState('')
   const [reframe, setReframe] = useState('')
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [saveError, setSaveError] = useState<string | null>(null)
   const [saveOk, setSaveOk] = useState(false)
+  const [deleting, setDeleting] = useState(false)
+  const [deleteError, setDeleteError] = useState<string | null>(null)
 
   const reload = useCallback(async () => {
     setLoading(true)
@@ -68,8 +72,15 @@ export function ReframesTool() {
     void reload()
   }, [reload])
 
-  const deck = useMemo(() => starters, [starters])
-  const current = deck[cardIndex % Math.max(deck.length, 1)]
+  const browseDeck = starters
+  const browseCurrent = browseDeck[browseCardIndex % Math.max(browseDeck.length, 1)]
+  const mineDeck = mine
+  const mineCurrent = mineDeck[mineCardIndex % Math.max(mineDeck.length, 1)]
+
+  useEffect(() => {
+    if (mine.length === 0) return
+    setMineCardIndex((i) => (i >= mine.length ? mine.length - 1 : i))
+  }, [mine.length])
 
   async function handleSaveCustom() {
     setSaving(true)
@@ -85,10 +96,38 @@ export function ReframesTool() {
     setReframe('')
     setSaveOk(true)
     setMine((prev) => [row, ...prev])
+    setMineCardIndex(0)
     window.setTimeout(() => {
       setSaveOk(false)
       setView('mine')
     }, 600)
+  }
+
+  async function handleDeleteCurrent() {
+    if (!mineCurrent) return
+    setDeleting(true)
+    setDeleteError(null)
+    const { ok, error } = await deleteUserReframe(mineCurrent.id)
+    setDeleting(false)
+    if (!ok) {
+      setDeleteError(error ?? 'Could not delete.')
+      return
+    }
+    const removedId = mineCurrent.id
+    const len = mine.length
+    const removedIndex = mine.findIndex((r) => r.id === removedId)
+    const next = mine.filter((r) => r.id !== removedId)
+    const eff = len > 0 ? mineCardIndex % len : 0
+    let newEff = eff
+    if (removedIndex >= 0 && next.length > 0) {
+      if (eff > removedIndex) newEff = eff - 1
+      else if (eff === removedIndex) newEff = Math.min(eff, next.length - 1)
+    }
+
+    setMine(next)
+    setMineCardIndex(next.length === 0 ? 0 : newEff)
+
+    onMineChanged?.()
   }
 
   return (
@@ -123,11 +162,13 @@ export function ReframesTool() {
 
       {view === 'browse' && !loading ? (
         <>
-          {current ? <ReframeCard thought={current.thought} reframe={current.reframe} /> : null}
+          {browseCurrent ? (
+            <ReframeCard thought={browseCurrent.thought} reframe={browseCurrent.reframe} />
+          ) : null}
           <div className="flex flex-wrap gap-2">
             <button
               type="button"
-              onClick={() => setCardIndex((i) => i + 1)}
+              onClick={() => setBrowseCardIndex((i) => i + 1)}
               className="rounded-xl px-4 py-2 text-sm font-semibold text-white"
               style={{ background: CARDEA_NAVY }}
             >
@@ -191,27 +232,62 @@ export function ReframesTool() {
       ) : null}
 
       {view === 'mine' && !loading ? (
-        <div className="space-y-3">
+        <>
           {mine.length === 0 ? (
-            <p className="text-sm leading-relaxed" style={{ color: CARDEA_MUTED }}>
-              No saved reframes yet. Use &ldquo;Write your own&rdquo; from Browse cards.
-            </p>
+            <div className="space-y-3">
+              <p className="text-sm leading-relaxed" style={{ color: CARDEA_MUTED }}>
+                No saved reframes yet. Use &ldquo;Write your own&rdquo; from Browse cards.
+              </p>
+              <button
+                type="button"
+                onClick={() => setView('write')}
+                className="rounded-xl border px-4 py-2 text-sm font-semibold"
+                style={{ borderColor: CARDEA_DARK_GREEN, color: CARDEA_DARK_GREEN }}
+              >
+                Write your own
+              </button>
+            </div>
           ) : (
-            mine.map((row) => (
-              <div key={row.id} className="rounded-2xl border bg-white p-4" style={{ borderColor: 'rgba(25,43,63,0.08)' }}>
-                <ReframeCard thought={row.thought} reframe={row.reframe} />
+            <>
+              {mineCurrent ? (
+                <ReframeCard thought={mineCurrent.thought} reframe={mineCurrent.reframe} />
+              ) : null}
+              {deleteError ? (
+                <p className="text-sm text-[#9B1C31]" role="alert">
+                  {deleteError}
+                </p>
+              ) : null}
+              <div className="flex flex-wrap gap-2">
+                <button
+                  type="button"
+                  onClick={() => setMineCardIndex((i) => i + 1)}
+                  className="rounded-xl px-4 py-2 text-sm font-semibold text-white"
+                  style={{ background: CARDEA_NAVY }}
+                >
+                  Next reframe
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setView('write')}
+                  className="rounded-xl border px-4 py-2 text-sm font-semibold"
+                  style={{ borderColor: CARDEA_DARK_GREEN, color: CARDEA_DARK_GREEN }}
+                >
+                  Write your own
+                </button>
+                <button
+                  type="button"
+                  disabled={deleting || !mineCurrent}
+                  onClick={() => void handleDeleteCurrent()}
+                  className="inline-flex items-center gap-1.5 rounded-xl border border-[#dcb0b8] px-4 py-2 text-sm font-semibold text-[#9B1C31] disabled:opacity-40"
+                  aria-label="Delete this saved reframe"
+                >
+                  <Trash2 className="h-4 w-4 shrink-0" aria-hidden />
+                  {deleting ? 'Deleting…' : 'Delete'}
+                </button>
               </div>
-            ))
+            </>
           )}
-          <button
-            type="button"
-            onClick={() => setView('write')}
-            className="rounded-xl border px-4 py-2 text-sm font-semibold"
-            style={{ borderColor: CARDEA_DARK_GREEN, color: CARDEA_DARK_GREEN }}
-          >
-            Write your own
-          </button>
-        </div>
+        </>
       ) : null}
     </div>
   )

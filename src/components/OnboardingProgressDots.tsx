@@ -1,4 +1,7 @@
-
+import {
+  CARDEA_DARK_GREEN,
+  CARDEA_MUTED,
+} from '../ui/cardeaTokens'
 
 export type OnboardingProgressDotsProps = {
   totalSteps: number
@@ -14,7 +17,7 @@ function clamp(value: number, min: number, max: number) {
 export function OnboardingProgressDots({
   totalSteps,
   currentStep,
-  className,
+  className = '',
   'aria-label': ariaLabel = 'Onboarding progress',
 }: OnboardingProgressDotsProps) {
   const safeTotalSteps = Math.max(0, Math.floor(totalSteps))
@@ -25,18 +28,12 @@ export function OnboardingProgressDots({
 
   return (
     <div
-      className={className}
+      className={`flex items-center justify-center gap-2 ${className}`.trim()}
       role="progressbar"
       aria-label={ariaLabel}
       aria-valuemin={1}
       aria-valuemax={safeTotalSteps}
       aria-valuenow={safeCurrentStep + 1}
-      style={{
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        gap: 8,
-      }}
     >
       {Array.from({ length: safeTotalSteps }).map((_, idx) => {
         const isActive = idx === safeCurrentStep
@@ -44,14 +41,9 @@ export function OnboardingProgressDots({
           <span
             key={idx}
             aria-hidden="true"
+            className="h-2 w-2 rounded-full transition-colors duration-150"
             style={{
-              width: 8,
-              height: 8,
-              borderRadius: 9999,
-              backgroundColor: isActive
-                ? 'currentColor'
-                : 'rgba(25, 43, 63, 0.28)',
-              transition: 'background-color 150ms ease',
+              backgroundColor: isActive ? CARDEA_DARK_GREEN : `${CARDEA_MUTED}55`,
             }}
           />
         )
