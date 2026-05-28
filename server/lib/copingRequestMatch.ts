@@ -34,7 +34,7 @@ const BREATHING_CONCEPT_RE =
 const GROUNDING_CONCEPT_RE = /\b(?:ground|grounding|grounding\s+exercise|5-4-3-2-1|ground\s+me)\b/i
 const JOURNALING_CONCEPT_RE = /\b(?:journal|journaling|micro-?journal(?:ing)?)\b/i
 const REFRAMES_CONCEPT_RE = /\b(?:refram(?:e|es|ing))\b/i
-const SAFE_PLACE_CONCEPT_RE = /\b(?:safe\s+place|visualization)\b/i
+const SAFE_PLACE_CONCEPT_RE = /\b(?:safe\s+place|safe\s+space|visualization)\b/i
 const PHYSICAL_REGULATION_CONCEPT_RE =
   /\b(?:body\s+scan|body\s+check-?in|cold\s+reset|move\s+it\s+out|physical\s+regulation)\b/i
 const TOOL_CONCEPT_PATTERN =

@@ -17,6 +17,7 @@ const shouldBeCoping = [
   'i want to journal',
   'help me reframe this thought',
   'i need a safe place visualization',
+  'give me safe space tool',
   'walk me through a body scan',
 ]
 
@@ -44,6 +45,7 @@ const expectedToolByPrompt: Record<string, string> = {
   'i want to journal': 'Micro-journal',
   'help me reframe this thought': 'Reframes',
   'i need a safe place visualization': 'Safe Place Visualization',
+  'give me safe space tool': 'Safe Place Visualization',
   'walk me through a body scan': 'Physical regulation',
 }
 
@@ -102,6 +104,24 @@ for (const msg of shouldNotBeCoping) {
 
 if (!shouldUseCopingBranch('COPING_REQUEST', 'i need help breathing')) {
   console.error('FAIL (expected strict gate to allow explicit coping): i need help breathing')
+  failed++
+}
+
+const safeSpace = matchCopingRequest('give me safe space tool', null, null)
+if (!looksLikeCopingRequest('give me safe space tool')) {
+  console.error('FAIL (expected coping request): give me safe space tool')
+  failed++
+}
+if (!shouldUseCopingBranch('COPING_REQUEST', 'give me safe space tool')) {
+  console.error('FAIL (expected coping branch): give me safe space tool')
+  failed++
+}
+if (safeSpace.selectedTool?.name !== 'Safe Place Visualization') {
+  console.error('FAIL (expected Safe Place Visualization):', safeSpace.selectedTool)
+  failed++
+}
+if (safeSpace.selectedTool?.route !== '/wellness?tool=safe-place') {
+  console.error('FAIL (expected safe-place route):', safeSpace.selectedTool)
   failed++
 }
 
