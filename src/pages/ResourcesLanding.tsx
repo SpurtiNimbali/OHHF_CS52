@@ -1,11 +1,11 @@
 import { useState } from 'react'
 import MedicalGlossary from '../screens/MedicalGlossary'
 import FindSupport from '../components/FindSupport'
-import QuestionsForCardiologist from '../components/QuestionsForCardiologist'
+import QuestionsForCareTeam from '../components/QuestionsForCareTeam'
 import FloatingActions from '../components/FloatingActions'
 import ChatScreen from '../screens/ChatScreen'
 
-type Screen = 'home' | 'support' | 'questions' | 'glossary' | 'marketplace' | 'profile' | 'chat'
+type Screen = 'home' | 'support' | 'care-team' | 'glossary' | 'marketplace' | 'profile' | 'chat'
 
 const BOTTOM_NAV_HEIGHT = 72
 
@@ -72,7 +72,7 @@ const NAV_ITEMS: { id: Screen; label: string; Icon: React.FC<{ active: boolean }
 
 function BottomNav({ current, onNavigate }: { current: Screen; onNavigate: (s: Screen) => void }) {
   const activeId: Screen =
-    current === 'questions' || current === 'glossary' ? 'support' : current
+    current === 'care-team' || current === 'glossary' ? 'support' : current
 
   return (
     <nav style={{
@@ -236,7 +236,7 @@ function HomePanel({ onNavigate }: { onNavigate: (s: Screen) => void }) {
       }}>
         {([
           { id: 'support'   as Screen, icon: '🤝', label: 'FIND SUPPORT',          desc: 'Local and online resources for heart families' },
-          { id: 'questions' as Screen, icon: '💬', label: 'CARDIOLOGIST Q&A',       desc: 'Save questions before your next appointment' },
+          { id: 'care-team' as Screen, icon: '💬', label: 'CARE TEAM QUESTIONS', desc: 'Save questions before your next appointment' },
           { id: 'glossary'  as Screen, icon: '📚', label: 'MEDICAL GLOSSARY',       desc: 'Plain-language heart health terminology' },
         ] as const).map((card) => (
           <button
@@ -361,7 +361,7 @@ const ResourcesLanding: React.FC = () => {
       <main style={{ flex: 1, overflowY: current === 'chat' ? 'hidden' : 'auto', paddingBottom: current === 'chat' ? 0 : `${BOTTOM_NAV_HEIGHT}px`, display: 'flex', flexDirection: 'column' }}>
         {current === 'home'        && <HomePanel onNavigate={setCurrent} />}
         {current === 'support'     && <FindSupport />}
-        {current === 'questions'   && <QuestionsForCardiologist />}
+        {current === 'care-team'   && <QuestionsForCareTeam />}
         {current === 'glossary'    && <div style={{ padding: '40px' }}><MedicalGlossary /></div>}
         {current === 'chat'        && <ChatScreen />}
         {current === 'marketplace' && <MarketplacePlaceholder />}

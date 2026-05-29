@@ -43,7 +43,7 @@ const FOLLOWUP_CHAT_MODEL =
   process.env.OPENAI_FOLLOWUP_MODEL?.trim() || MAIN_CHAT_MODEL
 
 export type UiRedirect = {
-  kind: 'mental_health_tools' | 'cardiologist_questions' | 'support_groups' | 'glossary'
+  kind: 'mental_health_tools' | 'care_team_questions' | 'support_groups' | 'glossary'
   label: string
   path: string
   /** True when the user's message matched (legacy / scripts). */
@@ -730,7 +730,7 @@ function emotionalIntent(intent: ClassifierIntent): boolean {
 
 function intentToRedirect(intent: ClassifierIntent): CompanionUiRedirect | null {
   if (intent === 'INFORMATIONAL_CARE_TEAM') {
-    return { label: 'Questions for your care team', destination: '?view=questions' }
+    return { label: 'Questions for your care team', destination: '?view=care-team' }
   }
   if (intent === 'INFORMATIONAL_SUPPORT') {
     return { label: 'Support & community resources', destination: '?view=support' }
@@ -745,9 +745,10 @@ function redirectToLegacy(r: CompanionUiRedirect | null): UiRedirect[] {
   if (!r) return []
   const path = r.destination.startsWith('/') ? r.destination : `/resources${r.destination}`
   let kind: UiRedirect['kind'] = 'glossary'
-  if (r.destination.includes('questions')) kind = 'cardiologist_questions'
+  if (r.destination.includes('care-team')) kind = 'care_team_questions'
+  else if (r.destination.includes('questions')) kind = 'care_team_questions'
   else if (r.destination.includes('support')) kind = 'support_groups'
-  return [{ kind, label: r.label, path, suggested: false, prominent: kind === 'cardiologist_questions' || kind === 'glossary' || kind === 'support_groups' }]
+  return [{ kind, label: r.label, path, suggested: false, prominent: kind === 'care_team_questions' || kind === 'glossary' || kind === 'support_groups' }]
 }
 
 async function openAiMessages(

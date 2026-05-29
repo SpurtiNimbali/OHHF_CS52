@@ -65,9 +65,9 @@ export const HOME_CARD_CATALOG: HomeCardDefinition[] = [
   {
     id: 'visit-questions',
     icon: CircleHelp,
-    title: 'Questions for your visit',
-    descriptionDefault: 'Save prompts to bring to your healthcare appointments.',
-    to: '/resources?view=questions',
+    title: 'Questions for your care team',
+    descriptionDefault: 'Save prompts to bring to your health care team.',
+    to: '/resources?view=care-team',
     palette: 'coral',
   },
   {
@@ -127,7 +127,7 @@ export const HOME_CARD_CATALOG: HomeCardDefinition[] = [
     icon: Sparkles,
     title: 'Prep for your appointment',
     descriptionDefault: 'Gather questions and context so you feel ready at the visit.',
-    to: '/resources?view=questions',
+    to: '/resources?view=care-team',
     palette: 'sky',
   },
   {

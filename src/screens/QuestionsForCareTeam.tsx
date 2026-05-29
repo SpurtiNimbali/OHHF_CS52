@@ -230,7 +230,7 @@ function getSavedLabel(row: SavedQuestion): string {
   return 'Saved question'
 }
 
-export default function QuestionsForCardiologist() {
+export default function QuestionsForCareTeam() {
   const [, setSearchParams] = useSearchParams()
   const [saved, setSaved] = useState<SavedQuestion[]>([])
   const [userId, setUserId] = useState<string | null>(null)
@@ -627,7 +627,7 @@ export default function QuestionsForCardiologist() {
           <div className="grid grid-cols-2 gap-3 border-t pt-6" style={{ borderColor: 'rgba(25, 43, 63, 0.1)' }}>
             <button
               type="button"
-              onClick={() => setSearchParams({ view: 'standard-questions' })}
+              onClick={() => setSearchParams({ view: 'care-team-standard' })}
               className="flex w-full items-center justify-center rounded-xl border-2 bg-white px-3 py-4 text-sm font-semibold shadow-sm transition-colors hover:bg-white/95 sm:text-base"
               style={{ borderColor: NAVY, color: NAVY }}
             >

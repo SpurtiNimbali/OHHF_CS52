@@ -346,7 +346,7 @@ function SavedQuestionsList({
 
 // ── Main Screen ──────────────────────────────────────────────────────────────
 
-export default function QuestionsForCardiologist() {
+export default function QuestionsForCareTeam() {
   const [grouped, setGrouped] = useState<GroupedQuestions>({})
   const [saved, setSaved] = useState<SavedQuestion[]>([])
   const [savedIds, setSavedIds] = useState<Set<string>>(new Set())

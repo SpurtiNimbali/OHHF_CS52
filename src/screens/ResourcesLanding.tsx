@@ -1,4 +1,5 @@
 import type { FC, ReactNode } from 'react'
+import { useEffect } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import { motion } from 'motion/react'
 import { Users, CircleHelp, BookOpen } from 'lucide-react'
@@ -7,19 +8,25 @@ import { ResourcesRightNav } from '../components/ResourcesRightNav'
 import { useMood, moodShellBackgroundClasses, MoodHeartFill } from '../mood'
 import MedicalGlossary from './MedicalGlossary'
 import FindSupport from './FindSupport'
-import QuestionsForCardiologist from './QuestionsForCardiologist'
+import QuestionsForCareTeam from './QuestionsForCareTeam'
 import StandardCareTeamQuestions from './StandardCareTeamQuestions'
 import { CARDEA_FONT_PRIMARY, CARDEA_LIGHT_BLUE, CARDEA_MUTED, CARDEA_NAVY } from '../ui/cardeaTokens'
 
-type Screen = 'landing' | 'glossary' | 'support' | 'questions' | 'standard-questions'
+type Screen = 'landing' | 'glossary' | 'support' | 'care-team' | 'care-team-standard'
 
 function screenFromParams(searchParams: URLSearchParams): Screen {
   const v = searchParams.get('view')?.trim().toLowerCase()
   if (v === 'glossary') return 'glossary'
   if (v === 'support') return 'support'
-  if (v === 'questions') return 'questions'
-  if (v === 'standard-questions') return 'standard-questions'
+  if (v === 'care-team' || v === 'questions') return 'care-team'
+  if (v === 'care-team-standard' || v === 'standard-questions') return 'care-team-standard'
   return 'landing'
+}
+
+function canonicalViewParam(screen: Exclude<Screen, 'landing'>): string {
+  if (screen === 'care-team') return 'care-team'
+  if (screen === 'care-team-standard') return 'care-team-standard'
+  return screen
 }
 
 function ResourcesShell({ children }: { children: ReactNode }) {
@@ -82,7 +89,7 @@ const landingCards: {
     Icon: CircleHelp,
     title: 'Questions for Your Health Care Team',
     description: 'Important questions and conversation starters for your appointments',
-    view: 'questions',
+    view: 'care-team',
     iconWrapClass: 'bg-[#192b3f]',
     iconClass: 'text-white',
   },
@@ -106,8 +113,17 @@ const ResourcesLanding: FC = () => {
 
   const handleNavigation = (screen: Screen) => {
     if (screen === 'landing') goLanding()
-    else setSearchParams({ view: screen })
+    else setSearchParams({ view: canonicalViewParam(screen) })
   }
+
+  useEffect(() => {
+    const raw = searchParams.get('view')?.trim().toLowerCase()
+    if (!raw) return
+    const screen = screenFromParams(searchParams)
+    if (screen === 'landing') return
+    const canonical = canonicalViewParam(screen)
+    if (raw !== canonical) setSearchParams({ view: canonical }, { replace: true })
+  }, [searchParams, setSearchParams])
 
   if (currentScreen === 'glossary') {
     return (
@@ -125,17 +141,17 @@ const ResourcesLanding: FC = () => {
     )
   }
 
-  if (currentScreen === 'questions') {
+  if (currentScreen === 'care-team') {
     return (
       <SubpageChrome onBack={goLanding}>
-        <QuestionsForCardiologist />
+        <QuestionsForCareTeam />
       </SubpageChrome>
     )
   }
 
-  if (currentScreen === 'standard-questions') {
+  if (currentScreen === 'care-team-standard') {
     return (
-      <SubpageChrome onBack={() => setSearchParams({ view: 'questions' })} backText="Back to Questions">
+      <SubpageChrome onBack={() => setSearchParams({ view: 'care-team' })} backText="Back to care team questions">
         <StandardCareTeamQuestions />
       </SubpageChrome>
     )

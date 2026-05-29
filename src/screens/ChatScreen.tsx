@@ -393,7 +393,7 @@ const INTENT_RESOURCE_UI: Record<
     Icon: typeof CircleHelp
   }
 > = {
-  cardiologist_questions: {
+  care_team_questions: {
     title: 'Questions for your care team',
     description: 'Save and organize prompts for cardiology visits and other appointments.',
     buttonLabel: 'Open question library',
