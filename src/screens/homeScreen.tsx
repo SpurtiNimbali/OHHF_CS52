@@ -78,11 +78,6 @@ export function HomeScreen() {
     }
     if (entry) {
       markMoodCheckInSaved(moodId, entry.id)
-      if (moodId === 'numb') {
-        setCheckInSaved(true)
-        navigate('/wellness?tool=name-it')
-        return
-      }
     }
     setCheckInSaved(true)
     window.setTimeout(() => setCheckInSaved(false), 2500)
@@ -233,6 +228,11 @@ export function HomeScreen() {
                       description={resource.description}
                       iconWrapClass={resource.iconWrapClass}
                       iconClass={resource.iconClass}
+                      onClick={
+                        resource.id === 'chat-support' && moodId
+                          ? () => void openMoodChat()
+                          : undefined
+                      }
                     />
                   )}
                 </motion.div>
