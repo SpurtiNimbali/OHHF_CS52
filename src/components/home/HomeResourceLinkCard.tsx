@@ -11,7 +11,12 @@ type HomeResourceLinkCardProps = {
   description: string
   iconWrapClass: string
   iconClass: string
+  /** When set, runs instead of router navigation (e.g. async chat open with prefill). */
+  onClick?: () => void
 }
+
+const cardClassName =
+  'flex items-center gap-4 p-4 rounded-2xl bg-white border border-gray-100 shadow-sm hover:shadow-md transition-shadow min-h-[4.5rem] w-full text-left'
 
 /** Large tappable tile on Home — “Learning & resources” style rows. */
 export function HomeResourceLinkCard({
@@ -21,12 +26,10 @@ export function HomeResourceLinkCard({
   description,
   iconWrapClass,
   iconClass,
+  onClick,
 }: HomeResourceLinkCardProps) {
-  return (
-    <Link
-      to={to}
-      className="flex items-center gap-4 p-4 rounded-2xl bg-white border border-gray-100 shadow-sm hover:shadow-md transition-shadow min-h-[4.5rem]"
-    >
+  const content = (
+    <>
       <div className={`${iconWrapClass} p-3 rounded-xl shrink-0`}>
         <Icon className={`w-6 h-6 ${iconClass}`} strokeWidth={2} />
       </div>
@@ -42,6 +45,20 @@ export function HomeResourceLinkCard({
         </p>
       </div>
       <ChevronRight className="w-5 h-5 shrink-0 text-[#8BD7D2]" aria-hidden />
+    </>
+  )
+
+  if (onClick) {
+    return (
+      <button type="button" onClick={onClick} className={cardClassName}>
+        {content}
+      </button>
+    )
+  }
+
+  return (
+    <Link to={to} className={cardClassName}>
+      {content}
     </Link>
   )
 }

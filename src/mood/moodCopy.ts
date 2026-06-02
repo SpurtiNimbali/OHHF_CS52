@@ -15,27 +15,51 @@ const MOOD_MESSAGES: Record<MoodId, string> = {
   numb: 'Not knowing what you feel is a feeling too — let’s explore it gently.',
 }
 
+/** What the user sends to chat — first-person, directed at the assistant. */
+const MOOD_CHAT_PREFILLS: Record<MoodId, string> = {
+  happy:
+    "I'm feeling really happy right now and want to talk about what's going well.",
+  calm:
+    "I'm feeling calm right now and want to reflect on what's helping me feel this way.",
+  hopeful:
+    "I'm feeling hopeful right now and want to explore what I'm looking forward to.",
+  overwhelmed:
+    "I'm feeling really overwhelmed right now and need help figuring out what to focus on first.",
+  exhausted:
+    "I'm feeling exhausted from caregiving and want to talk through what's been weighing on me.",
+  angry:
+    "I'm feeling really angry about our situation right now and need a space to process it.",
+  scared:
+    "I'm feeling scared today and want help thinking through what's worrying me most.",
+  sad:
+    "I'm feeling really sad right now and want to explore what I'm carrying.",
+  disconnected:
+    "I'm feeling disconnected lately and want help finding my way back to feeling present.",
+  numb:
+    "I'm not sure what I'm feeling right now, and I want to explore it gently.",
+}
+
 const CHAT_HINTS: Record<MoodId, string> = {
   happy:
-    'Try: “What made today feel lighter, and how can I hold onto that?” — share it when you chat.',
+    `Try: “${MOOD_CHAT_PREFILLS.happy}” — open chat when you want to share the good.`,
   calm:
-    'Try: “What helped me get to this calm place, and what do I want to remember about it?” — jot it down before you talk with someone.',
+    `Try: “${MOOD_CHAT_PREFILLS.calm}” — open chat when you want to capture this moment.`,
   hopeful:
-    'Try: “What’s one thing I’m looking forward to, even if it’s small?” — celebrate it when you chat.',
+    `Try: “${MOOD_CHAT_PREFILLS.hopeful}” — open chat when you want to lean into hope.`,
   overwhelmed:
-    'Try: “What’s one thing I can set down today, even temporarily?” — say it clearly to someone you trust.',
+    `Try: “${MOOD_CHAT_PREFILLS.overwhelmed}” — open chat when you need help prioritizing.`,
   exhausted:
-    'Try: “What has caregiving cost me lately that I haven’t named out loud?” — honesty counts as clarity.',
+    `Try: “${MOOD_CHAT_PREFILLS.exhausted}” — open chat when you need space to name the weight.`,
   angry:
-    'Try: “What feels most unfair about this situation right now?” — share it with care.',
+    `Try: “${MOOD_CHAT_PREFILLS.angry}” — open chat when you need room to vent safely.`,
   scared:
-    'Try: “What symptom or uncertainty scares me most today?” — share it with care.',
+    `Try: “${MOOD_CHAT_PREFILLS.scared}” — open chat when fear feels too big to hold alone.`,
   sad:
-    'Try: “What loss or grief am I carrying right now that I haven’t had space to feel?” — even a tiny comfort counts.',
+    `Try: “${MOOD_CHAT_PREFILLS.sad}” — open chat when you need someone to sit with it.`,
   disconnected:
-    'Try: “When did I last feel present with someone I love, and what was different then?” — that’s enough to open a conversation.',
+    `Try: “${MOOD_CHAT_PREFILLS.disconnected}” — open chat when you want help reconnecting.`,
   numb:
-    'Try: “If I had to guess at one word for what I’m feeling underneath ‘unsure,’ what might it be?” — honesty like that counts as clarity.',
+    `Try: “${MOOD_CHAT_PREFILLS.numb}” — open chat when you're ready to name what’s underneath.`,
 }
 
 const DEFAULT_HINT =
@@ -50,11 +74,7 @@ export function getChatPromptHint(moodId: MoodId | null): string {
   return CHAT_HINTS[moodId]
 }
 
-/** Conversation starter for chat prefill (quoted line from mood hint, when present). */
+/** Conversation starter prefilled in chat after a mood check-in. */
 export function getMoodChatPrefill(moodId: MoodId): string {
-  const hint = CHAT_HINTS[moodId]
-  const quoted = hint.match(/[“"]([^”"]+)[”"]/)
-  if (quoted?.[1]) return quoted[1]
-  const stripped = hint.replace(/^Try:\s*/i, '').split(' — ')[0]?.trim()
-  return stripped || hint
+  return MOOD_CHAT_PREFILLS[moodId]
 }

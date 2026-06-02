@@ -76,7 +76,7 @@ export const HOME_CARD_CATALOG: HomeCardDefinition[] = [
     title: 'Chat prompts & support',
     descriptionDefault:
       'Conversation starters and peer support — open when you want to connect.',
-    to: '/resources?view=support',
+    to: '/chat',
     palette: 'sky',
     descriptionFromChatHint: true,
   },
@@ -205,7 +205,7 @@ export type PickHomeCardsOptions = {
 
 /**
  * Ordered, personalized home cards for the current mood.
- * With a mood selected: 4 cards from the team doc (chat → wellness → resource → feeling).
+ * With a mood selected: 4 cards from the team doc (chat → wellness → support/questions → feeling).
  */
 export function pickHomeCardsForMood(
   moodId: MoodId | null,

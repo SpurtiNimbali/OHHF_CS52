@@ -7,9 +7,9 @@ import type { MoodId } from './moodVariants'
 import {
   buildToolRoute,
   isLiveWellnessToolId,
+  WELLNESS_TOOL_DESCRIPTIONS,
   WELLNESS_TOOL_REGISTRY,
   type WellnessToolId,
-  type WellnessToolSection,
 } from '../lib/wellnessToolRegistry'
 
 export type { WellnessToolId }
@@ -18,7 +18,7 @@ export type RecommendedWellnessTool = {
   slug: WellnessToolId
   label: string
   route: string
-  section: WellnessToolSection
+  description: string
 }
 
 /** Primary wellness tool surfaced on the home “Wellness tools” card */
@@ -82,16 +82,16 @@ export const MOOD_WELLNESS_PRIMARY_SECONDARY: Record<
 
 /** “Right for you now” card ids per mood (exactly 4 when mood is set) */
 export const MOOD_HOME_CARD_ORDER: Record<MoodId, string[]> = {
-  overwhelmed: ['chat-support', 'wellness-tools', 'learning-hub', 'feeling-mood'],
-  exhausted: ['chat-support', 'wellness-tools', 'learning-hub', 'feeling-mood'],
+  overwhelmed: ['chat-support', 'wellness-tools', 'support-network', 'feeling-mood'],
+  exhausted: ['chat-support', 'wellness-tools', 'support-network', 'feeling-mood'],
   angry: ['chat-support', 'wellness-tools', 'visit-questions', 'feeling-mood'],
-  scared: ['chat-support', 'wellness-tools', 'learning-hub', 'feeling-mood'],
-  sad: ['chat-support', 'wellness-tools', 'learning-hub', 'feeling-mood'],
+  scared: ['chat-support', 'wellness-tools', 'support-network', 'feeling-mood'],
+  sad: ['chat-support', 'wellness-tools', 'support-network', 'feeling-mood'],
   disconnected: ['chat-support', 'wellness-tools', 'support-network', 'feeling-mood'],
-  numb: ['chat-support', 'wellness-tools', 'learning-hub', 'feeling-mood'],
-  hopeful: ['chat-support', 'wellness-tools', 'learning-hub', 'feeling-mood'],
-  happy: ['chat-support', 'wellness-tools', 'learning-hub', 'feeling-mood'],
-  calm: ['chat-support', 'wellness-tools', 'learning-hub', 'feeling-mood'],
+  numb: ['chat-support', 'wellness-tools', 'visit-questions', 'feeling-mood'],
+  hopeful: ['chat-support', 'wellness-tools', 'support-network', 'feeling-mood'],
+  happy: ['chat-support', 'wellness-tools', 'support-network', 'feeling-mood'],
+  calm: ['chat-support', 'wellness-tools', 'support-network', 'feeling-mood'],
 }
 
 export const DEFAULT_HOME_CARD_ORDER = [
@@ -136,7 +136,7 @@ export function resolveRecommendedToolsForMood(
         slug: tool.id,
         label: tool.label,
         route: buildToolRoute(toolId),
-        section: tool.section,
+        description: WELLNESS_TOOL_DESCRIPTIONS[toolId],
       }
     })
 }
