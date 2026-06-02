@@ -21,8 +21,6 @@ import {
 import { AnimatePresence, motion } from 'motion/react'
 import {
   MOOD_VARIANTS,
-  MoodHeartFill,
-  getMoodChatPrefill,
   isWellnessToolId,
   MOOD_WELLNESS_PRIMARY_SECONDARY,
   moodShellBackgroundClasses,
@@ -32,13 +30,9 @@ import {
   useMood,
 } from '../mood'
 import {
-  clearMoodCheckInSession,
-  ensureMoodEntryForChat,
   fetchMoodEntries,
   RECENT_MOOD_CHECKINS_LIMIT,
   insertMoodEntry,
-  markMoodCheckInSaved,
-  saveMoodCheckInIfNeeded,
   type MoodEntryRow,
 } from '../lib/moodEntries'
 import {
@@ -324,31 +318,6 @@ function toolUseCount(
     if (Number.isNaN(usedAt.getTime()) || moodLocalDateKey(usedAt) !== wellnessDayKey) return false
     return entry.toolId === toolId && (!emotion || entry.emotion === emotion)
   }).length
-}
-
-function WellnessChip({
-  emotion,
-  selected,
-  onClick,
-}: {
-  emotion: (typeof WELLNESS_EMOTIONS)[number]
-  selected: boolean
-  onClick: () => void
-}) {
-  const mood = moodVariantFor(emotion.moodId)
-  return (
-    <motion.button
-      type="button"
-      whileTap={{ scale: 0.98 }}
-      onClick={onClick}
-      className={`rounded-full border px-4 py-2 text-sm font-semibold transition-all ${
-        selected ? `${mood.chipBg} ${mood.chipText} border-transparent shadow-sm` : 'border-white bg-white text-[#3A525A]'
-      }`}
-      style={{ fontFamily: CARDEA_FONT_PRIMARY }}
-    >
-      {emotion.label}
-    </motion.button>
-  )
 }
 
 function ToolTile({
@@ -1012,6 +981,7 @@ function MicroJournalTool({
   const [saving, setSaving] = useState(false)
   const [history, setHistory] = useState<JournalEntryRow[]>([])
   const [historyLoading, setHistoryLoading] = useState(true)
+  const [expandedId, setExpandedId] = useState<string | null>(null)
 
   const reloadHistory = useCallback(async () => {
     setHistoryLoading(true)
@@ -1103,31 +1073,100 @@ function MicroJournalTool({
             No entries yet. What you save will show up here.
           </p>
         ) : (
-          <ul className="space-y-4">
-            {history.map((row) => (
-              <li
-                key={row.id}
-                className="rounded-2xl border bg-[#f5f9f9] px-4 py-3"
-                style={{ borderColor: 'rgba(25,43,63,0.08)' }}
-              >
-                <p className="text-xs" style={{ color: CARDEA_MUTED }}>
-                  {formatEntryDateTime(row.timestamp)}
-                </p>
-                {row.prompt && !isStandardMicroJournalPrompt(row.prompt) ? (
-                  <p className="mt-1 text-sm leading-relaxed" style={{ color: CARDEA_MUTED }}>
-                    {row.prompt}
-                  </p>
-                ) : null}
-                <p
-                  className={`whitespace-pre-wrap text-sm leading-relaxed text-[#3A525A] ${
-                    row.prompt && !isStandardMicroJournalPrompt(row.prompt) ? 'mt-2' : 'mt-1'
-                  }`}
-                >
-                  {row.entry}
-                </p>
-              </li>
-            ))}
-          </ul>
+          <div>
+            <div
+              className="flex gap-3 overflow-x-auto snap-x snap-mandatory pb-2"
+              style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
+            >
+              {history.map((row) => {
+                const hasCustomPrompt = Boolean(row.prompt && !isStandardMicroJournalPrompt(row.prompt))
+                return (
+                  <button
+                    key={row.id}
+                    type="button"
+                    onClick={() => setExpandedId(row.id)}
+                    className="snap-start shrink-0 w-52 rounded-2xl border p-4 text-left transition-all hover:shadow-sm overflow-hidden"
+                    style={{
+                      height: '144px',
+                      background: '#f5f9f9',
+                      borderColor: 'rgba(25,43,63,0.08)',
+                    }}
+                  >
+                    <p className="text-[10px] font-medium" style={{ color: CARDEA_MUTED }}>
+                      {formatEntryDateTime(row.timestamp)}
+                    </p>
+                    {hasCustomPrompt ? (
+                      <p className="mt-1 text-[11px] leading-snug truncate font-medium" style={{ color: CARDEA_MUTED }}>
+                        {row.prompt}
+                      </p>
+                    ) : null}
+                    <p
+                      className="mt-1.5 text-sm leading-relaxed text-[#3A525A]"
+                      style={{
+                        display: '-webkit-box',
+                        WebkitLineClamp: hasCustomPrompt ? 3 : 4,
+                        WebkitBoxOrient: 'vertical',
+                        overflow: 'hidden',
+                      }}
+                    >
+                      {row.entry}
+                    </p>
+                  </button>
+                )
+              })}
+            </div>
+
+            <AnimatePresence>
+              {expandedId ? (() => {
+                const row = history.find((r) => r.id === expandedId)
+                if (!row) return null
+                const hasCustomPrompt = Boolean(row.prompt && !isStandardMicroJournalPrompt(row.prompt))
+                return (
+                  <motion.div
+                    key={expandedId}
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    exit={{ opacity: 0 }}
+                    transition={{ duration: 0.15 }}
+                    className="fixed inset-0 z-50 flex items-center justify-center px-4 py-8 bg-[rgba(25,43,63,0.35)] backdrop-blur-sm"
+                    onClick={() => setExpandedId(null)}
+                  >
+                    <motion.div
+                      initial={{ opacity: 0, scale: 0.96, y: 12 }}
+                      animate={{ opacity: 1, scale: 1, y: 0 }}
+                      exit={{ opacity: 0, scale: 0.96, y: 12 }}
+                      transition={{ duration: 0.2 }}
+                      className="w-full max-w-lg rounded-3xl bg-white p-6 shadow-2xl max-h-[80vh] overflow-y-auto"
+                      onClick={(e) => e.stopPropagation()}
+                    >
+                      <div className="mb-4 flex items-center justify-between gap-3">
+                        <p className="text-xs font-medium" style={{ color: CARDEA_MUTED }}>
+                          {formatEntryDateTime(row.timestamp)}
+                        </p>
+                        <button
+                          type="button"
+                          onClick={() => setExpandedId(null)}
+                          className="rounded-full px-3 py-1.5 text-xs font-semibold"
+                          style={{ background: CARDEA_ALMOST_WHITE, color: CARDEA_NAVY }}
+                        >
+                          ← Back
+                        </button>
+                      </div>
+                      {hasCustomPrompt ? (
+                        <div className="mb-4 rounded-xl border-l-4 bg-[#f0f7f4] px-4 py-3" style={{ borderLeftColor: CARDEA_DARK_GREEN }}>
+                          <p className="text-xs font-bold uppercase tracking-[0.14em] mb-1" style={{ color: CARDEA_DARK_GREEN }}>prompt</p>
+                          <p className="text-sm leading-relaxed text-[#192b3f]">{row.prompt}</p>
+                        </div>
+                      ) : null}
+                      <p className="whitespace-pre-wrap text-sm leading-relaxed text-[#3A525A]">
+                        {row.entry}
+                      </p>
+                    </motion.div>
+                  </motion.div>
+                )
+              })() : null}
+            </AnimatePresence>
+          </div>
         )}
       </div>
     </div>
@@ -1584,17 +1623,15 @@ function MoodCheckInTool({ onSaved }: { onSaved?: () => void }) {
 export default function WellnessTools() {
   const navigate = useNavigate()
   const [searchParams] = useSearchParams()
-  const { moodId, setMoodId, theme } = useMood()
+  const { moodId, theme } = useMood()
   const [selectedEmotion, setSelectedEmotion] = useState<WellnessEmotion | null>(() =>
     moodId ? (moodId as WellnessEmotion) : null,
   )
   const [activeTool, setActiveTool] = useState<ToolId | null>(null)
   const [activePrefill, setActivePrefill] = useState<string | null>(null)
-  const [moodLog, setMoodLog] = useLocalState<MoodLogEntry[]>(STORAGE.moods, [])
+  const [moodLog] = useLocalState<MoodLogEntry[]>(STORAGE.moods, [])
   const [moodEntries, setMoodEntries] = useState<MoodEntryRow[]>([])
   const [toolLog, setToolLog] = useLocalState<ToolUseEntry[]>(STORAGE.tools, [])
-  const [checkInSaved, setCheckInSaved] = useState(false)
-  const [checkInError, setCheckInError] = useState<string | null>(null)
 
   const reloadMoodEntries = useCallback(async () => {
     const rows = await fetchMoodEntries(RECENT_MOOD_CHECKINS_LIMIT)
@@ -1630,7 +1667,6 @@ export default function WellnessTools() {
     if (tool && isWellnessToolId(tool)) setActiveTool(tool)
   }, [searchParams])
 
-  const selectedMeta = selectedEmotion ? WELLNESS_EMOTIONS.find((e) => e.id === selectedEmotion) ?? null : null
   const checkInEmotion = selectedEmotion ?? wellnessEmotionFromMoodId(moodId)
   const wellnessDayKey = moodLocalDateKey(new Date())
   const suggestedExercises = useMemo(
@@ -1668,79 +1704,7 @@ export default function WellnessTools() {
     return `linear-gradient(90deg, ${colors.join(', ')})`
   }, [recentMoodSummaries])
 
-  async function saveCheckInFromSelection(options?: { showSavedToast?: boolean }): Promise<boolean> {
-    if (!selectedMeta) return true
-    setCheckInError(null)
-    setMoodLog([
-      {
-        id: makeId('mood'),
-        date: new Date().toISOString(),
-        emotion: selectedMeta.moodId,
-      },
-      ...moodLog,
-    ].slice(0, 80))
-    const { entry, error, alreadySaved } = await saveMoodCheckInIfNeeded(selectedMeta.moodId)
-    if (error) {
-      setCheckInError(error)
-      return false
-    }
-    if (entry) {
-      markMoodCheckInSaved(selectedMeta.moodId, entry.id)
-      setMoodEntries((prev) =>
-        [entry, ...prev.filter((r) => r.id !== entry.id)].slice(0, RECENT_MOOD_CHECKINS_LIMIT),
-      )
-      if (options?.showSavedToast && !alreadySaved) {
-        setCheckInSaved(true)
-        window.setTimeout(() => setCheckInSaved(false), 1800)
-      }
-    } else {
-      await reloadMoodEntries()
-    }
-    return true
-  }
-
-  async function saveMoodCheckIn() {
-    await saveCheckInFromSelection({ showSavedToast: true })
-  }
-
-  async function openMoodChat() {
-    if (!selectedMeta) return
-    setCheckInError(null)
-    setMoodLog([
-      {
-        id: makeId('mood'),
-        date: new Date().toISOString(),
-        emotion: selectedMeta.moodId,
-      },
-      ...moodLog,
-    ].slice(0, 80))
-    const { entry, entryId: moodEntryId, error } = await ensureMoodEntryForChat(selectedMeta.moodId)
-    if (error) {
-      setCheckInError(error)
-      return
-    }
-    if (entry) {
-      markMoodCheckInSaved(selectedMeta.moodId, entry.id)
-      setMoodEntries((prev) =>
-        [entry, ...prev.filter((r) => r.id !== entry.id)].slice(0, RECENT_MOOD_CHECKINS_LIMIT),
-      )
-    } else {
-      await reloadMoodEntries()
-    }
-    navigate('/chat', {
-      state: {
-        prefill: getMoodChatPrefill(selectedMeta.moodId),
-        moodId: selectedMeta.moodId,
-        moodEntryId,
-      },
-    })
-  }
-
-  async function openTool(toolId: ToolId, options?: { saveCheckIn?: boolean; prefill?: string }) {
-    if (options?.saveCheckIn && selectedMeta) {
-      const ok = await saveCheckInFromSelection({ showSavedToast: true })
-      if (!ok) return
-    }
+  async function openTool(toolId: ToolId, options?: { prefill?: string }) {
     setActivePrefill(options?.prefill ?? null)
     setActiveTool(toolId)
     setToolLog([
@@ -1752,14 +1716,6 @@ export default function WellnessTools() {
   function closeModal() {
     setActiveTool(null)
     setActivePrefill(null)
-  }
-
-  function chooseEmotion(emotion: (typeof WELLNESS_EMOTIONS)[number]) {
-    setMoodId(emotion.moodId)
-    setCheckInSaved(false)
-    setCheckInError(null)
-    clearMoodCheckInSession()
-    setActiveTool(null)
   }
 
   const activeMeta = activeTool ? TOOL_META[activeTool] : null
@@ -1822,95 +1778,15 @@ export default function WellnessTools() {
           </div>
         </section>
 
-        <Section id="understand" label="Understand what you're feeling">
-          <div className="rounded-3xl bg-white/85 p-6 shadow-sm backdrop-blur">
-            <div className="mb-5 flex items-center gap-4">
-              <MoodHeartFill
-                theme={theme}
-                size={48}
-                viewBox="0 0 100 100"
-                pathD="M50 85C50 85 20 65 20 40C20 25 30 15 40 15C45 15 50 20 50 20C50 20 55 15 60 15C70 15 80 25 80 40C80 65 50 85 50 85Z"
-                stroke={theme.heartStroke}
-                strokeWidth={2}
-              />
-              <div>
-                <p className="text-xs font-bold uppercase tracking-[0.2em]" style={{ color: CARDEA_MUTED }}>
-                  daily mood check-in
-                </p>
-                <h3 className="text-3xl text-[#062A4A]" style={{ fontFamily: "'Bebas Neue', sans-serif", letterSpacing: '0.07em' }}>
-                  how are you?
-                </h3>
-              </div>
-            </div>
-
-            <div className="flex flex-wrap gap-2">
-              {WELLNESS_EMOTIONS.map((emotion) => (
-                <WellnessChip
-                  key={emotion.id}
-                  emotion={emotion}
-                  selected={moodId === emotion.moodId}
-                  onClick={() => chooseEmotion(emotion)}
-                />
-              ))}
-            </div>
-
-            <p className="mt-2 text-xs leading-relaxed" style={{ color: CARDEA_MUTED }}>
-              Feeling more than one? Pick Unsure.
-            </p>
-
-            <div className="mt-4 rounded-2xl border bg-white/85 p-4 shadow-sm" style={{ borderColor: 'rgba(25,43,63,0.08)' }}>
-              <p className="mb-3 text-sm font-semibold text-[#192b3f]">
-                Want to explore what&apos;s underneath it?
-              </p>
-              <button
-                type="button"
-                disabled={!selectedMeta}
-                onClick={() => void openMoodChat()}
-                className="inline-flex items-center gap-2 rounded-xl px-4 py-2.5 text-sm font-semibold text-white disabled:cursor-not-allowed disabled:opacity-40"
-                style={{ background: CARDEA_DARK_GREEN }}
-              >
-                Open chat
-                <ArrowRight className="h-4 w-4" aria-hidden />
-              </button>
-              {checkInError ? (
-                <p className="mt-2 text-xs leading-relaxed text-[#9B1C31]">{checkInError}</p>
-              ) : null}
-              <div className="mt-3 flex flex-wrap items-center justify-between gap-3">
-                <p className="text-xs leading-relaxed" style={{ color: CARDEA_MUTED }}>
-                  two questions. one minute.
-                </p>
-                <div className="flex items-center gap-2">
-                  {checkInSaved && (
-                    <span className="text-xs font-semibold" style={{ color: CARDEA_DARK_GREEN }}>
-                      saved
-                    </span>
-                  )}
-                  <button
-                    type="button"
-                    disabled={!selectedMeta}
-                    onClick={() => void saveMoodCheckIn()}
-                    className="rounded-full px-4 py-2 text-xs font-semibold text-white disabled:opacity-40"
-                    style={{ background: CARDEA_DARK_GREEN }}
-                  >
-                    Save check-in
-                  </button>
-                </div>
-              </div>
-            </div>
-
-          </div>
-
+        <Section id="understand" label="Past week check-ins">
           {recentMoods.length === 0 ? (
             <p className="mt-4 text-sm leading-relaxed" style={{ color: CARDEA_MUTED }}>
-              No mood check-ins yet. Save one above and it will appear here.
+              No mood check-ins yet. Complete a mood check-in on the home screen and it will appear here.
             </p>
           ) : null}
 
           {recentMoods.length > 0 ? (
             <div className="mt-4 rounded-3xl bg-white/80 p-5 shadow-sm">
-              <p className="mb-3 text-xs font-bold uppercase tracking-[0.18em]" style={{ color: CARDEA_MUTED }}>
-                past week check-ins
-              </p>
               <div
                 className="relative flex h-4 rounded-full bg-[#f5f9f9] shadow-inner"
                 style={{ background: recentMoodGradient }}
@@ -1952,35 +1828,6 @@ export default function WellnessTools() {
 
         </Section>
 
-        <Section id="crisis" label="Crisis support">
-          <button
-            type="button"
-            onClick={() => openTool('crisis-reset')}
-            className="group flex w-full items-center justify-between gap-6 rounded-2xl border-l-4 bg-white p-6 text-left shadow-sm transition hover:shadow-md"
-            style={{ borderLeftColor: '#9B1C31' }}
-          >
-            <div className="flex items-start gap-4">
-              <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-[#9B1C31]/10">
-                <AlertCircle className="h-5 w-5 text-[#9B1C31]" />
-              </div>
-              <div>
-                <h3
-                  className="text-2xl text-[#192b3f]"
-                  style={{ fontFamily: "'Bebas Neue', sans-serif", letterSpacing: '0.07em' }}
-                >
-                  I need help right now
-                </h3>
-                <p className="mt-1 text-sm leading-relaxed" style={{ color: CARDEA_MUTED }}>
-                  A guided 4-step reset. Takes about 60 seconds.
-                </p>
-              </div>
-            </div>
-            <span className="hidden rounded-xl bg-[#9B1C31] px-4 py-2 text-sm font-semibold text-white sm:inline-flex">
-              Start now →
-            </span>
-          </button>
-        </Section>
-
         <Section id="suggested" label="Suggested Exercises">
           <div className="grid gap-4 md:grid-cols-2">
             {suggestedExercises.map((toolId, index) => (
@@ -1997,46 +1844,59 @@ export default function WellnessTools() {
           </p>
         </Section>
 
-        <Section id="regulate" label="Regulate your body">
-          <div className="grid gap-3 md:grid-cols-2">
-            {(['breathing', 'grounding', 'physical-regulation'] as ToolId[]).map((toolId) => (
-              <ToolTile
-                key={toolId}
-                toolId={toolId}
-                onOpen={openTool}
-                count={toolUseCount(toolLog, toolId, checkInEmotion, wellnessDayKey)}
-              />
-            ))}
+        <div className="mt-12">
+          <div className="mb-4 flex items-center gap-3">
+            <h2
+              className="text-base font-bold uppercase tracking-[0.22em]"
+              style={{ color: CARDEA_NAVY }}
+            >
+              Tools
+            </h2>
+            <div className="h-px flex-1 bg-gradient-to-r from-[#c6d9e5] to-transparent" />
           </div>
-        </Section>
+          <div className="border-l-2 pl-5" style={{ borderColor: 'rgba(25,43,63,0.12)' }}>
+            <Section id="regulate" label="Regulate your body">
+              <div className="grid gap-3 md:grid-cols-2">
+                {(['breathing', 'grounding', 'physical-regulation', 'name-it'] as ToolId[]).map((toolId) => (
+                  <ToolTile
+                    key={toolId}
+                    toolId={toolId}
+                    onOpen={openTool}
+                    count={toolUseCount(toolLog, toolId, checkInEmotion, wellnessDayKey)}
+                  />
+                ))}
+              </div>
+            </Section>
 
-        <Section id="mindset" label="Shift your mindset">
-          <div className="grid gap-3 md:grid-cols-2">
-            {(['reframes', 'safe-place'] as ToolId[]).map((toolId) => (
-              <ToolTile
-                key={toolId}
-                toolId={toolId}
-                onOpen={openTool}
-                count={toolUseCount(toolLog, toolId, checkInEmotion, wellnessDayKey)}
-              />
-            ))}
-          </div>
-        </Section>
+            <Section id="mindset" label="Shift your mindset">
+              <div className="grid gap-3 md:grid-cols-2">
+                {(['reframes', 'safe-place'] as ToolId[]).map((toolId) => (
+                  <ToolTile
+                    key={toolId}
+                    toolId={toolId}
+                    onOpen={openTool}
+                    count={toolUseCount(toolLog, toolId, checkInEmotion, wellnessDayKey)}
+                  />
+                ))}
+              </div>
+            </Section>
 
-        <Section id="parent" label="Be the parent">
-          <div className="space-y-6">
-            <TodayNudgeCard />
-            <div>
-              <p className="mb-3 text-xs font-bold uppercase tracking-[0.18em]" style={{ color: CARDEA_MUTED }}>
-                Reflection prompts
-              </p>
-              <ReflectionPromptsPanel
-                moodId={moodId}
-                onReflect={(prompt) => void openTool('micro-journal', { prefill: prompt })}
-              />
-            </div>
+            <Section id="parent" label="Be the parent">
+              <div className="space-y-6">
+                <TodayNudgeCard />
+                <div>
+                  <p className="mb-3 text-xs font-bold uppercase tracking-[0.18em]" style={{ color: CARDEA_MUTED }}>
+                    Reflection prompts
+                  </p>
+                  <ReflectionPromptsPanel
+                    moodId={moodId}
+                    onReflect={(prompt) => void openTool('micro-journal', { prefill: prompt })}
+                  />
+                </div>
+              </div>
+            </Section>
           </div>
-        </Section>
+        </div>
 
         <footer className="mb-6 mt-16 flex flex-col items-center gap-2 text-center">
           <Sparkles className="h-4 w-4" style={{ color: CARDEA_DARK_GREEN }} />
