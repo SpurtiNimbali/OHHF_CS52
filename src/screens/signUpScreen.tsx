@@ -781,7 +781,7 @@ export function SignUpScreen() {
               cursor: 'pointer',
             }}
           >
-            Skip to security questions (dev only—remove for production)
+            Skip to security questions
           </button>
         )}
 
