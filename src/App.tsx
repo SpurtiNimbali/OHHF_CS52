@@ -21,7 +21,7 @@ function App() {
       <MoodProvider>
         <CheckInSavedBarHost />
         <Routes>
-          <Route path="/" element={<Navigate to="/home" replace />} />
+          <Route path="/" element={<Navigate to="/auth" replace />} />
           <Route path="/auth" element={<AuthLandingScreen />} />
           <Route path="/sign-in" element={<SignInScreen />} />
           <Route path="/sign-up" element={<SignUpScreen />} />
