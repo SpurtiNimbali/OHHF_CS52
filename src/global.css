@@ -48,6 +48,33 @@ textarea:focus {
   border-color: var(--dark-green) !important;
 }
 
+/* Chat composer: no inner focus rectangle on the native textarea */
+.chat-composer-field {
+  overflow: hidden;
+}
+
+.chat-composer-field:focus-within {
+  outline: none !important;
+  box-shadow: none !important;
+}
+
+.chat-composer-textarea,
+.chat-composer-textarea:focus,
+.chat-composer-textarea:focus-visible,
+.chat-composer-textarea:active {
+  margin: 0;
+  padding: 0;
+  width: 100%;
+  border: none !important;
+  border-width: 0 !important;
+  outline: none !important;
+  outline-offset: 0 !important;
+  box-shadow: none !important;
+  background: transparent !important;
+  -webkit-appearance: none;
+  appearance: none;
+}
+
 /* ── Inline link style ─────────────────────────────────────── */
 a.ohhf-link {
   color: var(--navy);

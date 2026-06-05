@@ -1107,19 +1107,40 @@ export default function ChatScreen() {
       {/* ── Input ──────────────────────────────────────────────────────────── */}
       <div style={{ background: '#fff', borderTop: `1px solid ${LIGHT_BLUE}`, padding: '12px 16px 16px', flexShrink: 0 }}>
         <div style={{ display: 'flex', alignItems: 'flex-end', gap: 10, maxWidth: 680, margin: '0 auto' }}>
-          <div style={{ flex: 1, display: 'flex', alignItems: 'flex-end', background: OFF_WHITE, border: `1.5px solid ${LIGHT_BLUE}`, borderRadius: 16, padding: '10px 14px', transition: 'border-color 0.2s' }}
-            onFocusCapture={e => (e.currentTarget.style.borderColor = GREEN)}
-            onBlurCapture={e => (e.currentTarget.style.borderColor = LIGHT_BLUE)}
+          <div
+            className="chat-composer-field"
+            style={{
+              flex: 1,
+              display: 'flex',
+              alignItems: 'flex-end',
+              background: OFF_WHITE,
+              border: `1.5px solid ${LIGHT_BLUE}`,
+              borderRadius: 16,
+              padding: '10px 14px',
+            }}
           >
             <textarea
               ref={textareaRef}
+              className="chat-composer-textarea"
               value={value}
               onChange={handleChange}
               onKeyDown={handleKeyDown}
               placeholder="Share what's on your mind..."
               disabled={isLoading}
               rows={1}
-              style={{ flex: 1, resize: 'none', background: 'transparent', fontSize: '0.875rem', color: NAVY, fontFamily: FONT, outline: 'none', lineHeight: 1.6, maxHeight: 160, border: 'none' }}
+              style={{
+                flex: 1,
+                resize: 'none',
+                background: 'transparent',
+                fontSize: '0.875rem',
+                color: NAVY,
+                fontFamily: FONT,
+                outline: 'none',
+                boxShadow: 'none',
+                lineHeight: 1.6,
+                maxHeight: 160,
+                border: 'none',
+              }}
             />
           </div>
           <motion.button
