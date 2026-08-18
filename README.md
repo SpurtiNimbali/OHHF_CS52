@@ -94,6 +94,17 @@ See `.env.example`. Secrets are gitignored (`*.local`, `.env*`).
 
 After changing env, restart `dev:all`.
 
+### Vercel (frontend)
+
+Vite is a single-page app. `vercel.json` rewrites `/home`, `/auth`, `/chat`, etc. to `index.html` so those URLs do not 404.
+
+In the Vercel project, set **build-time** env vars (they are baked into the JS bundle):
+
+- `VITE_SUPABASE_URL`
+- `VITE_SUPABASE_ANON_KEY`
+
+The Express API (`server/`, `/api/*`) does **not** run on Vercel. Chat and server-side saves still need a separate host (or local `npm run server:dev`).
+
 ---
 
 ## Handoff notes
